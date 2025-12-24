@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Crear Orden Médica</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; text-align: center; margin-bottom: 10px; }
+    h2 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 30px; }
+    label { display: block; margin-top: 15px; font-weight: bold; color: #2c3e50; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    textarea { resize: vertical; min-height: 80px; }
+    button { background: #28a745; color: white; border: none; cursor: pointer; padding: 12px 30px; border-radius: 8px; font-size: 16px; margin-top: 20px; }
+    button:hover { background: #218838; }
+    .btn-secondary { background: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 10px; }
+    .btn-secondary:hover { background: #5a6268; }
+    .row { display: flex; gap: 10px; margin-top: 10px; }
+    .col { flex: 1; }
+    @media (max-width: 768px) { .row { flex-direction: column; } }
+    .med-title { margin-top: 20px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Orden Médica</h1>
+
+  <p><strong>Paciente:</strong> {{ historia.paciente.nombre if historia.paciente else '' }}</p>
+  <p><strong>Número Historia:</strong> {{ historia.numero_historia }}</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="message {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST">
+    <h2>Indicaciones generales</h2>
+    <label for="indicaciones_medicas">Indicaciones médicas</label>
+    <textarea id="indicaciones_medicas" name="indicaciones_medicas"></textarea>
+
+    <label for="medicacion_texto">Resumen de medicación (texto libre)</label>
+    <textarea id="medicacion_texto" name="medicacion_texto"></textarea>
+
+    <h2 class="med-title">💊 Medicamentos formulados</h2>
+    <small style="color:#666;">Use esta tabla para formular medicamentos estructurados (se guardan en JSON).</small>
+
+    <div id="medicamentos-container">
+      <div class="row medicamento-item">
+        <div class="col">
+          <label>Medicamento</label>
+          <select name="medicamentos[0][codigo]">
+            <option value="">-- Seleccione medicamento --</option>
+            {% if medicamentos_catalogo %}
+              {% for med in medicamentos_catalogo %}
+              <option value="{{ med.codigo }}">{{ med.codigo }} - {{ med.nombre }}</option>
+              {% endfor %}
+            {% endif %}
+          </select>
+        </div>
+        <div class="col">
+          <label>Dosis / presentación</label>
+          <input type="text" name="medicamentos[0][dosis]" placeholder="Ej: 500 mg, 1 ampolla">
+        </div>
+        <div class="col">
+          <label>Frecuencia / tiempo</label>
+          <input type="text" name="medicamentos[0][frecuencia]" placeholder="Ej: cada 8 horas x 5 días">
+        </div>
+        <div class="col">
+          <label>Cantidad</label>
+          <input type="number" step="0.001" min="0"
+                 name="medicamentos[0][cantidad_solicitada]"
+                 placeholder="Cantidad (ej: 3)">
+        </div>
+        <div class="col">
+          <label>Unidad</label>
+          <input type="text"
+                 name="medicamentos[0][unidad_inventario]"
+                 placeholder="Unidad (ampolla, frasco, etc.)">
+        </div>
+        <div class="col">
+          <label>Vía</label>
+          <select name="medicamentos[0][via_administracion]">
+            <option value="">Vía</option>
+            <option value="VO">VO</option>
+            <option value="IV">IV</option>
+            <option value="IM">IM</option>
+            <option value="SC">SC</option>
+          </select>
+        </div>
+        <div class="col" style="max-width:80px; display:flex; align-items:flex-end;">
+          <button type="button" class="btn-secondary btn-remove-med">X</button>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="btn-secondary" id="add-medicamento" style="margin-top:10px;">
+      + Añadir otro medicamento
+    </button>
+
+    <br>
+    <button type="submit">💾 Guardar Orden Médica</button>
+  </form>
+
+  <div style="margin-top:20px;">
+    <a href="{{ url_for('pacientes.listar') }}" class="btn-secondary">← Volver</a>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const container = document.getElementById('medicamentos-container');
+  const addBtn = document.getElementById('add-medicamento');
+
+  function renumerar() {
+    const items = container.querySelectorAll('.medicamento-item');
+    items.forEach((item, index) => {
+      item.querySelectorAll('select, input').forEach(el => {
+        el.name = el.name.replace(/medicamentos\[\d+]/, 'medicamentos[' + index + ']');
+      });
+    });
+  }
+
+  addBtn.addEventListener('click', function () {
+    const items = container.querySelectorAll('.medicamento-item');
+    const ultimo = items[items.length - 1];
+    const clon = ultimo.cloneNode(true);
+    clon.querySelectorAll('select, input').forEach(el => { el.value = ''; });
+    container.appendChild(clon);
+    renumerar();
+  });
+
+  container.addEventListener('click', function (e) {
+    if (e.target.classList.contains('btn-remove-med')) {
+      const items = container.querySelectorAll('.medicamento-item');
+      if (items.length > 1) {
+        e.target.closest('.medicamento-item').remove();
+        renumerar();
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>

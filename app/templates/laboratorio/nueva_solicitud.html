@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nueva solicitud de laboratorio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>.titulo-principal{color:#236e7b;font-weight:600;}</style>
+</head>
+<body class="bg-light">
+<div class="container py-4">
+  <h3 class="mb-3 titulo-principal">Nueva solicitud de laboratorio</h3>
+
+  <p class="mb-3">
+    Paciente: <strong>{{ paciente.nombre }}</strong><br>
+    Número: <strong>{{ paciente.numero }}</strong><br>
+    Historia: <strong>{{ historia.numero_historia }}</strong>
+  </p>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post">
+        <div class="mb-3">
+          <label for="examen_id" class="form-label">Examen del catálogo</label>
+          <select id="examen_id" name="examen_id" class="form-select" required>
+            <option value="">-- Seleccione un examen --</option>
+            {% for ex in examenes %}
+              <option value="{{ ex.id }}">
+                {{ ex.grupo }} - {{ ex.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Crear solicitud</button>
+        <a href="{{ url_for('ayudas.ayudas_laboratorios', historia_id=historia.id) }}" class="btn btn-link">
+          Cancelar
+        </a>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Listado de Pacientes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .btn { display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin: 3px; text-align: center; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-outline { background-color: white; border: 1px solid #007bff; color: #007bff; }
+        .message { padding: 15px; margin: 10px 0; border-radius: 4px; font-weight: bold; }
+        .success { background-color: #d4edda; color: #155724; }
+        .danger { background-color: #f8d7da; color: #721c24; }
+
+        .card { max-width: 900px; margin: 0 auto 25px auto; padding: 15px 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card-title { font-size: 18px; margin-bottom: 10px; font-weight: bold; }
+        .btn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+
+        .search-box { max-width: 700px; margin: 0 auto 10px auto; }
+        .search-box label { display: block; margin-bottom: 4px; }
+        .search-box input { width: 100%; padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
+
+        .center-footer { text-align: center; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>📋 Listado de Pacientes</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- TARJETA DE ACCIONES SUPERIORES -->
+    <div class="card">
+        <div class="card-title">Acciones rápidas</div>
+        <div class="btn-grid">
+            <a href="{{ url_for('pacientes.crear') }}" class="btn btn-success">
+                ➕ Nuevo Paciente Simple
+            </a>
+            <a href="{{ url_for('pacientes.nuevo_ingreso') }}" class="btn btn-primary">
+                🆕 Nuevo Paciente + Historia de Ingreso
+            </a>
+            <a href="{{ url_for('pacientes.carga_masiva') }}" class="btn btn-outline">
+                📥 Carga masiva Pacientes + Historias
+            </a>
+        </div>
+    </div>
+
+    <!-- BUSCADOR -->
+    <h2>Buscar historias por paciente</h2>
+    <div class="search-box">
+      <label for="pacienteBusqueda">Paciente</label>
+      <input type="text" id="pacienteBusqueda"
+             placeholder="ID - Nombre (Número)" list="listaPacientes">
+      <datalist id="listaPacientes">
+        {% for p in pacientes %}
+        <option value="{{ p.id }} - {{ p.nombre }} ({{ p.numero }})">
+        {% endfor %}
+      </datalist>
+    </div>
+
+    <!-- TABLA DE HISTORIAS (VACÍA HASTA BUSCAR) -->
+    <h2 class="mt-5">Historias Clínicas</h2>
+    <table class="table table-striped" id="tablaHistorias">
+      <thead>
+        <tr>
+          <th>ID Historia</th>
+          <th>Nombre Paciente</th>
+          <th>Número Paciente</th>
+          <th>Fecha Registro</th>
+          <th>Régimen</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- filas por JS -->
+      </tbody>
+    </table>
+
+    <div class="center-footer">
+        <a href="{{ url_for('menu.inicio') }}" class="btn btn-success" style="padding: 12px 24px;">
+            ← Volver al Menú Principal
+        </a>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const input = document.getElementById('pacienteBusqueda');
+      const tbody = document.querySelector('#tablaHistorias tbody');
+
+      const urlPdfBase = "/pacientes/historias/libro/__ID__/pdf";
+      const urlOrdenBase = "/pacientes/historias/__ID__/orden_medica";
+
+
+      function getPacienteId(valor) {
+        const partes = (valor || '').split('-');
+        const id = parseInt(partes[0]);
+        return isNaN(id) ? null : id;
+      }
+
+      tbody.innerHTML = '';
+
+      input.addEventListener('change', function () {
+        const pacienteId = getPacienteId(input.value);
+        if (!pacienteId) {
+          tbody.innerHTML = '';
+          return;
+        }
+
+        fetch("{{ url_for('pacientes.historias_por_paciente') }}?paciente_id=" + pacienteId)
+          .then(resp => resp.json())
+          .then(data => {
+            tbody.innerHTML = '';
+            if (!data.length) {
+              tbody.innerHTML = '<tr><td colspan="6">Este paciente no tiene historias clínicas.</td></tr>';
+              return;
+            }
+
+            data.forEach(h => {
+              const tr = document.createElement('tr');
+              const urlPdf = urlPdfBase.replace('__ID__', h.id);
+              const urlOrden = urlOrdenBase.replace('__ID__', h.id);
+
+              tr.innerHTML = `
+                <td>${h.id}</td>
+                <td>${h.nombre}</td>
+                <td>${h.numero}</td>
+                <td>${h.fecha_registro}</td>
+                <td>${h.regimen}</td>
+                <td>
+                  <a class="btn btn-sm btn-primary" href="${urlPdf}" target="_blank">Ver PDF</a>
+                  <a class="btn btn-sm btn-success" href="${urlOrden}">Añadir Orden Médica</a>
+                </td>`;
+              tbody.appendChild(tr);
+            });
+          })
+          .catch(err => {
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="6">Error al cargar historias.</td></tr>';
+          });
+      });
+    });
+    </script>
+</body>
+</html>

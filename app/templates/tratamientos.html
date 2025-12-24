@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Tratamientos{% endblock %}
+
+{% block content %}
+<h2>Lista de Tratamientos</h2>
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>ID</th><th>Descripción</th><th>ID Consulta</th><th>Opciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for tr in tratamientos %}
+        <tr>
+            <td>{{ tr.id }}</td>
+            <td>{{ tr.descripcion }}</td>
+            <td>{{ tr.consulta_id }}</td>
+            <td>
+                <!-- Opciones para editar y eliminar pueden añadirse si se implementan -->
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p><a href="{{ url_for('crear_tratamiento_web') }}">Crear nuevo tratamiento</a></p>
+{% endblock %}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}Software SM{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    
+    <style>
+        /* Colores base del login: fondo beige y acentos verde azulado */
+        :root {
+            --sm-bg: #f7d5ba;        /* beige de fondo */
+            --sm-card-bg: #f0e7d8;   /* beige algo más claro para contenedores */
+            --sm-primary: #236e7b;   /* verde azulado */
+            --sm-primary-soft: #0b616920;
+            --sm-text-main: #0b6169;
+            --sm-text-muted: #5f5f5f;
+        }
+
+        body {
+            background-color: var(--sm-bg);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        /* NAVBAR estilo tarjeta superior, misma línea de colores */
+        .navbar-sm {
+            background-color: var(--sm-card-bg) !important;
+            border-bottom: 3px solid var(--sm-primary);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--sm-primary) !important;
+            letter-spacing: 0.03em;
+        }
+
+        .navbar-nav .nav-link {
+            color: var(--sm-primary) !important;
+            font-weight: 500;
+        }
+
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link:focus {
+            color: #094b50 !important;
+        }
+
+        .dropdown-menu {
+            border-radius: 12px;
+            border: 1px solid var(--sm-primary-soft);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--sm-primary-soft);
+        }
+
+        /* Contenedor principal tipo tarjeta suave */
+        .sm-main-container {
+            max-width: 1200px;
+            margin-top: 2.5rem;
+            margin-bottom: 2.5rem;
+            background-color: var(--sm-card-bg);
+            border-radius: 24px;
+            border: 3px solid var(--sm-primary);
+            padding: 2.5rem 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        .sm-main-title {
+            color: var(--sm-text-main);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .sm-main-subtitle {
+            text-align: center;
+            color: var(--sm-text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Mensajes flash dentro de la tarjeta */
+        .sm-alert {
+            border-radius: 16px;
+        }
+
+        footer {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: transparent;
+            text-align: center;
+            color: var(--sm-text-main);
+            font-size: 0.85rem;
+        }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light navbar-sm shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('menu.inicio') }}">SOFTWARE SM</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSM" aria-controls="navbarSM" aria-expanded="false" aria-label="Menú de navegación">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSM">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="modulosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Módulos
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="modulosDropdown">
+            <li><a class="dropdown-item" href="{{ url_for('ayudas.inicio_ayudas') }}">Médicos</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('pacientes.listar') }}">Pacientes</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('pacientes.listar') }}">Historias Clínicas</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('enfermeria.inicio_enfermeria') }}">Enfermería</a></li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container d-flex justify-content-center">
+  <div class="sm-main-container w-100">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show sm-alert flash-alert" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<footer>
+  &copy; 2025 Software SM - CENCATECH
+</footer>
+
+<!-- Bootstrap JS CDN y Popper.js -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+
+<script>
+  // Ocultar automáticamente solo los mensajes flash
+  document.addEventListener('DOMContentLoaded', function () {
+    const alerts = document.querySelectorAll('.flash-alert');
+    if (!alerts.length) return;
+
+    setTimeout(() => {
+      alerts.forEach(a => {
+        a.classList.remove('show');
+        a.classList.add('hide');
+        setTimeout(() => a.remove(), 300);
+      });
+    }, 2000); // 2 segundos
+  });
+</script>
+
+</html>

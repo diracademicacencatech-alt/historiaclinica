@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Consultas{% endblock %}
+
+{% block content %}
+<h2>Lista de Consultas</h2>
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Síntomas</th>
+            <th>Observaciones</th>
+            <th>Paciente</th>
+            <th>Médico</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for consulta in consultas %}
+        <tr>
+            <td>{{ consulta.id }}</td>
+            <td>{{ consulta.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ consulta.sintomas }}</td>
+            <td>{{ consulta.observaciones }}</td>
+            <td>{{ consulta.paciente.nombre }} {{ consulta.paciente.apellido }}</td>
+            <td>{{ consulta.medico.nombre }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p><a href="{{ url_for('crear_consulta_web') }}">Crear nueva consulta</a></p>
+{% endblock %}

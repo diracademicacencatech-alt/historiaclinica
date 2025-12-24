@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Diagnósticos{% endblock %}
+
+{% block content %}
+<h2>Lista de Diagnósticos</h2>
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>ID</th><th>Descripción</th><th>ID Consulta</th><th>Opciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for diag in diagnosticos %}
+        <tr>
+            <td>{{ diag.id }}</td>
+            <td>{{ diag.descripcion }}</td>
+            <td>{{ diag.consulta_id }}</td>
+            <td>
+                <!-- Opciones editar y eliminar pueden agregarse si se implementan -->
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p><a href="{{ url_for('crear_diagnostico_web') }}">Crear nuevo diagnóstico</a></p>
+{% endblock %}

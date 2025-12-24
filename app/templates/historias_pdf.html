@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Historia Clínica PDF</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
+        h1, h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px;}
+        th, td { border: 1px solid #333; padding: 5px; }
+        th { background-color: #eee; }
+        section { page-break-after: always; }
+    </style>
+</head>
+<body>
+<h1>Historia Clínica</h1>
+
+{% for historia in historias %}
+<section>
+    <h2>
+        {% if loop.first %}
+            Ingreso / Evolución
+        {% else %}
+            Órdenes Médicas
+        {% endif %}
+    </h2>
+
+    {% if loop.first %}
+        <h3>Datos Básicos</h3>
+        <table>
+            <tr><th>Nombre Paciente</th><td>{{ historia.nombre_paciente or 'N/A' }}</td></tr>
+            <tr><th>Identificación</th><td>{{ historia.paciente.identificacion if historia.paciente else 'N/A' }}</td></tr>
+            <tr><th>Fecha de Ingreso</th><td>{{ historia.fecha_ingreso.strftime('%Y-%m-%d') if historia.fecha_ingreso else 'N/A' }}</td></tr>
+            <tr><th>Fecha de Registro</th><td>{{ historia.fecha_registro.strftime('%Y-%m-%d') if historia.fecha_registro else 'N/A' }}</td></tr>
+        </table>
+
+        <h3>Datos Personales</h3>
+        <table>
+            <tr><th>Fecha nacimiento</th><td>{{ historia.fecha_nacimiento.strftime('%Y-%m-%d') if historia.fecha_nacimiento else 'N/A' }}</td></tr>
+            <tr><th>Edad</th><td>{{ historia.edad or 'N/A' }}</td></tr>
+            <tr><th>Dirección</th><td>{{ historia.direccion or 'N/A' }}</td></tr>
+            <tr><th>Sexo</th><td>{{ historia.sexo or 'N/A' }}</td></tr>
+            <tr><th>Ocupación</th><td>{{ historia.ocupacion or 'N/A' }}</td></tr>
+            <tr><th>Teléfono</th><td>{{ historia.telefono or 'N/A' }}</td></tr>
+        </table>
+        
+        <h3>Signos Vitales</h3>
+        <table>
+            <tr><th>Tensión Arterial</th><td>{{ historia.signos_vitales.tension_arterial if historia.signos_vitales else 'N/A' }}</td></tr>
+            <tr><th>Frecuencia Cardiaca</th><td>{{ historia.signos_vitales.frecuencia_cardiaca if historia.signos_vitales else 'N/A' }}</td></tr>
+            <tr><th>Frecuencia Respiratoria</th><td>{{ historia.signos_vitales.frecuencia_respiratoria if historia.signos_vitales else 'N/A' }}</td></tr>
+            <tr><th>Temperatura</th><td>{{ historia.signos_vitales.temperatura if historia.signos_vitales else 'N/A' }}</td></tr>
+            <tr><th>Saturometría</th><td>{{ historia.signos_vitales.saturometria if historia.signos_vitales else 'N/A' }}</td></tr>
+        </table>
+
+        <h3>Evolución</h3>
+        <p><strong>Subjetivos:</strong> {{ historia.evolucion.subjetivos if historia.evolucion else 'N/A' }}</p>
+        <p><strong>Objetivos:</strong> {{ historia.evolucion.objetivos if historia.evolucion else 'N/A' }}</p>
+        <p><strong>Análisis:</strong> {{ historia.evolucion.analisis if historia.evolucion else 'N/A' }}</p>
+        <p><strong>Plan:</strong> {{ historia.evolucion.plan if historia.evolucion else 'N/A' }}</p>
+        
+    {% else %}
+        <h3>Datos Básicos (Historia Base)</h3>
+        <table>
+            <tr><th>Nombre Paciente</th><td>{{ historia.nombre_paciente or 'N/A' }}</td></tr>
+            <tr><th>Identificación</th><td>{{ historia.paciente.identificacion if historia.paciente else 'N/A' }}</td></tr>
+            <tr><th>Fecha de Ingreso</th><td>{{ historia.fecha_ingreso.strftime('%Y-%m-%d') if historia.fecha_ingreso else 'N/A' }}</td></tr>
+            <tr><th>Fecha de Registro</th><td>{{ historia.fecha_registro.strftime('%Y-%m-%d') if historia.fecha_registro else 'N/A' }}</td></tr>
+        </table>
+
+        <h3>Órdenes Médicas</h3>
+        <p><strong>Indicaciones Médicas:</strong></p>
+        <p>{% if historia.ordenes_medicas %}{{ historia.ordenes_medicas[0].indicaciones_medicas or 'N/A' }}{% else %}N/A{% endif %}</p>
+        <p><strong>Medicación:</strong></p>
+        <p>{% if historia.ordenes_medicas %}{{ historia.ordenes_medicas[0].medicacion_texto or 'N/A' }}{% else %}N/A{% endif %}</p>
+    {% endif %}
+</section>
+{% endfor %}
+
+</body>
+</html>

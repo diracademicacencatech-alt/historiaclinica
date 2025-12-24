@@ -1,0 +1,7 @@
+codigo,nombre,forma_farmaceutica,presentacion,cantidad_disponible,unidad_inventario
+ACET500TAB,Acetaminofén 500 mg,Tableta,Tableta 500 mg,0,tableta
+DIP500TAB,Dipirona 500 mg,Tableta,Tableta 500 mg,0,tableta
+KCL10AMP,Cloruro de potasio,Solución inyectable,Ampolla 10 mEq/10 mL,0,ampolla
+AMOX500CAP,Amoxicilina 500 mg,Cápsula,Cápsula 500 mg,0,cápsula
+SS09BOL,Solución salina 0.9 %,Solución,Frasco 500 mL,0,frasco
+RL1000BOL,Solución Hartmann,Solución,Frasco 1000 mL,0,frasco

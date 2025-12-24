@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Laboratorios - {{ paciente.nombre }}{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+
+    <h2 class="sm-main-title">Laboratorios</h2>
+
+    <!-- Info paciente -->
+    <div class="alert alert-info sm-alert">
+      <strong>Paciente:</strong> {{ paciente.nombre }}<br>
+      <strong>Número:</strong> {{ paciente.numero }}<br>
+      <strong>Cama:</strong> {{ paciente.cama or '-' }}<br>
+      <strong>Historia:</strong> {{ historia.numero_historia }}
+    </div>
+
+    <!-- Tabla principal: Examen / Fecha último resultado -->
+    <div class="card mb-4">
+      <div class="card-header">Exámenes registrados</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Examen</th>
+                <th>Fecha último resultado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% if examenes %}
+              {% for e in examenes %}
+                <tr>
+                  <td>{{ e.nombre_examen }}</td>
+                  <td>
+                    {% if e.fecha_resultado %}
+                      {{ e.fecha_resultado.strftime('%Y-%m-%d %H:%M') }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td class="text-nowrap">
+                    {% if e.archivo %}
+                      <a href="{{ url_for('ayudas.ver_archivo_ayuda', ayuda_id=e.id) }}"
+                         class="btn btn-sm btn-outline-primary" target="_blank">
+                        Visualizar
+                      </a>
+                    {% endif %}
+                    <form action="{{ url_for('ayudas.eliminar_ayuda', ayuda_id=e.id) }}"
+                          method="post" class="d-inline"
+                          onsubmit="return confirm('¿Seguro que desea eliminar este registro?');">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">
+                        Eliminar
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">
+                  No hay exámenes registrados para esta historia.
+                </td>
+              </tr>
+            {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Formulario: carga individual -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">Agregar examen individual</div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+              <div class="mb-3">
+                <label for="nombre_examen" class="form-label">Nombre del examen</label>
+                <input type="text" id="nombre_examen" name="nombre_examen" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label for="fecha_resultado" class="form-label">Fecha del resultado</label>
+                <input type="date" id="fecha_resultado" name="fecha_resultado" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label for="archivo" class="form-label">Archivo (PDF, imagen, etc.) opcional</label>
+                <input type="file" id="archivo" name="archivo" class="form-control">
+              </div>
+              <button type="submit" class="btn btn-primary">Guardar examen</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario: carga masiva para este paciente/historia -->
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">Carga masiva (solo esta historia)</div>
+          <div class="card-body">
+            <p class="small text-muted mb-2">
+              Archivo CSV o Excel con columnas:
+              <code>NOMBRE_EXAMEN</code> y <code>FECHA_RESULTADO</code>
+              (la fecha puede ir en formato de Excel o texto tipo 2025-12-05).
+            </p>
+            <form method="post" enctype="multipart/form-data">
+              <div class="mb-3">
+                <label for="archivo_masivo" class="form-label">Archivo</label>
+                <input type="file" id="archivo_masivo" name="archivo_masivo" class="form-control" required>
+              </div>
+              <button type="submit" class="btn btn-secondary">Cargar archivo</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}" class="btn btn-link">
+      &larr; Volver al menú de ayudas
+    </a>
+  </div>
+</div>
+{% endblock %}

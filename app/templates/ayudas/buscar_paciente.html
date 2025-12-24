@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Ayudas diagnósticas{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 col-lg-4 mb-3">
+
+    <h2 class="sm-main-title">Ayudas diagnósticas</h2>
+    <p class="sm-main-subtitle">
+      Buscar paciente para laboratorios, imágenes u otros estudios.
+    </p>
+
+    <!-- BOTÓN CATÁLOGO (GLOBAL, SIN PACIENTE) -->
+    <div class="d-flex flex-column gap-2 mb-3">
+      <a href="{{ url_for('ayudas.gestion_catalogo_laboratorios') }}"
+         class="btn btn-info w-100">
+        🧪 Gestionar catálogo de laboratorios
+      </a>
+    </div>
+
+    <!-- FORMULARIO DE BÚSQUEDA DE PACIENTE -->
+    <div class="card">
+      <div class="card-header">Buscar paciente</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('ayudas.buscar_paciente') }}">
+          <div class="mb-3 position-relative">
+            <label for="criterio" class="form-label">Nombre o número de paciente</label>
+
+            <input type="text" id="criterio" name="criterio"
+                   class="form-control"
+                   autocomplete="off"
+                   placeholder="Empieza a escribir: Juan, 12345..." required>
+
+            <!-- Contenedor de sugerencias -->
+            <div id="sugerencias"
+                 class="list-group position-absolute w-100"
+                 style="z-index: 1000;"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            Buscar
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-12 col-lg-8">
+    <!-- vacío; los resultados se muestran en buscar_resultados.html -->
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const input = document.getElementById('criterio');
+  const contenedor = document.getElementById('sugerencias');
+
+  let ultimoTermino = '';
+  let timeoutId = null;
+
+  if (!input || !contenedor) {
+    return;
+  }
+
+  function limpiarSugerencias() {
+    while (contenedor.firstChild) {
+      contenedor.removeChild(contenedor.firstChild);
+    }
+  }
+
+  input.addEventListener('input', function () {
+    const termino = input.value.trim();
+
+    if (termino.length < 2 || termino === ultimoTermino) {
+      limpiarSugerencias();
+      return;
+    }
+    ultimoTermino = termino;
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    timeoutId = setTimeout(function () {
+      fetch('{{ url_for("ayudas.autocomplete_pacientes") }}?q=' + encodeURIComponent(termino))
+        .then(resp => resp.json())
+        .then(function (datos) {
+          limpiarSugerencias();
+
+          datos.forEach(function (p) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'list-group-item list-group-item-action';
+            item.textContent = p.nombre + ' (' + p.numero + ')';
+
+            item.addEventListener('click', function () {
+              // Rellenar el input solo con el número del paciente
+              input.value = p.numero;
+              limpiarSugerencias();
+            });
+
+            contenedor.appendChild(item);
+          });
+        })
+        .catch(function (err) {
+          console.error('Error en autocomplete:', err);
+          limpiarSugerencias();
+        });
+    }, 250);
+  });
+
+  input.addEventListener('blur', function () {
+    setTimeout(limpiarSugerencias, 200);
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Paciente Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { max-width: 400px; margin: auto; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background-color: #28a745; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-size: 16px; margin-top: 20px; cursor: pointer; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <h2>➕ Crear Paciente Simple</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label for="nombre">Nombre Completo <span style="color: red;">*</span></label>
+        <input type="text" id="nombre" name="nombre" required>
+
+        <label for="numero">Número <span style="color: red;">*</span></label>
+        <input type="text" id="numero" name="numero" required>
+
+        <label for="cama">Cama</label>
+        <input type="text" id="cama" name="cama">
+
+        <button type="submit">Crear Paciente</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('pacientes.nuevo_ingreso') }}" style="color: #007bff; font-weight: bold;">
+            ¿Quieres crear también Historia de Ingreso? → Haz clic aquí
+        </a>
+    </p>
+
+    <br>
+    <a href="{{ url_for('pacientes.listar') }}">← Volver al listado</a>
+</body>
+</html>

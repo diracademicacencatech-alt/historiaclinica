@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Registrar Usuario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        label, input, select {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        input[type="text"], input[type="password"], select {
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px;
+            background-color: #004080;
+            color: white;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0066cc;
+        }
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+        .success {
+            color: green;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Registrar Usuario</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ category }}">
+            <p>{{ message }}</p>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+        <label>Nombre de usuario:</label>
+        <input type="text" name="username" required autofocus />
+
+        <label>Contraseña:</label>
+        <input type="password" name="password" required />
+
+        <label>Confirmar contraseña:</label>
+        <input type="password" name="confirm_password" required />
+
+        <label>Rol:</label>
+        <select name="rol" required>
+            <option value="usuario">Usuario</option>
+            <option value="medico">Médico</option>
+            <option value="admin">Administrador</option>
+        </select>
+
+        <button type="submit">Registrar</button>
+    </form>
+
+    <p>¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a>.</p>
+</body>
+</html>

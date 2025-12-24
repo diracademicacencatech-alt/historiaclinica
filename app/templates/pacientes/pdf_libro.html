@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Historia clínica - Libro</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    h1, h2, h3 { text-align: center; }
+    hr { margin: 30px 0; }
+    .section { margin: 10px 0 20px 0; }
+    label { font-weight: bold; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 4px;
+      font-size: 12px;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Historia Clínica de Ingreso</h1>
+
+  <div class="section">
+    <label>Paciente:</label>
+    {{ historia.paciente.nombre if historia.paciente else '' }}
+    (N°: {{ historia.paciente.numero if historia.paciente else '' }})
+  </div>
+  <div class="section">
+    <label>Fecha de Ingreso:</label>
+    {% if fecha_ingreso_local %}
+      {{ fecha_ingreso_local.strftime("%Y-%m-%d %H:%M:%S") }}
+    {% else %}
+      {{ historia.fecha_registro or '' }}
+    {% endif %}
+  </div>
+  <div class="section">
+    <label>Número Historia:</label> {{ historia.numero_historia or '' }}
+  </div>
+  <div class="section">
+    <label>Número Ingreso:</label> {{ historia.numero_ingreso or '' }}
+  </div>
+
+  <div class="section">
+    <label>Servicio hospitalario:</label> {{ historia.servicio_hospitalario or historia.servicio or '' }}
+  </div>
+  <div class="section">
+    <label>Diagnóstico principal (CIE‑10):</label>
+    {% if diag_cie10 %}
+      {{ diag_cie10.codigo }} - {{ diag_cie10.nombre }}
+    {% else %}
+      {{ historia.cie10_principal or 'No registrado' }}
+    {% endif %}
+  </div>
+
+  <div class="section"><label>Régimen:</label> {{ historia.regimen or '' }}</div>
+  <div class="section"><label>Estrato:</label> {{ historia.estrato or '' }}</div>
+  <div class="section"><label>Plan de Beneficios:</label> {{ historia.plan_beneficios or '' }}</div>
+  <div class="section"><label>Acudiente Responsable:</label> {{ historia.acudiente_responsable or '' }}</div>
+  <div class="section"><label>Teléfono Responsable:</label> {{ historia.telefono_responsable or '' }}</div>
+  <div class="section"><label>Dirección Responsable:</label> {{ historia.direccion_responsable or '' }}</div>
+  <div class="section"><label>Nombre Padre:</label> {{ historia.nombre_padre or '' }}</div>
+  <div class="section"><label>Nombre Madre:</label> {{ historia.nombre_madre or '' }}</div>
+
+  <hr>
+  <h2>Evaluación Clínica</h2>
+  <div class="section"><label>Subjetivo:</label> {{ historia.subjetivos or '' }}</div>
+  <div class="section"><label>Objetivo:</label> {{ historia.objetivos or '' }}</div>
+  <div class="section"><label>Análisis:</label> {{ historia.analisis or '' }}</div>
+  <div class="section"><label>Plan:</label> {{ historia.plan or '' }}</div>
+
+  <hr>
+  <h2>Signos Vitales</h2>
+  {% if historia.signos_vitales %}
+    <div class="section"><label>Tensión Arterial:</label> {{ historia.signos_vitales.tension_arterial or '' }}</div>
+    <div class="section"><label>Frecuencia Cardíaca:</label> {{ historia.signos_vitales.frecuencia_cardiaca or '' }}</div>
+    <div class="section"><label>Frecuencia Respiratoria:</label> {{ historia.signos_vitales.frecuencia_respiratoria or '' }}</div>
+    <div class="section"><label>Temperatura:</label> {{ historia.signos_vitales.temperatura or '' }}</div>
+    <div class="section"><label>Saturometría:</label> {{ historia.signos_vitales.saturometria or '' }}</div>
+    <div class="section"><label>Escala Dolor:</label> {{ historia.signos_vitales.escala_dolor or '' }}</div>
+  {% endif %}
+
+  <hr>
+  <h2>Medicamentos formulados</h2>
+  {% if medicamentos and medicamentos|length > 0 %}
+    <table>
+      <thead>
+        <tr>
+          <th>Medicamento</th>
+          <th>Dosis / Presentación</th>
+          <th>Frecuencia / Tiempo</th>
+          <th>Cantidad</th>
+          <th>Unidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for med in medicamentos %}
+        <tr>
+          <td>{{ med.codigo or '' }}</td>
+          <td>{{ med.dosis or '' }}</td>
+          <td>{{ med.frecuencia or '' }}</td>
+          <td>{{ med.cantidad_solicitada or '' }}</td>
+          <td>{{ med.unidad_inventario or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No hay medicamentos formulados registrados.</p>
+  {% endif %}
+
+  <hr>
+{% if ordenes_con_meds and ordenes_con_meds|length > 0 %}
+<h1>Órdenes Médicas</h1>
+{% for item in ordenes_con_meds %}
+  {% set orden = item.orden %}
+  {% set meds_orden = item.medicamentos %}
+
+  <h3>Orden Médica #{{ loop.index }}</h3>
+  <div class="section">
+    <label>Indicaciones:</label> {{ orden.indicaciones_medicas or '' }}
+  </div>
+  <div class="section">
+    <label>Ordenes Medicas:</label> {{ orden.medicacion_texto or '' }}
+  </div>
+
+  {% if meds_orden and meds_orden|length > 0 %}
+    <h4>Medicamentos Formulados</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Medicamento</th>
+          <th>Dosis / Presentación</th>
+          <th>Frecuencia / Tiempo</th>
+          <th>Cantidad</th>
+          <th>Unidad</th>
+          <th>Vía</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for med in meds_orden %}
+        <tr>
+          <td>{{ med.codigo or '' }}</td>
+          <td>{{ med.dosis or '' }}</td>
+          <td>{{ med.frecuencia or '' }}</td>
+          <td>{{ med.cantidad_solicitada or '' }}</td>
+          <td>{{ med.unidad_inventario or '' }}</td>
+          <td>{{ med.via_administracion or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No hay medicamentos estructurados en esta orden.</p>
+  {% endif %}
+  <hr>
+{% endfor %}
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nuevo Paciente + Historia de Ingreso</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    h1 { color: #2c3e50; text-align: center; margin-bottom: 10px; }
+    h2 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 30px; }
+    h3 { color: #2c3e50; margin-top: 25px; }
+    label { display: block; margin-top: 15px; font-weight: bold; color: #2c3e50; }
+    input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+    textarea { resize: vertical; min-height: 100px; }
+    button { background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; cursor: pointer; padding: 15px 40px; border-radius: 8px; font-size: 18px; margin-top: 25px; width: 100%; }
+    button:hover { background: linear-gradient(135deg, #218838, #1ea085); }
+    .btn-secondary { background: #6c757d; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+    .btn-secondary:hover { background: #5a6268; }
+    .message { padding: 15px; margin: 20px 0; border-radius: 8px; font-weight: bold; }
+    .success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+    .danger { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+    .warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+    .section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3498db; }
+    .required { color: red; }
+    .row { display: flex; gap: 20px; }
+    .col { flex: 1; }
+    @media (max-width: 768px) { .row { flex-direction: column; } }
+    .row.g-2 { gap: 10px; }
+    .med-title { margin-top: 10px; }
+  </style>
+
+  <!-- jQuery + jQuery UI para autocomplete CIE-10 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet"
+        href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🆕 Nuevo Paciente + Historia de Ingreso</h1>
+    <p style="text-align: center; color: #666; margin-bottom: 30px;">
+      Crea un nuevo paciente y su historia clínica de ingreso en un solo formulario
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="message {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+      <!-- SECCIÓN 1: DATOS DEL PACIENTE -->
+      <div class="section">
+        <h2>👤 Datos del Paciente</h2>
+        <div class="row">
+          <div class="col">
+            <label for="nombre">Nombre Completo <span class="required">*</span></label>
+            <input type="text" id="nombre" name="nombre" required>
+          </div>
+          <div class="col">
+            <label for="numero">Número <span class="required">*</span></label>
+            <input type="text" id="numero" name="numero" required>
+          </div>
+        </div>
+        <label for="cama">Cama</label>
+        <input type="text" id="cama" name="cama">
+      </div>
+
+      <!-- SECCIÓN 2: DATOS DE INGRESO -->
+      <div class="section">
+        <h2>🏥 Datos de Ingreso</h2>
+        <div class="row">
+          <div class="col">
+            <label for="numero_historia">Número de Historia <span class="required">*</span></label>
+            <input type="text" id="numero_historia" name="numero_historia" required>
+          </div>
+          <div class="col">
+            <label for="numero_ingreso">Número de Ingreso <span class="required">*</span></label>
+            <input type="text" id="numero_ingreso" name="numero_ingreso" required>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label for="servicio_hospitalario">Servicio hospitalario</label>
+            <select id="servicio_hospitalario" name="servicio_hospitalario">
+              <option value="">-- Seleccione servicio --</option>
+              <option value="ginecologia">Ginecología</option>
+              <option value="observacion_adultos">Observación adultos</option>
+              <option value="emergencias_adultos">Emergencias adultos</option>
+              <option value="cirugia_adultos">Cirugía adultos</option>
+              <option value="pediatria">Pediatría</option>
+              <option value="cirugia_umi">Cirugía UMI</option>
+              <option value="urgencias_pediatria">Urgencias pediatría</option>
+              <option value="uci_adultos">UCI adultos</option>
+              <option value="uci_pediatria">UCI pediatría</option>
+              <option value="uci_neonatal">UCI neonatal</option>
+              <option value="neonatos">Neonatos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 3: DATOS PERSONALES -->
+      <div class="section">
+        <h3>📋 Datos Personales</h3>
+        <div class="row">
+          <div class="col">
+            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
+          </div>
+          <div class="col">
+            <label for="edad">Edad</label>
+            <input type="number" id="edad" name="edad" min="0" max="120">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label for="sexo">Sexo</label>
+            <select id="sexo" name="sexo">
+              <option value="">Seleccione</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Femenino">Femenino</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="col">
+            <label for="telefono">Teléfono</label>
+            <input type="text" id="telefono" name="telefono">
+          </div>
+        </div>
+        <label for="direccion">Dirección</label>
+        <input type="text" id="direccion" name="direccion">
+        <label for="procedencia">Procedencia</label>
+        <input type="text" id="procedencia" name="procedencia">
+      </div>
+
+      <!-- SECCIÓN 4: AFILIACIÓN + ACUDIENTE -->
+      <div class="section">
+        <h3>💳 Afiliación y Acudiente</h3>
+        <div class="row">
+          <div class="col">
+            <label for="regimen">Régimen</label>
+            <select id="regimen" name="regimen">
+              <option value="">Seleccione</option>
+              <option value="Contributivo">Contributivo</option>
+              <option value="Subsidiado">Subsidiado</option>
+              <option value="Vinculado">Vinculado</option>
+              <option value="Particular">Particular</option>
+            </select>
+          </div>
+          <div class="col">
+            <label for="estrato">Estrato</label>
+            <select id="estrato" name="estrato">
+              <option value="">Seleccione</option>
+              <option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+            </select>
+          </div>
+        </div>
+        <label for="plan_beneficios">Plan de Beneficios</label>
+        <input type="text" id="plan_beneficios" name="plan_beneficios">
+
+        <label for="acudiente_responsable">Acudiente Responsable</label>
+        <input type="text" id="acudiente_responsable" name="acudiente_responsable">
+
+        <div class="row">
+          <div class="col">
+            <label for="telefono_responsable">Teléfono Responsable</label>
+            <input type="text" id="telefono_responsable" name="telefono_responsable">
+          </div>
+          <div class="col">
+            <label for="direccion_responsable">Dirección Responsable</label>
+            <input type="text" id="direccion_responsable" name="direccion_responsable">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label for="nombre_padre">Nombre Padre</label>
+            <input type="text" id="nombre_padre" name="nombre_padre">
+          </div>
+          <div class="col">
+            <label for="nombre_madre">Nombre Madre</label>
+            <input type="text" id="nombre_madre" name="nombre_madre">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 5: HISTORIA CLÍNICA -->
+      <div class="section">
+        <h2>📚 Historia Clínica (SOAP)</h2>
+
+        <label for="cie10_principal">Diagnóstico principal (CIE‑10)</label>
+        <input type="text"
+               id="cie10_principal"
+               name="cie10_principal"
+               placeholder="Escriba código o diagnóstico CIE‑10"
+               autocomplete="off">
+        <small id="cie10_label" style="color:#666; display:block; margin-top:4px;"></small>
+
+        <label for="subjetivos">S - Subjetivos</label>
+        <textarea id="subjetivos" name="subjetivos" placeholder="Motivo de consulta, antecedentes, síntomas..."></textarea>
+
+        <label for="objetivos">O - Objetivos</label>
+        <textarea id="objetivos" name="objetivos" placeholder="Signos vitales, examen físico..."></textarea>
+
+        <label for="analisis">A - Análisis</label>
+        <textarea id="analisis" name="analisis" placeholder="Diagnósticos presuntivos, impresión diagnóstica..."></textarea>
+
+        <label for="plan">P - Plan</label>
+        <textarea id="plan" name="plan" placeholder="Tratamiento, estudios, manejo, indicaciones..."></textarea>
+
+        <h3 class="med-title">💊 Medicamentos formulados</h3>
+
+<div id="medicamentos-container">
+  <div class="row g-2 medicamento-item">
+    <div class="col">
+      <select name="medicamentos[0][codigo]">
+        <option value="">-- Seleccione medicamento --</option>
+        {% if medicamentos_catalogo %}
+          {% for med in medicamentos_catalogo %}
+          <option value="{{ med.codigo }}">{{ med.codigo }} - {{ med.nombre }}</option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+
+    <div class="col">
+      <input type="text" name="medicamentos[0][dosis]" placeholder="Dosis / pres.">
+    </div>
+
+    <div class="col">
+      <input type="text" name="medicamentos[0][frecuencia]" placeholder="Frecuencia">
+    </div>
+
+    <div class="col">
+      <input type="number" step="0.001" min="0"
+             name="medicamentos[0][cantidad_solicitada]"
+             placeholder="Cantidad">
+    </div>
+
+    <div class="col">
+      <input type="text"
+             name="medicamentos[0][unidad_inventario]"
+             placeholder="Unidad (ampolla, etc.)">
+    </div>
+
+    <div class="col">
+      <select name="medicamentos[0][via_administracion]">
+        <option value="">Vía</option>
+        <option value="VO">VO</option>
+        <option value="IV">IV</option>
+        <option value="IM">IM</option>
+        <option value="SC">SC</option>
+      </select>
+    </div>
+
+    <div class="col" style="max-width:80px; display:flex; align-items:center;">
+      <button type="button" class="btn-secondary btn-remove-med" style="padding:6px 10px;">X</button>
+    </div>
+  </div>
+</div>
+
+<!-- Botón para añadir más filas (se mantiene) -->
+<button type="button"
+        class="btn-secondary"
+        id="add-medicamento"
+        style="margin-top:10px;">
+  + Añadir otro medicamento
+</button>
+
+      <!-- SECCIÓN 6: SIGNOS VITALES INICIALES -->
+      <div class="section">
+        <h2>🩺 Signos Vitales de Ingreso</h2>
+        <div class="row">
+          <div class="col">
+            <label for="tension_arterial">Tensión Arterial</label>
+            <input type="text" id="tension_arterial" name="tension_arterial" placeholder="120/80">
+          </div>
+          <div class="col">
+            <label for="frecuencia_cardiaca">Frecuencia Cardíaca</label>
+            <input type="text" id="frecuencia_cardiaca" name="frecuencia_cardiaca" placeholder="80">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label for="frecuencia_respiratoria">Frecuencia Respiratoria</label>
+            <input type="text" id="frecuencia_respiratoria" name="frecuencia_respiratoria" placeholder="18">
+          </div>
+          <div class="col">
+            <label for="temperatura">Temperatura</label>
+            <input type="text" id="temperatura" name="temperatura" placeholder="36.5">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label for="saturometria">Saturometría (SpO₂)</label>
+            <input type="text" id="saturometria" name="saturometria" placeholder="98%">
+          </div>
+          <div class="col">
+            <label for="fi02">FiO₂</label>
+            <input type="text" id="fi02" name="fi02" placeholder="21%">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label for="escala_dolor">Escala de Dolor</label>
+            <input type="text" id="escala_dolor" name="escala_dolor" placeholder="0-10">
+          </div>
+          <div class="col">
+            <label for="estado_consciencia">Estado de Conciencia</label>
+            <input type="text" id="estado_consciencia" name="estado_consciencia" placeholder="Alerta, somnoliento, etc.">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label for="glucometria">Glucometría</label>
+            <input type="text" id="glucometria" name="glucometria" placeholder="mg/dL">
+          </div>
+          <div class="col">
+            <label for="peso">Peso</label>
+            <input type="text" id="peso" name="peso" placeholder="kg">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label for="talla">Talla</label>
+            <input type="text" id="talla" name="talla" placeholder="cm">
+          </div>
+          <div class="col">
+            <label for="imc">IMC</label>
+            <input type="text" id="imc" name="imc" placeholder="kg/m²">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit">✅ Guardar Paciente + Historia de Ingreso</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="{{ url_for('pacientes.listar') }}" class="btn-secondary">← Volver al Listado</a>
+    </div>
+  </div>
+
+  <!-- Autocomplete CIE-10 -->
+  <script>
+  $(function () {
+    $("#cie10_principal").autocomplete({
+      minLength: 1,
+      delay: 200,
+      source: function (request, response) {
+        $.getJSON("{{ url_for('pacientes.autocomplete_cie10') }}", {
+          term: request.term
+        }, function (data) {
+          response(data);
+        });
+      },
+      select: function (event, ui) {
+        this.value = ui.item.value;
+        $("#cie10_label").text(ui.item.label);
+        return false;
+      }
+    });
+  });
+  </script>
+
+  <!-- JS medicamentos dinámicos -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('medicamentos-container');
+    const addBtn = document.getElementById('add-medicamento');
+
+    function renumerar() {
+      const items = container.querySelectorAll('.medicamento-item');
+      items.forEach((item, index) => {
+        item.querySelectorAll('select, input').forEach(el => {
+          el.name = el.name.replace(/medicamentos\[\d+]/, 'medicamentos[' + index + ']');
+        });
+      });
+    }
+
+    addBtn.addEventListener('click', function () {
+      const items = container.querySelectorAll('.medicamento-item');
+      const ultimo = items[items.length - 1];
+      const clon = ultimo.cloneNode(true);
+      clon.querySelectorAll('select, input').forEach(el => { el.value = ''; });
+      container.appendChild(clon);
+      renumerar();
+    });
+
+    container.addEventListener('click', function (e) {
+      if (e.target.classList.contains('btn-remove-med')) {
+        const items = container.querySelectorAll('.medicamento-item');
+        if (items.length > 1) {
+          e.target.closest('.medicamento-item').remove();
+          renumerar();
+        }
+      }
+    });
+  });
+  </script>
+</body>
+</html>

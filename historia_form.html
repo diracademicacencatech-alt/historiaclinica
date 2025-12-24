@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Historia Clínica</title>
+    <script>
+    function toggleSections(){
+        var tipo = document.getElementById('tipo').value;
+        document.getElementById('ingreso').style.display = tipo === 'Ingreso_Evolucion' ? 'block' : 'none';
+        document.getElementById('ordenes').style.display = tipo === 'Ordenes_Medicas' ? 'block' : 'none';
+    }
+    window.onload = function(){
+        toggleSections();
+        document.getElementById('tipo').addEventListener('change', toggleSections);
+    }
+    </script>
+</head>
+<body>
+    <h1>Historia para paciente {{ paciente_id }}</h1>
+    <form method="post">
+        <label for="tipo">Tipo Historia:</label>
+        <select id="tipo" name="tipo_historia">
+            <option value="">--Seleccione--</option>
+            <option value="Ingreso_Evolucion" {% if tipo=='Ingreso_Evolucion' %}selected{% endif %}>Ingreso / Evolucion</option>
+            <option value="Ordenes_Medicas" {% if tipo=='Ordenes_Medicas' %}selected{% endif %}>Ordenes Medicas</option>
+        </select>
+        <div id="ingreso" style="display:none;">
+            <h3>Ingreso / Evolucion</h3>
+            <label>Diagnostico:</label><input name="diagnostico_ingreso" type="text" /><br>
+            <label>Observaciones:</label><textarea name="observaciones_ingreso"></textarea>
+        </div>
+        <div id="ordenes" style="display:none;">
+            <h3>Ordenes Medicas</h3>
+            <label>Indicaciones:</label><textarea name="indicaciones"></textarea><br>
+            <label>Medicamentos:</label><textarea name="medicamentos"></textarea>
+        </div>
+        <button type="submit">Guardar</button>
+    </form>
+</body>
+</html>

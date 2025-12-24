@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Médico{% endblock %}
+
+{% block content %}
+<h2>Editar Médico</h2>
+
+<form method="post">
+  <div class="mb-3">
+    <label for="nombre" class="form-label">Nombre</label>
+    <input type="text" name="nombre" id="nombre" class="form-control" value="{{ medico.nombre }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="especialidad" class="form-label">Especialidad</label>
+    <input type="text" name="especialidad" id="especialidad" class="form-control" value="{{ medico.especialidad }}" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Guardar</button>
+  <a href="{{ url_for('ayudas.inicio_ayudas') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

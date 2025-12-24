@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Médicos{% endblock %}
+{% block content %}
+<h2>Médicos</h2>
+<a href="{{ url_for('medicos.crear') }}" class="btn btn-success mb-3">Crear Médico</a>
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th><th>Nombre</th><th>Especialidad</th><th>Teléfono</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for medico in medicos %}
+        <tr>
+            <td>{{ medico.id }}</td>
+            <td>{{ medico.nombre }}</td>
+            <td>{{ medico.especialidad or '-' }}</td>
+            <td>{{ medico.telefono or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center">No hay médicos registrados.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

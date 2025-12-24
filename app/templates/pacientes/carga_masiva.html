@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga Masiva de Pacientes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        h1 {
+            color: #1F4E78;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .alert {
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+        .card-info {
+            background: #f0f7ff;
+            border-left: 4px solid #1F4E78;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+        .card-info h5 {
+            color: #1F4E78;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .card-info ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            color: #333;
+        }
+        .card-info li {
+            margin-bottom: 5px;
+        }
+        /* 🆕 Cards para columnas específicas */
+        .columns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .column-card {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .column-card h6 {
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .upload-zone {
+            border: 2px dashed #1F4E78;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #fafafa;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-zone:hover {
+            background: #f0f7ff;
+            border-color: #2975a8;
+        }
+        .upload-zone.dragover {
+            background: #e3f2fd;
+            border-color: #1976d2;
+            transform: scale(1.02);
+        }
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+        .btn-primary {
+            background: #1F4E78;
+            border: none;
+            padding: 12px 24px;
+            font-weight: 500;
+            font-size: 16px;
+        }
+        .btn-primary:hover {
+            background: #16395a;
+        }
+        .btn-link-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #e8f4f8, #d0ebf2);
+            color: #1F4E78;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(31,78,120,0.1);
+        }
+        .btn-link-download:hover {
+            background: linear-gradient(135deg, #d0ebf2, #b8e0f0);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: #0f2f45;
+            box-shadow: 0 4px 8px rgba(31,78,120,0.2);
+        }
+        .steps {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        .steps li {
+            padding: 12px 0;
+            padding-left: 35px;
+            position: relative;
+            font-size: 14px;
+            color: #333;
+            border-left: 3px solid #e9ecef;
+            margin-bottom: 8px;
+        }
+        .steps li:before {
+            content: attr(data-step);
+            position: absolute;
+            left: -10px;
+            width: 24px;
+            height: 24px;
+            background: #1F4E78;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .file-info {
+            background: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            .columns-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📥 Carga Masiva de Pacientes + Historias + Signos Vitales</h1>
+    <p class="subtitle">Crea múltiples pacientes completos con un solo archivo Excel</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{% if category == 'success' %}success{% elif category == 'danger' %}danger{% else %}warning{% endif %}" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- 🆕 Botón mejorado para descargar plantilla -->
+    <a href="{{ url_for('pacientes.descargar_plantilla') }}" class="btn-link-download">
+        ⬇️ Descargar Plantilla Excel Completa (29 columnas)
+    </a>
+
+    <!-- 🆕 Columnas organizadas por secciones -->
+    <div class="columns-grid">
+        <div class="column-card">
+            <h6>👤 Datos del Paciente</h6>
+            <ul style="font-size: 12px; margin: 0; padding-left: 15px;">
+                <li>de>NOMBRE</code>, <e>NUMERO</code>, <e>CAMA</code></li>
+            </ul>
+        </div>
+        <div class="column-card">
+            <h6>📋 Historia Clínica</h6>
+            <ul style="font-size: 12px; margin: 0; padding-left: 15px;">
+                <li>de>NUMERO_HC</code>, <e>NUMERO_INGRESO</code>, de>SERVICIO</code></li>
+            </ul>
+        </div>
+        <div class="column-card">
+            <h6>🏥 Datos Demográficos</h6>
+            <ul style="font-size: 12px; margin: 0; padding-left: 15px;">
+                <li>de>REGIMEN</code>, <e>ESTRATO</code>, <e>PLAN_BENEFICIOS</code></li>
+            </ul>
+        </div>
+        <div class="column-card">
+            <h6>👨‍👩‍👧 Familiares</h6>
+            <ul style="font-size: 12px; margin: 0; padding-left: 15px;">
+                <li>de>ACUDIENTE</code>, <e>PADRE</code>, <e>MADRE</code></li>
+            </ul>
+        </div>
+        <div class="column-card">
+            <h6>📝 Evaluación Médica</h6>
+            <ul style="font-size: 12px; margin: 0; padding-left: 15px;">
+                <li>de>SUBJETIVOS</code>, <e>OBJETIVOS</code>, <e>ANALISIS</code>, <e>PLAN</code></li>
+            </ul>
+        </div>
+        <div class="column-card">
+            <h6>📊 Signos Vitales</h6>
+            <ul style="font-size: 12px; margin: 0; padding-left: 15px;">
+                <li>de>TENSION_ARTERIAL</code>, <e>FC</code>, <e>FR</code>, <e>TEMPERATURA</code>, etc.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card-info">
+        <h5>⚠️ Instrucciones Importantes</h5>
+        <ul>
+            <li><strong>✅ Obligatorias:</strong> NOMBRE, NUMERO (el resto se puede omitir)</li>
+            <li><strong>✅ Formatos:</strong> Excel (.xlsx) o CSV</li>
+            <li><strong>✅ Duplicados:</strong> Se salta pacientes que ya existen por NUMERO</li>
+            <li><strong>✅ Signos Vitales:</strong> Opcionales pero incluidos en plantilla</li>
+            <li><strong>✅ Crea automáticamente:</strong> Paciente + Historia + Signos + Registro Enfermería</li>
+        </ul>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        <div class="upload-zone" id="uploadZone">
+            <div id="uploadText">
+                <p style="margin: 0; color: #666; font-size: 16px; font-weight: 500;">
+                    📁 Haz clic o arrastra tu archivo Excel aquí
+                </p>
+                <p style="margin: 5px 0 0 0; color: #999; font-size: 14px;">
+                    Formatos aceptados: <strong>.xlsx</strong>, <strong>.xls</strong>, <strong>.csv</strong>
+                </p>
+            </div>
+            <div id="fileInfo" class="file-info" style="display: none;">
+                <strong>✅ Archivo seleccionado:</strong> <span id="fileName"></span>
+                <br><small>Tamaño: <span id="fileSize"></span></small>
+            </div>
+            <input type="file" name="archivo" id="archivo" accept=".xlsx,.xls,.csv" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+            ⬆️ 🚀 Cargar Pacientes (crea <strong>Paciente + Historia + Signos Vitales</strong>)
+        </button>
+    </form>
+
+    <ul class="steps">
+        <li data-step="1">
+            <strong>📥 Descarga</strong> la plantilla Excel desde arriba (incluye ejemplos)
+        </li>
+        <li data-step="2">
+            <strong>✏️ Completa</strong> los datos fila por fila (borra ejemplos o agrega debajo)
+        </li>
+        <li data-step="3">
+            <strong>⬆️ Sube</strong> el archivo Excel/CSV rellenado aquí
+        </li>
+        <li data-step="4">
+            <strong>✅ Verifica</strong> en <a href="{{ url_for('pacientes.listar') }}">Listado de Pacientes</a>
+        </li>
+    </ul>
+
+    <p style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('pacientes.listar') }}" class="btn btn-outline-primary" style="padding: 10px 24px;">
+            ← Volver al Listado de Pacientes
+        </a>
+    </p>
+</div>
+
+<script>
+    // 🆕 Drag & Drop mejorado
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('archivo');
+    const uploadText = document.getElementById('uploadText');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Click para seleccionar archivo
+    uploadZone.addEventListener('click', () => fileInput.click());
+
+    // Drag & Drop events
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        fileInput.files = e.dataTransfer.files;
+        mostrarArchivo(e.dataTransfer.files[0]);
+    });
+
+    // Selección de archivo
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+            mostrarArchivo(e.target.files[0]);
+        }
+    });
+
+    function mostrarArchivo(archivo) {
+        fileName.textContent = archivo.name;
+        fileSize.textContent = (archivo.size / 1024).toFixed(1) + ' KB';
+        uploadText.style.display = 'none';
+        fileInfo.style.display = 'block';
+        submitBtn.style.display = 'block';
+    }
+
+    // Submit con loading
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+        submitBtn.innerHTML = '⏳ Cargando pacientes...';
+        submitBtn.disabled = true;
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

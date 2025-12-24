@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Menú Principal{% endblock %}
+{% block content %}
+<div style="text-align: center; margin-bottom: 40px;">
+    <h1 style="font-size: 3em; font-weight: bold; color: #236e7b; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">CENCATECH</h1>
+    <p style="font-size: 1.2em; color: #236e7b; font-style: italic; margin: 0;">Aprender es hacer, servir es transformar</p>
+</div>
+
+<!-- CONTENEDOR CENTRADO DE MÓDULOS -->
+<div style="
+    max-width: 800px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 10px;
+">
+    <!-- MÓDULO 1 -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center;">
+        <h3 style="margin: 0 0 25px 0; font-size: 1.8em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">📋 HISTORIAS CLÍNICAS</h3>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px);">
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
+                    <span>👥</span>
+                    <a href="{{ url_for('pacientes.listar') }}" style="color: white; text-decoration: none; font-weight: bold;">Pacientes</a>
+                </li>
+                <li style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
+                    <span>👨‍⚕️</span>
+                    <a href="{{ url_for('ayudas.inicio_ayudas') }}" style="color: white; text-decoration: none; font-weight: bold;">Ayudas Dx</a>
+                </li>
+                <li style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
+                    <span>👩‍⚕️</span>
+                    <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" style="color: white; text-decoration: none; font-weight: bold;">Enfermería</a>
+                </li>
+                            </ul>
+        </div>
+    </div>
+
+    <!-- MÓDULO 2 -->
+    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center;">
+        <h3 style="margin: 0 0 25px 0; font-size: 1.8em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🟦 MÓDULO 2</h3>
+        <p style="margin: 0; opacity: 0.8;">Próximamente...</p>
+    </div>
+
+    <!-- MÓDULO 3 -->
+    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center;">
+        <h3 style="margin: 0 0 25px 0; font-size: 1.8em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🟨 MÓDULO 3</h3>
+        <p style="margin: 0; opacity: 0.8;">Próximamente...</p>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Carga Masiva de Exámenes - {{ institucion }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">📋 Carga Masiva de Exámenes de Laboratorio</h5>
+        </div>
+        
+        <div class="card-body">
+          <!-- PASO 1: SIEMPRE VISIBLE -->
+          <div class="alert alert-info mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>📥 Primer paso:</strong> Descargar la plantilla Excel con instrucciones
+              </div>
+              <a href="{{ url_for('ayudas.descargar_plantilla_laboratorios') }}" 
+                 class="btn btn-info btn-sm">
+                Descargar plantilla
+              </a>
+            </div>
+          </div>
+
+          <!-- PASO 2: SIEMPRE VISIBLE -->
+          <div class="mt-5">
+            <h6 class="mb-3"><strong>📤 Segundo paso:</strong> Cargar el archivo completado</h6>
+            
+            <form method="POST" enctype="multipart/form-data" id="formCargaMasiva">
+              <div class="form-group">
+                <label for="archivo_masivo">Seleccionar archivo Excel (.xlsx o .csv):</label>
+                <input 
+                  type="file" 
+                  class="form-control form-control-lg" 
+                  id="archivo_masivo"
+                  name="archivo_masivo"
+                  accept=".xlsx,.xls,.csv"
+                  required>
+                <small class="form-text text-muted">
+                  Formatos soportados: Excel (.xlsx, .xls) o CSV
+                </small>
+              </div>
+
+              <div class="mt-4">
+                <button type="submit" class="btn btn-success btn-lg btn-block">
+                  Procesar carga masiva
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="alert alert-warning mt-5" role="alert">
+            <strong>⚠️ Importante:</strong>
+            <ul class="mb-0 mt-2">
+              <li>Verifica que los números de pacientes existan en el sistema</li>
+              <li>Los nombres de exámenes y parámetros deben coincidir exactamente con el catálogo</li>
+              <li>Las fechas deben estar en formato DD/MM/YYYY</li>
+              <li>No dejar filas en blanco entre los datos</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('formCargaMasiva').addEventListener('submit', function(e) {
+    const file = document.getElementById('archivo_masivo').files[0];
+    if (!file) {
+      e.preventDefault();
+      alert('Por favor selecciona un archivo');
+      return false;
+    }
+    
+    const btn = this.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = 'Procesando...';
+  });
+</script>
+{% endblock %}

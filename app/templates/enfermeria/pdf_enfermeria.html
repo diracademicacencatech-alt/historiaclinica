@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registros de Enfermería PDF</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #222; padding: 6px; text-align: left; vertical-align: top; }
+    th { background-color: #eee; }
+    .nota-bloque { margin-bottom: 10px; }
+    .nota-titulo { font-weight: bold; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h2>Registros de Enfermería para {{ paciente.nombre }} ({{ paciente.numero }})</h2>
+
+  <!-- TABLA SOLO CON REGISTROS CLÍNICOS (SIN NOTAS) -->
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Signos Vitales</th>
+        <th>Líquidos Administrados</th>
+        <th>Líquidos Eliminados</th>
+        <th>Glicemia</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for registro in registros if not registro.tipo_nota %}
+      {% set sv = registro.signos_vitales_dict or {} %}
+      {% set bl = registro.balance_liquidos_dict or {} %}
+      {% set adm = bl.get('administrados', {}) %}
+      {% set elim = bl.get('eliminados', {}) %}
+      <tr>
+        <td>{{ registro.fecha_registro.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>
+          t/a: {{ sv.get('ta', 'N/A') }}<br>
+          fc: {{ sv.get('fc', 'N/A') }}<br>
+          fr: {{ sv.get('fr', 'N/A') }}<br>
+          t°: {{ sv.get('temp', 'N/A') }}<br>
+          SO2: {{ sv.get('so2', 'N/A') }}
+        </td>
+        <td>
+          <b>Hora Inicial:</b> {{ adm.get('hora_inicial', 'N/A') }}<br>
+          <b>Hora Final:</b> {{ adm.get('hora_final', 'N/A') }}<br>
+          <b>Líquido:</b> {{ adm.get('liquido', 'N/A') }}<br>
+          <b>Vía:</b> {{ adm.get('via', 'N/A') }}<br>
+          <b>Cantidad:</b> {{ adm.get('cantidad', 'N/A') }}
+        </td>
+        <td>
+          <b>Hora Eliminado:</b> {{ elim.get('hora_eliminado', 'N/A') }}<br>
+          <b>Tipo Líquido:</b> {{ elim.get('tipo_liquido', 'N/A') }}<br>
+          <b>Vía:</b> {{ elim.get('via_eliminacion', 'N/A') }}<br>
+          <b>Cantidad:</b> {{ elim.get('cantidad', 'N/A') }}<br>
+          <b>Obs:</b> {{ elim.get('obs', 'N/A') }}
+        </td>
+        <td>{{ registro.control_glicemia if registro.control_glicemia is not none else 'N/A' }}</td>
+        <td>{{ registro.observaciones or 'N/A' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- BLOQUE DE NOTAS DE ENFERMERÍA AL FINAL -->
+  {% set notas = registros|selectattr('tipo_nota')|list %}
+  {% if notas %}
+    <h3>Notas de enfermería</h3>
+    {% for nota in notas %}
+      <div class="nota-bloque">
+        <div class="nota-titulo">
+          {{ nota.fecha_registro.strftime('%Y-%m-%d %H:%M') }} - {{ nota.tipo_nota|capitalize }}
+        </div>
+        <div>
+          {{ nota.texto_nota }}
+        </div>
+        {% if nota.observaciones %}
+        <div>
+          <b>Observaciones:</b> {{ nota.observaciones }}
+        </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+</body>
+</html>

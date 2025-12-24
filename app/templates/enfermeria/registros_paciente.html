@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Hoja de enfermería de {{ paciente.nombre }} (cama {{ paciente.cama }})</h2>
+
+  <a href="{{ url_for('enfermeria.crear', paciente_id=paciente.id) }}"
+     class="btn btn-primary mb-3">
+    Nuevo registro de enfermería
+  </a>
+
+  <table class="table table-sm table-striped">
+    <thead>
+      <tr>
+        <th>Fecha registro</th>
+        <th>Signos vitales (JSON)</th>
+        <th>Balance líquidos (JSON)</th>
+        <th>Glicemia</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reg in registros %}
+      <tr>
+        <td>{{ reg.fecha_registro }}</td>
+        <td>{{ reg.signos_vitales }}</td>
+        <td>{{ reg.balance_liquidos }}</td>
+        <td>{{ reg.control_glicemia }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" class="text-center">Sin registros de enfermería</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

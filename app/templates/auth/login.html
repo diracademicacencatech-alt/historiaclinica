@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar Sesión{% endblock %}
+{% block content %}
+<h2>Iniciar Sesión</h2>
+<form method="post">
+  <label>Usuario o Email:</label><br>
+  <input type="text" name="username_or_email" required><br>
+  <label>Contraseña:</label><br>
+  <input type="password" name="password" required><br>
+  <button type="submit">Entrar</button>
+</form>
+{% for message in get_flashed_messages(with_categories=true) %}
+  <div class="alert alert-{{ message[0] }}">{{ message[1] }}</div>
+{% endfor %}
+{% endblock %}
