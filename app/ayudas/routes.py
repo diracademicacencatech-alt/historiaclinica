@@ -224,7 +224,7 @@ def nueva_solicitud_laboratorio(historia_id):
         # encabezado
         solicitud = LabSolicitud(
             historia_id=historia.id,
-            fecha_solicitud=datetime.now(ahora_bogota),
+            fecha_solicitud = ahora_bogota(),
             estado='pendiente'
         )
         db.session.add(solicitud)
@@ -282,7 +282,7 @@ def ver_solicitud_laboratorio(solicitud_id):
             if campo_interp in request.form:
                 res.interpretacion = request.form.get(campo_interp, '').strip()
 
-        solicitud.fecha_resultado = datetime.now(ahora_bogota)
+        solicitud.fecha_resultado = ahora_bogota()
         solicitud.estado = 'interpretado'
         db.session.commit()
         flash('Resultados de laboratorio actualizados.', 'success')
@@ -571,7 +571,7 @@ def carga_masiva_laboratorios():
                     if not solicitud:
                         solicitud = LabSolicitud(
                             historia_id=historia.id,
-                            fecha_solicitud=fecha_res or datetime.now(ahora_bogota),
+                            fecha_solicitud=fecha_res or ahora_bogota(),
                             estado='completado',
                             laboratorio_nombre=lab_nombre
                         )

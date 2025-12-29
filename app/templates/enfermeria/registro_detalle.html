@@ -1,81 +1,129 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Detalle de Registros de Enfermería</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-</head>
-<body>
-<div class="container mt-4">
-  <h2>Registros de Enfermería para {{ paciente.nombre }} ({{ paciente.numero }})</h2>
+{% extends "base.html" %}
 
-  {% if registros %}
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Signos Vitales</th>
-        <th>Líquidos Administrados</th>
-        <th>Líquidos Eliminados</th>
-        <th>Glicemia</th>
-        <th>Observaciones</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for registro in registros %}
-      {% set sv = registro.signos_vitales_dict %}
-      {% set admin = registro.balance_liquidos_dict.administrados %}
-      {% set elim = registro.balance_liquidos_dict.eliminados %}
-      <tr>
-        <td>{{ registro.fecha_registro.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td>
-          t/a: {{ sv.get('ta','') }}<br>
-          fc: {{ sv.get('fc','') }}<br>
-          fr: {{ sv.get('fr','') }}<br>
-          t°: {{ sv.get('temp','') }}<br>
-          SO2: {{ sv.get('so2','') }}
-        </td>
-        <td>
-          <b>Hora Inicial:</b> {{ admin.get('hora_inicial','') }}<br>
-          <b>Hora Final:</b> {{ admin.get('hora_final','') }}<br>
-          <b>Líquido:</b> {{ admin.get('liquido','') }}<br>
-          <b>Vía:</b> {{ admin.get('via','') }}<br>
-          <b>Cantidad:</b> {{ admin.get('cantidad','') }}
-        </td>
-        <td>
-          <b>Hora Eliminado:</b> {{ elim.get('hora_eliminado','') }}<br>
-          <b>Tipo Líquido:</b> {{ elim.get('tipo_liquido','') }}<br>
-          <b>Vía:</b> {{ elim.get('via_eliminacion','') }}<br>
-          <b>Cantidad:</b> {{ elim.get('cantidad','') }}<br>
-          <b>Obs:</b> {{ elim.get('obs','') }}
-        </td>
-        <td>{{ registro.control_glicemia or '' }}</td>
-        <td>{{ registro.observaciones or '' }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="alert alert-info">No hay registros disponibles para este paciente.</div>
-  {% endif %}
+{% block title %}Registros Enfermería - {{ paciente.nombre }}{% endblock %}
 
-  {% if notas %}
-    <h3>Últimas notas de enfermería</h3>
-    <ul class="list-group mb-3">
-      {% for nota in notas %}
-        <li class="list-group-item">
-          <strong>{{ nota.fecha_registro.strftime('%Y-%m-%d %H:%M') }}</strong>
-          – {{ nota.tipo_nota|capitalize }}<br>
-          {{ nota.texto_nota[:120] }}{% if nota.texto_nota|length > 120 %}...{% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Registros Enfermería</h2>
+        <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}"
+           class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Volver al menú
+        </a>
+      </div>
 
-  <a class="btn btn-secondary"
-     href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}">
-    Volver al menú de enfermería
-  </a>
+      <div class="alert alert-info">
+        <strong>Turno actual:</strong>
+        <span class="badge bg-primary fs-6">{{ turno_actual|upper }}</span>
+        <small class="ms-2">(Solo registros de HOY {{ turno_actual|upper }})</small>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5>{{ paciente.nombre }} - {{ paciente.numero }}</h5>
+        </div>
+        <div class="card-body">
+          {% if registros %}
+          <h6 class="mb-3">Registros del turno ({{ registros|length }})</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Fecha/Hora</th>
+                  <th>Signos Vitales</th>
+                  <th>Balance Líquidos</th>
+                  <th>Glicemia</th>
+                  <th>Observaciones</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in registros %}
+                <tr>
+                  <td>
+                    <strong>{{ r.fecha_registro.strftime('%d/%m %H:%M') }}</strong><br>
+                    <small>{{ turno_actual|upper }}</small>
+                  </td>
+                  <td>
+                    {% if r.signos_vitales_dict %}
+                      TA: {{ r.signos_vitales_dict.ta or 'N/A' }}<br>
+                      FC: {{ r.signos_vitales_dict.fc or 'N/A' }}<br>
+                      FR: {{ r.signos_vitales_dict.fr or 'N/A' }}<br>
+                      T°: {{ r.signos_vitales_dict.temp or 'N/A' }}<br>
+                      SatO2: {{ r.signos_vitales_dict.so2 or 'N/A' }}
+                    {% else %}
+                      <span class="text-muted">Sin datos</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if r.balance_liquidos_dict.administrados %}
+                      <small>Admin: {{ r.balance_liquidos_dict.administrados.cantidad or 0 }}ml</small>
+                    {% endif %}
+                    {% if r.balance_liquidos_dict.eliminados %}
+                      <br><small>Elim: {{ r.balance_liquidos_dict.eliminados.cantidad or 0 }}ml</small>
+                    {% endif %}
+                  </td>
+                  <td>{{ r.control_glicemia or 'N/A' }}</td>
+                  <td>
+                    {% if r.observaciones %}
+                      {{ r.observaciones[:50] }}{% if r.observaciones|length > 50 %}...{% endif %}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    <a href="{{ url_for('enfermeria.administrar_medicamentos', registro_id=r.id) }}"
+                       class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-pills"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle"></i>
+            No hay registros para {{ turno_actual|upper }} de hoy.
+          </div>
+          {% endif %}
+
+          {% if notas %}
+          <hr>
+          <h6>Notas recientes (todas)</h6>
+          <ul class="list-group list-group-flush">
+            {% for nota in notas %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>
+                <strong>{{ nota.tipo_nota|title }}</strong>:
+                {{ nota.texto_nota[:60] }}{% if nota.texto_nota|length > 60 %}...{% endif %}
+              </span>
+              <small class="text-muted">{{ nota.fecha_registro.strftime('%H:%M') }}</small>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <a href="{{ url_for('enfermeria.crear', paciente_id=paciente.id) }}"
+             class="btn btn-primary btn-lg w-100">
+            <i class="fas fa-plus"></i> Nuevo Registro
+          </a>
+        </div>
+        <div class="col-md-6">
+          <a href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}"
+             class="btn btn-success btn-lg w-100">
+            <i class="fas fa-file-pdf"></i> Exportar PDF
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-</body>
-</html>
+{% endblock %}

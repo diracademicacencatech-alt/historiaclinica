@@ -212,7 +212,7 @@ class RegistroEnfermeria(db.Model):
     observaciones = db.Column(db.Text)
     tipo_nota = db.Column(db.String(20), nullable=True)   # ingreso, egreso, intermedia, recibo, entrega
     texto_nota = db.Column(db.Text, nullable=True)
-
+    turno = db.Column(db.String(10), default='mañana')  # Agregar este campo
     paciente = db.relationship('Paciente', back_populates='registros_enfermeria')
     historia = db.relationship('HistoriaClinica')
 
