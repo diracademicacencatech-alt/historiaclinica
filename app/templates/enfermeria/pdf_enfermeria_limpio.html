@@ -89,7 +89,7 @@
 <div class="section">
 <div class="section-title">MEDICAMENTOS</div>
 <table class="table">
-<thead><tr><th>FECHA</th><th>HORA</th><th>CÓDIGO</th><th>CANT</th><th>UNID</th><th>VÍA</th></tr></thead>
+<thead><tr><th>FECHA</th><th>HORA</th><th>CÓDIGO</th><th>CANT</th><th>UNID</th><th>VÍA</th><th>OBSERVACIONES</th></tr></thead>
 <tbody>
 {% for admin in medicamentos %}
 <tr>
@@ -98,11 +98,12 @@
 <td>{{ admin.medicamento.codigo if admin.medicamento else 'N/A' }}</td>
 <td class="bold">{{ admin.cantidad }}</td>
 <td>{{ admin.unidad }}</td>
-<td>{{ admin.via }}</td>
+<td>{{ admin.via or '-' }}</td>
+<td>{{ admin.observaciones or '-' }}</td>
 </tr>
 {% endfor %}
 {% if not medicamentos %}
-<tr class="empty-row"><td colspan="6">Sin medicamentos administrados</td></tr>
+<tr class="empty-row"><td colspan="7">Sin medicamentos administrados</td></tr>
 {% endif %}
 </tbody>
 </table>

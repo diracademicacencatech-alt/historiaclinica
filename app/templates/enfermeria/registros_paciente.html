@@ -61,7 +61,7 @@
           <td>{{ r.fecha_registro.strftime('%Y-%m-%d') }}</td>
           <td>{{ r.fecha_registro.strftime('%H:%M') }}</td>
           <td>{{ r.turno }}</td>
-          <td>{% if admin %}{{ admin.hora_inicial or '' }} - {{ admin.hora_final or '' }}<br>
+          <td>{% if admin %}<br>
               <small>{{ admin.liquido or '' }} / {{ admin.via or '' }} / {{ admin.cantidad or '' }}</small>
               {% else %}<span class="text-muted">-</span>{% endif %}</td>
           <td>{% if elim %}{{ elim.hora_eliminado or '' }}<br>
@@ -133,7 +133,7 @@
               <th style="width:8%" class="text-center">Cant</th>
               <th style="width:8%">Unid</th>
               <th style="width:8%">Vía</th>
-              <th style="width:20%">Registro</th>
+              <th style="width:20%">Observaciones</th>
               <th style="width:12%">Eliminar</th>
             </tr>
           </thead>
@@ -146,7 +146,7 @@
               <td class="text-center fw-bold">{{ admin.cantidad }}</td>
               <td>{{ admin.unidad }}</td>
               <td><span class="badge bg-primary">{{ admin.via }}</span></td>
-              <td><small>Reg #{{ admin.registro_id }}</small></td>
+              <td>{{ admin.observaciones or '-' }}</td>
               <td>
                 <form method="POST" action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}" class="d-inline">
                   <button type="submit" class="btn btn-danger btn-sm px-2 py-1" onclick="return confirm('¿Eliminar medicamento?');" title="🗑️ Eliminar">

@@ -4,21 +4,22 @@ from datetime import datetime, timedelta
 import json
 from flask import (
     Blueprint, render_template, request, redirect,
-    url_for, flash, jsonify, make_response, send_file
+    url_for, flash, jsonify, make_response, send_file, session
 )
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from app.enfermeria import enfermeria_bp
 from app.extensions import db
 from app.models import (
     RegistroEnfermeria, Paciente, HistoriaClinica,
-    AdministracionMedicamento, Medicamento, OrdenMedica,
+    AdministracionMedicamento, Medicamento, OrdenMedica, InsumoMedico, InsumoPaciente,
 )
 from app.utils.fechas import ahora_bogota
 from sqlalchemy import func, text
 from collections import defaultdict
 from weasyprint import HTML
 from io import BytesIO
+from app import db  # ← db.session 
 
 TURNOS_DISPONIBLES = ['MAÑANA', 'TARDE', 'NOCHE']
 
@@ -854,7 +855,7 @@ def registros_paciente(paciente_id):
             bl = {"administrados": {}, "eliminados": {}}
         r.balance_liquidos_dict = bl
 
-    # CORREGIDO: Medicamentos administrados
+    # TU CÓDIGO ORIGINAL - Medicamentos
     medicamentos = []
     if registros:
         registro_ids = [r.id for r in registros]
@@ -864,11 +865,39 @@ def registros_paciente(paciente_id):
             AdministracionMedicamento.hora_administracion.desc()
         ).limit(50).all()
 
+    # ← NUEVO: INSUMOS REGISTRADOS Y PENDIENTES (CORREGIDO indentación)
+    insumos_paciente = InsumoPaciente.query.filter_by(paciente_id=paciente_id).all()
+    insumos_registrados = []
+    insumos_pendientes = []
+    for ip in insumos_paciente:
+        insumo = InsumoMedico.query.get(ip.insumo_id)
+        if not insumo:
+            continue
+        
+        usado = ip.cantidad_usada or 0  # ← SAFE
+        
+        if usado > 0:  # USADOS
+            insumos_registrados.append({
+                'nombre': insumo.nombre,
+                'solicitado': ip.cantidad,
+                'usado': usado,
+                'fecha_uso': ip.fecha_uso.strftime('%d/%m %H:%M') if ip.fecha_uso else 'Sin fecha',
+                'observaciones': getattr(ip, 'observaciones', '') or 'Sin observaciones'
+            })
+        else:  # PENDIENTES
+            insumos_pendientes.append({
+                'nombre': insumo.nombre,
+                'solicitado': ip.cantidad,
+                'fecha_solicitud': 'Pendiente'
+            })
+
     return render_template(
         'enfermeria/registros_paciente.html',
         paciente=paciente,
         registros=registros,
-        medicamentos=medicamentos
+        medicamentos=medicamentos,
+        insumos_registrados=insumos_registrados,    # ← NUEVO
+        insumos_pendientes=insumos_pendientes       # ← NUEVO
     )
 
 @enfermeria_bp.route('/debug/ordenes/<int:historia_id>')
@@ -1047,4 +1076,137 @@ def debug_cargar_ordenes(historia_id):
         return redirect(url_for('enfermeria.registros_paciente', paciente_id=historia.paciente_id))
     return "Historia no encontrada"
 
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/solicitar_insumos', methods=['GET', 'POST'])
+@login_required 
+def solicitar_insumos(paciente_id):
+    paciente = Paciente.query.get_or_404(paciente_id)
+    
+    if request.method == 'POST':
+        insumo_id_str = request.form.get('insumo_id', '').strip()
+        cantidad_str = request.form.get('cantidad', '0').strip()
+        
+        if not insumo_id_str:
+            flash('❌ Selecciona un insumo', 'danger')
+        else:
+            try:
+                insumo_id = int(insumo_id_str)
+                cantidad = max(1, int(cantidad_str))
+                
+                insumo = InsumoMedico.query.get(insumo_id)
+                if insumo and insumo.stock_actual >= cantidad:
+                    insumo_paciente = InsumoPaciente(
+                        paciente_id=paciente_id,
+                        insumo_id=insumo_id,
+                        cantidad=cantidad,
+                        cantidad_usada=0
+                    )
+                    db.session.add(insumo_paciente)
+                    db.session.commit()
+                    flash(f'✅ {insumo.nombre} SOLICITADO', 'success')
+                else:
+                    flash('❌ Stock insuficiente', 'danger')
+            except Exception:
+                flash('❌ Datos inválidos', 'danger')
+        return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
+    
+    # GET: insumos disponibles
+    insumos_json = InsumoMedico.query.filter(
+        InsumoMedico.stock_actual > 0
+    ).limit(50).all()
+    
+    # GET: TODOS los solicitados para ese paciente
+    insumos_solicitados = []
+    for ip in InsumoPaciente.query.filter_by(paciente_id=paciente_id).all():
+        insumo = InsumoMedico.query.get(ip.insumo_id)
+        if insumo:
+            insumos_solicitados.append({
+                'id': ip.id,
+                'nombre': insumo.nombre,
+                'cantidad': ip.cantidad,
+                'usado': ip.cantidad_usada or 0,
+                'stock_actual': insumo.stock_actual or 0
+            })
+    
+    return render_template(
+        'enfermeria/solicitar_insumos.html',
+        paciente=paciente,
+        insumos_json=insumos_json,
+        insumos_solicitados=insumos_solicitados
+    )
 
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/registrar_insumos', methods=['GET', 'POST'])
+@login_required
+def registrar_insumos(paciente_id):
+    paciente = Paciente.query.get_or_404(paciente_id)
+    
+    if request.method == 'POST':
+        ids_raw = request.form.getlist('insumos_reg[]')
+        if not ids_raw:
+            flash('Selecciona al menos un insumo para registrar.', 'warning')
+            return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
+        
+        procesados = 0
+        for ip_id_str in ids_raw:
+            try:
+                ip_id = int(ip_id_str)
+                ip = InsumoPaciente.query.get(ip_id)
+                if not ip or ip.paciente_id != paciente_id:
+                    continue
+
+                # CANTIDAD ESPECÍFICA POR INSUMO
+                cantidad_str = request.form.get(f'cant_{ip_id}', '1')
+                cantidad = min(int(cantidad_str), ip.cantidad - (ip.cantidad_usada or 0))
+                if cantidad <= 0:
+                    continue
+
+                # OBSERVACIONES
+                obs = request.form.get(f'obs_{ip_id}', '').strip()
+                ip.observaciones = obs if obs else None
+
+                # ACTUALIZAR USO
+                usado_actual = ip.cantidad_usada or 0
+                ip.cantidad_usada = usado_actual + cantidad
+                ip.fecha_uso = datetime.now()
+
+                # Descontar stock físico
+                insumo = InsumoMedico.query.get(ip.insumo_id)
+                if insumo:
+                    insumo.stock_actual = max(0, (insumo.stock_actual or 0) - cantidad)
+
+                procesados += 1
+                
+            except Exception as e:
+                print(f"Error procesando {ip_id_str}: {e}")
+                continue  # Salta errores individuales
+        
+        db.session.commit()
+        if procesados > 0:
+            flash(f'✅ {procesados} insumo(s) registrados correctamente', 'success')
+        else:
+            flash('No se pudo registrar ningún insumo.', 'warning')
+        
+        return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
+    
+    # SOLO INSUMOS PENDIENTES (no completos)
+    insumos_paciente = InsumoPaciente.query.filter(
+        InsumoPaciente.paciente_id == paciente_id,
+        InsumoPaciente.cantidad_usada < InsumoPaciente.cantidad
+    ).order_by(InsumoPaciente.id.desc()).all()
+    
+    insumos_reg = []
+    for ip in insumos_paciente:
+        insumo = InsumoMedico.query.get(ip.insumo_id)
+        if insumo:
+            insumos_reg.append({
+                'id': ip.id,
+                'nombre': insumo.nombre,
+                'solicitado': ip.cantidad,
+                'usado': ip.cantidad_usada or 0,
+                'observaciones': ip.observaciones or ''
+            })
+    
+    return render_template(
+        'enfermeria/registrar_insumos.html',
+        paciente=paciente,
+        insumos=insumos_reg
+    )

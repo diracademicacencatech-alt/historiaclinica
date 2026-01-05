@@ -47,7 +47,12 @@ class Paciente(db.Model):
         cascade='all, delete-orphan',
         foreign_keys='HistoriaClinica.paciente_id'
     )
-
+    insumos_paciente = db.relationship(
+        'InsumoPaciente', 
+        back_populates='paciente', 
+        cascade='all, delete-orphan',
+        lazy=True
+    )
 
 class HistoriaClinica(db.Model):
     __tablename__ = 'historias_clinicas'
@@ -341,3 +346,50 @@ class AdministracionMedicamento(db.Model):
     # relaciones
     registro = db.relationship('RegistroEnfermeria', backref='administraciones')
     medicamento = db.relationship('Medicamento', backref='administraciones')
+
+class InsumoMedico(db.Model):
+    __tablename__ = 'insumos_medicos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(50), unique=True, index=True, nullable=False)
+    nombre = db.Column(db.String(255), nullable=False)
+    stock_actual = db.Column(db.Numeric(12, 3), default=0)
+    unidad = db.Column(db.String(50), default='uni')
+    activo = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=ahora_bogota)
+    
+    # Relaciones
+    solicitudes = db.relationship('SolicitudInsumo', backref='insumo_medico')
+
+class SolicitudInsumo(db.Model):
+    __tablename__ = 'solicitudes_insumos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
+    insumo_medico_id = db.Column(db.Integer, db.ForeignKey('insumos_medicos.id'), nullable=False)
+    cantidad = db.Column(db.Numeric(10, 3), nullable=False)
+    unidad = db.Column(db.String(50))
+    observaciones = db.Column(db.String(255))
+    fecha_solicitud = db.Column(db.DateTime, default=ahora_bogota)
+    estado = db.Column(db.String(20), default='pendiente')  # pendiente, aprobado, entregado
+    enfermero_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    
+    # Relaciones
+    paciente = db.relationship('Paciente', backref='solicitudes_insumos')
+    # enfermero enfermero = db.relationship('Usuario', foreign_keys=[enfermero_id]) # temporal 
+
+class InsumoPaciente(db.Model):
+    __tablename__ = 'insumos_paciente'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
+    insumo_id = db.Column(db.Integer, db.ForeignKey('insumos_medicos.id'), nullable=False)
+    cantidad = db.Column(db.Float, nullable=False)
+    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    cantidad_usada = db.Column(db.Integer, default=0)  # ← NUEVO
+    fecha_uso = db.Column(db.DateTime)  # ← NUEVO
+    stock_actual = db.Column(db.Float, default=0)
+    observaciones = db.Column(db.Text, default='')
+    # Relaciones SIMPLES
+    paciente = db.relationship('Paciente', back_populates='insumos_paciente')
+    insumo = db.relationship('InsumoMedico')

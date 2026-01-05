@@ -39,7 +39,14 @@
        class="btn btn-warning btn-lg mb-2">
       Registrar medicamentos
     </a>
-
+    <a href="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}"
+         class="btn btn-danger btn-lg mb-2">
+        <i class="fas fa-band-aid"></i> Solicitar insumos
+      </a>
+      <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}" 
+       class="btn btn-info">
+        📦 Registrar Insumos
+    </a>
     <br>
     <a href="{{ url_for('enfermeria.inicio_enfermeria') }}"
        class="btn btn-outline-secondary mt-3">

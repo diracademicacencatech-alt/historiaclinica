@@ -18,6 +18,8 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from io import BytesIO
 from app.utils.fechas import ahora_bogota
+from app.ayudas import ayudas_bp
+from app.services.pplx_client import pplx_chat
 
 UPLOAD_SUBFOLDER = os.path.join('uploads', 'ayudas')  # carpeta relativa
 
@@ -902,3 +904,12 @@ def descargar_catalogo_template():
     
     return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                      as_attachment=True, download_name='Catalogo_Laboratorios.xlsx')
+
+@ayudas_bp.post("/ia")
+def ayudas_ia():
+    prompt = request.json.get("prompt", "")
+    if not prompt:
+        return jsonify({"error": "Falta 'prompt'"}), 400
+
+    respuesta = pplx_chat(prompt)
+    return jsonify({"respuesta": respuesta})
