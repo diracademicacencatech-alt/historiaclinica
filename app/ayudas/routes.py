@@ -18,8 +18,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from io import BytesIO
 from app.utils.fechas import ahora_bogota
-from app.ayudas import ayudas_bp
-from app.services.pplx_client import pplx_chat
+
 
 UPLOAD_SUBFOLDER = os.path.join('uploads', 'ayudas')  # carpeta relativa
 
@@ -905,11 +904,109 @@ def descargar_catalogo_template():
     return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                      as_attachment=True, download_name='Catalogo_Laboratorios.xlsx')
 
-@ayudas_bp.post("/ia")
-def ayudas_ia():
-    prompt = request.json.get("prompt", "")
-    if not prompt:
-        return jsonify({"error": "Falta 'prompt'"}), 400
+from app.models import (
+    HistoriaClinica,
+    OrdenMedica,
+    OrdenLaboratorioItem,
+    CatLaboratorioParametro,
+    LabResultado,
+)
 
-    respuesta = pplx_chat(prompt)
-    return jsonify({"respuesta": respuesta})
+@ayudas_bp.route('/laboratorio/paciente/<int:historia_id>', methods=['GET', 'POST'])
+@login_required
+def laboratorio_paciente(historia_id):
+    historia = HistoriaClinica.query.get_or_404(historia_id)
+
+    # 1) Órdenes médicas de esta historia
+    ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
+    orden_ids = [o.id for o in ordenes]
+
+    if not orden_ids:
+        items = []
+    else:
+        # 2) Ítems de lab (exámenes) asociados a esas órdenes
+        items = (
+            db.session.query(OrdenLaboratorioItem)
+            .filter(OrdenLaboratorioItem.orden_id.in_(orden_ids))
+            .order_by(OrdenLaboratorioItem.id.desc())
+            .all()
+        )
+
+    # 3) Asegurarse de que exista una LabSolicitud para esta historia
+    solicitud = LabSolicitud.query.filter_by(historia_id=historia_id).first()
+    if solicitud is None:
+        solicitud = LabSolicitud(historia_id=historia_id)
+        db.session.add(solicitud)
+        db.session.commit()
+
+    # POST: guardar solo valor de resultados
+    if request.method == 'POST':
+        form = request.form
+        # campos tipo: resultado[parametro_id]
+        for key, value in form.items():
+            if not key.startswith('resultado['):
+                continue
+            # resultado[123]
+            try:
+                parametro_id = int(key[len('resultado['):-1])
+            except ValueError:
+                continue
+
+            valor = value.strip()
+
+            res = LabResultado.query.filter_by(
+                solicitud_id=solicitud.id,
+                parametro_id=parametro_id
+            ).first()
+
+            if res is None and valor:
+                # Necesitamos saber a qué examen pertenece este parámetro
+                param = CatLaboratorioParametro.query.get(parametro_id)
+                if not param:
+                    continue
+                res = LabResultado(
+                    solicitud_id=solicitud.id,
+                    examen_id=param.examen_id,
+                    parametro_id=parametro_id,
+                    valor=valor,
+                    unidad=param.unidad,
+                )
+                db.session.add(res)
+            elif res:
+                res.valor = valor or None
+
+        db.session.commit()
+        flash('Resultados de laboratorio actualizados', 'success')
+        return redirect(url_for('ayudas.laboratorio_paciente', historia_id=historia_id))
+
+    # 4) Armar datos para la plantilla: por cada examen solicitado, sus parámetros y resultados
+    items_con_parametros = []
+    # cache de resultados por parametro_id
+    resultados_existentes = {
+        r.parametro_id: r
+        for r in LabResultado.query.filter_by(solicitud_id=solicitud.id).all()
+    }
+
+    for it in items:
+        examen = it.examen  # CatLaboratorioExamen
+        parametros = (
+            CatLaboratorioParametro.query
+            .filter_by(examen_id=it.examen_id)
+            .order_by(CatLaboratorioParametro.id)
+            .all()
+        )
+
+        items_con_parametros.append({
+            'item': it,
+            'examen': examen,
+            'parametros': parametros,
+            'resultados': resultados_existentes,  # mismo dict para todos
+        })
+
+    return render_template(
+        'ayudas/laboratorio_paciente.html',
+        historia=historia,
+        items_con_parametros=items_con_parametros,
+        solicitud=solicitud,
+    )
+

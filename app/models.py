@@ -138,7 +138,11 @@ class OrdenMedica(db.Model):
     medicamentos_json = db.Column(db.Text, nullable=True)  # lista de {codigo, dosis, frecuencia, via, horario}
 
     historia = db.relationship('HistoriaClinica', back_populates='ordenes_medicas')
-
+    examenes_lab = db.relationship(
+        'OrdenLaboratorioItem',
+        back_populates='orden',
+        cascade='all, delete-orphan'
+    )
 
 class Medico(db.Model):
     __tablename__ = 'medicos'
@@ -262,6 +266,7 @@ class LabSolicitud(db.Model):
     __tablename__ = 'lab_solicitud'
 
     id = db.Column(db.Integer, primary_key=True)
+
     historia_id = db.Column(
         db.Integer,
         db.ForeignKey('historias_clinicas.id'),
@@ -280,9 +285,23 @@ class LabResultado(db.Model):
     __tablename__ = 'lab_resultado'
 
     id = db.Column(db.Integer, primary_key=True)
-    solicitud_id = db.Column(db.Integer, db.ForeignKey('lab_solicitud.id'), nullable=False)
-    examen_id = db.Column(db.Integer, db.ForeignKey('cat_laboratorio_examen.id'), nullable=False)
-    parametro_id = db.Column(db.Integer, db.ForeignKey('cat_laboratorio_parametro.id'), nullable=False)
+
+    solicitud_id = db.Column(
+        db.Integer,
+        db.ForeignKey('lab_solicitud.id'),
+        nullable=False
+    )
+
+    examen_id = db.Column(
+        db.Integer,
+        db.ForeignKey('cat_laboratorio_examen.id'),
+        nullable=False
+    )
+    parametro_id = db.Column(
+        db.Integer,
+        db.ForeignKey('cat_laboratorio_parametro.id'),
+        nullable=False
+    )
 
     valor = db.Column(db.String(100), nullable=True)
     unidad = db.Column(db.String(50), nullable=True)
@@ -292,7 +311,6 @@ class LabResultado(db.Model):
     solicitud = db.relationship('LabSolicitud', backref='resultados')
     parametro = db.relationship('CatLaboratorioParametro')
     examen = db.relationship('CatLaboratorioExamen')
-
 
 class DiagnosticoCIE10(db.Model):
     __tablename__ = 'diagnosticos_cie10'
@@ -393,3 +411,15 @@ class InsumoPaciente(db.Model):
     # Relaciones SIMPLES
     paciente = db.relationship('Paciente', back_populates='insumos_paciente')
     insumo = db.relationship('InsumoMedico')
+
+class OrdenLaboratorioItem(db.Model):
+    __tablename__ = 'orden_laboratorio_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    orden_id = db.Column(db.Integer, db.ForeignKey('ordenes_medicas.id'), nullable=False)
+    examen_id = db.Column(db.Integer, db.ForeignKey('cat_laboratorio_examen.id'), nullable=False)
+    estado = db.Column(db.String(20), default='solicitado')  # solicitado, procesado, etc.
+
+    orden = db.relationship('OrdenMedica', back_populates='examenes_lab')
+    examen = db.relationship('CatLaboratorioExamen')
+

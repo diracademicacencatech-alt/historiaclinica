@@ -38,63 +38,117 @@
         </div>
     </div>
 
-    <!-- TABLA INSUMOS SOLICITADOS -->
-    <div class="card shadow mb-4">
-        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="fas fa-list me-2"></i>Insumos Solicitados ({{ insumos_solicitados|length }})
-            </h5>
-            <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}"
-               class="btn btn-warning btn-sm">
-                <i class="fas fa-check me-1"></i> Registrar uso
-            </a>
+    <!-- ✅ TABLA AGRUPADA + ACCIONES INDIVIDUALES -->
+    {% if insumos_solicitados %}
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">📋 Insumos Solicitados Agrupados ({{ insumos_solicitados|length }})</h5>
+
+            <!-- Botón LIMPIAR TODOS PENDIENTES -->
+            <form method="POST"
+                  action="{{ url_for('enfermeria.limpiar_insumos_solicitados', paciente_id=paciente.id) }}"
+                  class="d-inline"
+                  onsubmit="return confirm('🗑️ Eliminar TODOS los insumos pendientes de este paciente?');">
+                <button type="submit" class="btn btn-warning btn-sm">
+                    <i class="fas fa-broom"></i> Limpiar pendientes
+                </button>
+            </form>
         </div>
+
         <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 450px;">
+            <div class="table-responsive">
                 <table class="table table-sm mb-0">
                     <thead class="table-dark">
                         <tr>
-                            <th style="width: 40%">Insumo</th>
-                            <th class="text-center" style="width: 15%">Solicitado</th>
-                            <th class="text-center" style="width: 15%">Usado</th>
-                            <th class="text-center" style="width: 15%">Stock actual</th>
-                            <th class="text-center" style="width: 15%">Estado</th>
+                            <th>Insumo</th>
+                            <th>Solic. total</th>
+                            <th>Usado</th>
+                            <th style="width:80px;">Pendiente</th>
+                            <th style="width:90px;">Último ID</th>
+                            <th style="width:70px;">Solic.</th>
+                            <th style="width:130px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for i in insumos_solicitados %}
-                        <tr>
-                            <td><strong>{{ i.nombre }}</strong></td>
-                            <td class="text-center fw-bold">{{ i.cantidad }}</td>
-                            <td class="text-center">{{ i.usado }}</td>
-                            <td class="text-center">{{ i.stock_actual }}</td>
-                            <td class="text-center">
-                                {% if i.usado == 0 %}
-                                    <span class="badge bg-warning text-dark">PENDIENTE</span>
-                                {% elif i.usado < i.cantidad %}
-                                    <span class="badge bg-info text-dark">PARCIAL</span>
-                                {% else %}
-                                    <span class="badge bg-success">COMPLETO</span>
+                        {% for ins in insumos_solicitados %}
+                        <tr class="{% if ins.pendiente > 0 %}table-warning{% else %}table-success{% endif %}">
+                            <td><strong>{{ ins.nombre }}</strong></td>
+                            <td>{{ "%.1f"|format(ins.total_solicitado) }}</td>
+                            <td>{{ "%.1f"|format(ins.total_usado) }}</td>
+                            <td class="fw-bold {% if ins.pendiente > 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ "%.1f"|format(ins.pendiente) }}
+                            </td>
+                            <td><code>{{ ins.ultimo_id }}</code></td>
+                            <td><span class="badge bg-secondary">{{ ins.num_solicitudes }}</span></td>
+                            <td>
+                                <!-- 🗑️ Eliminar SOLO la última solicitud (usa insumo_paciente_id real) -->
+                                <form method="POST"
+                                      action="{{ url_for('enfermeria.eliminar_insumo_individual',
+                                                        paciente_id=paciente.id,
+                                                        insumo_paciente_id=ins.ultimo_id) }}"
+                                      class="d-inline me-1"
+                                      onsubmit="return confirm('🗑️ Eliminar la última solicitud de {{ ins.nombre }} (ID {{ ins.ultimo_id }})?');">
+                                    <button type="submit" class="btn btn-danger btn-sm p-1" title="Eliminar última">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+
+                                <!-- ✅ Ir a registrar uso (solo si hay pendiente) -->
+                                {% if ins.pendiente > 0 %}
+                                <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}"
+                                   class="btn btn-success btn-sm p-1" title="Registrar uso">
+                                    <i class="fas fa-check"></i>
+                                </a>
                                 {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
-                        {% if not insumos_solicitados %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted p-4">
-                                No hay insumos solicitados.
-                            </td>
-                        </tr>
-                        {% endif %}
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
 
-    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}"
-       class="btn btn-secondary">
-        ← Volver al menú
-    </a>
+        <!-- Botón registrar masivo (lleva a la pantalla de registrar_insumos) -->
+        <div class="card-footer bg-light">
+            {% set pend_list = insumos_solicitados|selectattr('pendiente', '>', 0)|list %}
+            {% if pend_list %}
+            <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}"
+               class="btn btn-success btn-lg w-100">
+                <i class="fas fa-syringe me-2"></i>
+                Registrar uso de {{ pend_list|length }} insumos con pendientes
+            </a>
+            {% endif %}
+        </div>
+        <form method="POST"
+      action="{{ url_for('enfermeria.reset_insumos_paciente', paciente_id=paciente.id) }}"
+      class="d-inline"
+      onsubmit="return confirm('⚠️ HARD RESET: eliminar TODAS las solicitudes de insumos (incluye usadas). ¿Continuar?');">
+    <button type="submit" class="btn btn-danger btn-sm">
+        <i class="fas fa-trash-alt"></i> Reset total
+    </button>
+</form>
+
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+        <h5>✅ Sin insumos pendientes</h5>
+        <p class="mb-0">¡Tabla limpia! Solicita nuevos insumos en el formulario superior.</p>
+    </div>
+    {% endif %}
+
+    <!-- Volver -->
+    <div class="mt-4">
+        <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn btn-secondary">
+            ← Volver al menú
+        </a>
+    </div>
 </div>
+
+<style>
+.table th { font-size: 0.85rem; }
+.table td { font-size: 0.8rem; vertical-align: middle; }
+.btn-sm { font-size: 0.7rem; }
+.table-warning { border-left: 4px solid #ffc107; }
+</style>
 {% endblock %}

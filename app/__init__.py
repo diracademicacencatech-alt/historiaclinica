@@ -10,6 +10,8 @@ from app.ayudas import ayudas_bp
 from app.enfermeria import enfermeria_bp
 from app.menu import menu_bp
 from app.utils.fechas import ahora_bogota
+from app.inventario.routes import inventario_bp
+from app.param.routes import param_bp
 
 migrate = Migrate()
 
@@ -34,6 +36,8 @@ def create_app():
     app.register_blueprint(ayudas_bp, url_prefix='/ayudas')
     app.register_blueprint(enfermeria_bp, url_prefix='/enfermeria')
     app.register_blueprint(menu_bp, url_prefix='/menu')
+    app.register_blueprint(inventario_bp)
+    app.register_blueprint(param_bp)
 
     # Ruta raíz
     @app.route('/')

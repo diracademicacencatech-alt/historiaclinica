@@ -116,52 +116,80 @@
   {% endif %}
 
   <hr>
-{% if ordenes_con_meds and ordenes_con_meds|length > 0 %}
-<h1>Órdenes Médicas</h1>
-{% for item in ordenes_con_meds %}
-  {% set orden = item.orden %}
-  {% set meds_orden = item.medicamentos %}
+  {% if ordenes_con_meds and ordenes_con_meds|length > 0 %}
+  <h1>Órdenes Médicas</h1>
+  {% for item in ordenes_con_meds %}
+    {% set orden = item.orden %}
+    {% set meds_orden = item.medicamentos %}
+    {% set examenes_orden = item.examenes_lab %}
 
-  <h3>Orden Médica #{{ loop.index }}</h3>
-  <div class="section">
-    <label>Indicaciones:</label> {{ orden.indicaciones_medicas or '' }}
-  </div>
-  <div class="section">
-    <label>Ordenes Medicas:</label> {{ orden.medicacion_texto or '' }}
-  </div>
+    <h3>Orden Médica #{{ loop.index }}</h3>
+    <div class="section">
+      <label>Indicaciones:</label> {{ orden.indicaciones_medicas or '' }}
+    </div>
+    <div class="section">
+      <label>Ordenes Medicas:</label> {{ orden.medicacion_texto or '' }}
+    </div>
 
-  {% if meds_orden and meds_orden|length > 0 %}
-    <h4>Medicamentos Formulados</h4>
-    <table>
-      <thead>
-        <tr>
-          <th>Medicamento</th>
-          <th>Dosis / Presentación</th>
-          <th>Frecuencia / Tiempo</th>
-          <th>Cantidad</th>
-          <th>Unidad</th>
-          <th>Vía</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for med in meds_orden %}
-        <tr>
-          <td>{{ med.codigo or '' }}</td>
-          <td>{{ med.dosis or '' }}</td>
-          <td>{{ med.frecuencia or '' }}</td>
-          <td>{{ med.cantidad_solicitada or '' }}</td>
-          <td>{{ med.unidad_inventario or '' }}</td>
-          <td>{{ med.via_administracion or '' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>No hay medicamentos estructurados en esta orden.</p>
+    {% if meds_orden and meds_orden|length > 0 %}
+      <h4>Medicamentos Formulados</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Medicamento</th>
+            <th>Dosis / Presentación</th>
+            <th>Frecuencia / Tiempo</th>
+            <th>Cantidad</th>
+            <th>Unidad</th>
+            <th>Vía</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for med in meds_orden %}
+          <tr>
+            <td>{{ med.codigo or '' }}</td>
+            <td>{{ med.dosis or '' }}</td>
+            <td>{{ med.frecuencia or '' }}</td>
+            <td>{{ med.cantidad_solicitada or '' }}</td>
+            <td>{{ med.unidad_inventario or '' }}</td>
+            <td>{{ med.via_administracion or '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No hay medicamentos estructurados en esta orden.</p>
+    {% endif %}
+
+    {# ===== NUEVO: EXÁMENES DE LABORATORIO SOLICITADOS ===== #}
+    {% if examenes_orden and examenes_orden|length > 0 %}
+      <h4>Exámenes de laboratorio solicitados</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Examen</th>
+            <th>Grupo</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in examenes_orden %}
+          <tr>
+            <td>{{ it.examen.nombre if it.examen else '' }}</td>
+            <td>{{ it.examen.grupo if it.examen else '' }}</td>
+            <td>{{ it.estado or '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No hay exámenes de laboratorio solicitados en esta orden.</p>
+    {% endif %}
+    {# ======================================================= #}
+
+    <hr>
+  {% endfor %}
   {% endif %}
-  <hr>
-{% endfor %}
-{% endif %}
 
 </body>
 </html>

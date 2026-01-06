@@ -19,6 +19,9 @@
     .col { flex: 1; }
     @media (max-width: 768px) { .row { flex-direction: column; } }
     .med-title { margin-top: 20px; }
+    .list-group { list-style: none; padding-left: 0; margin: 0; }
+    .list-group-item { border: 1px solid #ddd; padding: 8px 10px; border-radius: 4px; margin-bottom: 5px; background: #fff; }
+    .list-group-item-action { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -55,7 +58,7 @@
             <option value="">-- Seleccione medicamento --</option>
             {% if medicamentos_catalogo %}
               {% for med in medicamentos_catalogo %}
-              <option value="{{ med.codigo }}">{{ med.codigo }} - {{ med.nombre }}</option>
+                <option value="{{ med.codigo }}">{{ med.codigo }} - {{ med.nombre }}</option>
               {% endfor %}
             {% endif %}
           </select>
@@ -100,6 +103,32 @@
       + Añadir otro medicamento
     </button>
 
+    <!-- ================== EXÁMENES DE LABORATORIO ================== -->
+    <h2 class="med-title">🧪 Exámenes de laboratorio</h2>
+
+    <label for="buscador_examenes">Buscar exámenes de laboratorio</label>
+    <input type="text" id="buscador_examenes" class="form-control" placeholder="Escriba para buscar por nombre o grupo">
+
+    <ul id="lista_resultados_examenes" class="list-group" style="max-height: 220px; overflow-y:auto; margin-top:10px;">
+      {% for ex in examenes_catalogo %}
+        <li class="list-group-item list-group-item-action examen-item"
+            data-id="{{ ex.id }}"
+            data-nombre="{{ ex.nombre|e }}"
+            data-grupo="{{ ex.grupo or '' }}">
+          {{ ex.nombre }}{% if ex.grupo %} ({{ ex.grupo }}){% endif %}
+          <button type="button" class="btn-secondary btn-agregar-examen" style="float:right; padding:4px 8px; margin-top:0;">
+            Añadir
+          </button>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <h4 style="margin-top:20px;">Exámenes añadidos</h4>
+    <ul id="lista_examenes_seleccionados" class="list-group" style="margin-top:5px;"></ul>
+    <!-- inputs ocultos que se envían al backend -->
+    <div id="inputs_examenes_seleccionados"></div>
+    <!-- ============================================================= -->
+
     <br>
     <button type="submit">💾 Guardar Orden Médica</button>
   </form>
@@ -111,6 +140,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // ===== Medicamentos (igual que antes) =====
   const container = document.getElementById('medicamentos-container');
   const addBtn = document.getElementById('add-medicamento');
 
@@ -140,6 +170,74 @@ document.addEventListener('DOMContentLoaded', function () {
         renumerar();
       }
     }
+  });
+
+  // ===== Exámenes de laboratorio: buscador + lista seleccionados =====
+  const buscador = document.getElementById('buscador_examenes');
+  const listaResultados = document.getElementById('lista_resultados_examenes');
+  const listaSeleccionados = document.getElementById('lista_examenes_seleccionados');
+  const inputsSeleccionados = document.getElementById('inputs_examenes_seleccionados');
+
+  const seleccionadosSet = new Set();
+
+  // Filtro simple en el listado de resultados
+  buscador.addEventListener('input', function () {
+    const term = this.value.toLowerCase();
+    listaResultados.querySelectorAll('.examen-item').forEach(function (li) {
+      const nombre = li.getAttribute('data-nombre').toLowerCase();
+      const grupo = li.getAttribute('data-grupo').toLowerCase();
+      if (!term || nombre.includes(term) || grupo.includes(term)) {
+        li.style.display = '';
+      } else {
+        li.style.display = 'none';
+      }
+    });
+  });
+
+  // Añadir examen desde la lista de resultados
+  listaResultados.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('btn-agregar-examen')) return;
+
+    const li = e.target.closest('.examen-item');
+    const id = li.getAttribute('data-id');
+    const nombre = li.getAttribute('data-nombre');
+    const grupo = li.getAttribute('data-grupo');
+
+    if (seleccionadosSet.has(id)) {
+      return; // ya fue añadido
+    }
+    seleccionadosSet.add(id);
+
+    // Mostrar en lista de seleccionados
+    const liSel = document.createElement('li');
+    liSel.className = 'list-group-item d-flex justify-content-between align-items-center';
+    liSel.setAttribute('data-id', id);
+    liSel.innerHTML = `
+      <span>${nombre}${grupo ? ' (' + grupo + ')' : ''}</span>
+      <button type="button" class="btn-secondary btn-quitar-examen" style="padding:4px 8px;">Quitar</button>
+    `;
+    listaSeleccionados.appendChild(liSel);
+
+    // Input oculto para enviar al backend
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'examenes_lab_ids[]';
+    input.value = id;
+    input.setAttribute('data-id', id);
+    inputsSeleccionados.appendChild(input);
+  });
+
+  // Quitar examen de la lista seleccionada
+  listaSeleccionados.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('btn-quitar-examen')) return;
+
+    const liSel = e.target.closest('li');
+    const id = liSel.getAttribute('data-id');
+    seleccionadosSet.delete(id);
+    liSel.remove();
+
+    const input = inputsSeleccionados.querySelector('input[data-id="' + id + '"]');
+    if (input) input.remove();
   });
 });
 </script>

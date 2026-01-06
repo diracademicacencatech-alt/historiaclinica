@@ -45,14 +45,10 @@
        class="list-group-item list-group-item-action">
       Imágenes diagnósticas
     </a>
-    <a href="{{ url_for('ayudas.ayudas_laboratorios', historia_id=historia.id) }}"
-       class="list-group-item list-group-item-action">
-      Laboratorios
-    </a>
-    <a href="{{ url_for('ayudas.carga_masiva_laboratorios') }}"
-       class="list-group-item list-group-item-action">
-      Carga masiva de laboratorios
-    </a>
+    <a href="{{ url_for('ayudas.laboratorio_paciente', historia_id=historia.id) }}">
+  Ver laboratorio solicitado
+</a>
+
   </div>
 
   <div class="card shadow-sm mb-4">

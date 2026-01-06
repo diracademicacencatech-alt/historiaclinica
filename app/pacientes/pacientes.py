@@ -14,6 +14,8 @@ from app.models import (
     RegistroEnfermeria,
     DiagnosticoCIE10,
     Medicamento,
+    OrdenLaboratorioItem,
+    CatLaboratorioExamen,
 )
 from app.utils.fechas import ahora_bogota
 from app.utils.fechas import tz_bogota
@@ -436,6 +438,7 @@ def orden_medica(historia_id):
     if request.method == 'POST':
         form = request.form
 
+        # ===== Medicamentos (igual que antes) =====
         medicamentos = []
         idx = 0
         while True:
@@ -454,6 +457,7 @@ def orden_medica(historia_id):
                 })
             idx += 1
 
+        # ===== Crear orden médica (igual) =====
         orden = OrdenMedica(
             historia_id=historia.id,
             indicaciones_medicas=form.get('indicaciones_medicas'),
@@ -461,15 +465,34 @@ def orden_medica(historia_id):
             medicamentos_json=json.dumps(medicamentos, ensure_ascii=False)
         )
         db.session.add(orden)
+        db.session.flush()   # para tener orden.id sin cerrar la transacción
+
+        # ===== NUEVO: exámenes de laboratorio seleccionados =====
+        examenes_seleccionados = request.form.getlist('examenes_lab_ids[]')
+
+        for ex_id in examenes_seleccionados:
+            if not ex_id:
+                continue
+            item = OrdenLaboratorioItem(
+                orden_id=orden.id,
+                examen_id=int(ex_id),
+                estado='solicitado'
+            )
+            db.session.add(item)
+
         db.session.commit()
         flash('Orden médica creada correctamente', 'success')
         return redirect(url_for('pacientes.listar'))
 
+    # GET: cargar catálogos
     medicamentos_catalogo = Medicamento.query.order_by(Medicamento.nombre).all()
+    examenes_catalogo = CatLaboratorioExamen.query.filter_by(activo=True).order_by(CatLaboratorioExamen.nombre).all()
+
     return render_template(
-        'pacientes/crear_orden_medica.html',   # ← nuevo path
+        'pacientes/crear_orden_medica.html',
         historia=historia,
-        medicamentos_catalogo=medicamentos_catalogo
+        medicamentos_catalogo=medicamentos_catalogo,
+        examenes_catalogo=examenes_catalogo
     )
 
 @pacientes_bp.route('/historias/libro/<int:historia_id>/pdf')
@@ -495,7 +518,7 @@ def pdf_libro_historia(historia_id):
         except ValueError:
             medicamentos = []
 
-    # NUEVO: parsear medicamentos por orden
+    # Medicamentos y exámenes por cada orden médica
     ordenes_con_meds = []
     for orden in ordenes:
         meds_orden = []
@@ -504,16 +527,18 @@ def pdf_libro_historia(historia_id):
                 meds_orden = json.loads(orden.medicamentos_json)
             except ValueError:
                 meds_orden = []
+
         ordenes_con_meds.append({
             'orden': orden,
-            'medicamentos': meds_orden
+            'medicamentos': meds_orden,
+            'examenes_lab': orden.examenes_lab  # relación OrdenLaboratorioItem
         })
 
     html = render_template(
         'pacientes/pdf_libro.html',
         historia=historia,
         fecha_ingreso_local=fecha_ingreso_local,
-        ordenes_con_meds=ordenes_con_meds,   # ← usar esta lista
+        ordenes_con_meds=ordenes_con_meds,
         diag_cie10=diag_cie10,
         medicamentos=medicamentos,
     )
@@ -524,3 +549,4 @@ def pdf_libro_historia(historia_id):
         f'inline; filename=libro_historia_{historia_id}.pdf'
     )
     return response
+

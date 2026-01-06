@@ -27,9 +27,10 @@
           <td>{{ r.observaciones or '' }}</td>
           <td>
             <div class="btn-group btn-group-sm" role="group">
-              
-              <form method="post" action="{{ url_for('enfermeria.eliminar_signos_enfermeria', registro_id=r.id) }}" 
-                    style="display: inline;" onsubmit="return confirm('¿Eliminar signos vitales?');">
+              <form method="post"
+                    action="{{ url_for('enfermeria.eliminar_signos_enfermeria', registro_id=r.id) }}"
+                    style="display: inline;"
+                    onsubmit="return confirm('¿Eliminar signos vitales?');">
                 <button type="submit" class="btn btn-danger" title="🗑️ Eliminar">
                   <i class="fas fa-trash"></i><br><small>Eliminar</small>
                 </button>
@@ -40,7 +41,11 @@
         {% endif %}
       {% endfor %}
       {% if not registros %}
-        <tr><td colspan="11" class="text-center text-muted p-4">No hay signos vitales registrados.</td></tr>
+        <tr>
+          <td colspan="11" class="text-center text-muted p-4">
+            No hay signos vitales registrados.
+          </td>
+        </tr>
       {% endif %}
     </tbody>
   </table>
@@ -49,7 +54,10 @@
   <h4 class="mt-4">💧 Balance de líquidos</h4>
   <table class="table table-sm table-striped">
     <thead>
-      <tr><th>Fecha</th><th>Hora</th><th>Turno</th><th>Administrados</th><th>Eliminados</th><th>Obs.</th><th>Acción</th></tr>
+      <tr>
+        <th>Fecha</th><th>Hora</th><th>Turno</th>
+        <th>Administrados</th><th>Eliminados</th><th>Obs.</th><th>Acción</th>
+      </tr>
     </thead>
     <tbody>
       {% for r in registros %}
@@ -61,17 +69,29 @@
           <td>{{ r.fecha_registro.strftime('%Y-%m-%d') }}</td>
           <td>{{ r.fecha_registro.strftime('%H:%M') }}</td>
           <td>{{ r.turno }}</td>
-          <td>{% if admin %}<br>
+          <td>
+            {% if admin %}
+              <br>
               <small>{{ admin.liquido or '' }} / {{ admin.via or '' }} / {{ admin.cantidad or '' }}</small>
-              {% else %}<span class="text-muted">-</span>{% endif %}</td>
-          <td>{% if elim %}{{ elim.hora_eliminado or '' }}<br>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if elim %}
+              {{ elim.hora_eliminado or '' }}<br>
               <small>{{ elim.tipo_liquido or '' }} / {{ elim.via_eliminacion or '' }} / {{ elim.cantidad or '' }}</small>
-              {% else %}<span class="text-muted">-</span>{% endif %}</td>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
           <td>{{ elim.obs or '' }}</td>
           <td>
             <div class="btn-group btn-group-sm" role="group">
-            <form method="post" action="{{ url_for('enfermeria.eliminar_balance_enfermeria', registro_id=r.id) }}" 
-                    style="display: inline;" onsubmit="return confirm('¿Eliminar balance?');">
+              <form method="post"
+                    action="{{ url_for('enfermeria.eliminar_balance_enfermeria', registro_id=r.id) }}"
+                    style="display: inline;"
+                    onsubmit="return confirm('¿Eliminar balance?');">
                 <button type="submit" class="btn btn-warning" title="🗑️ Eliminar">
                   <i class="fas fa-trash"></i><br><small>Eliminar</small>
                 </button>
@@ -88,7 +108,9 @@
   <h4 class="mt-4">📝 Notas de enfermería</h4>
   <table class="table table-sm table-striped">
     <thead>
-      <tr><th>Fecha</th><th>Hora</th><th>Turno</th><th>Tipo</th><th>Nota</th><th>Acción</th></tr>
+      <tr>
+        <th>Fecha</th><th>Hora</th><th>Turno</th><th>Tipo</th><th>Nota</th><th>Acción</th>
+      </tr>
     </thead>
     <tbody>
       {% for r in registros %}
@@ -98,11 +120,15 @@
           <td>{{ r.fecha_registro.strftime('%H:%M') }}</td>
           <td>{{ r.turno }}</td>
           <td><span class="badge bg-primary">{{ r.tipo_nota }}</span></td>
-          <td style="max-width: 400px; white-space: pre-wrap; word-break: break-word;">{{ r.texto_nota }}</td>
+          <td style="max-width: 400px; white-space: pre-wrap; word-break: break-word;">
+            {{ r.texto_nota }}
+          </td>
           <td>
             <div class="btn-group btn-group-sm" role="group">
-            <form method="post" action="{{ url_for('enfermeria.eliminar_nota_enfermeria', registro_id=r.id) }}" 
-                    style="display: inline;" onsubmit="return confirm('¿Eliminar nota?');">
+              <form method="post"
+                    action="{{ url_for('enfermeria.eliminar_nota_enfermeria', registro_id=r.id) }}"
+                    style="display: inline;"
+                    onsubmit="return confirm('¿Eliminar nota?');">
                 <button type="submit" class="btn btn-info" title="🗑️ Eliminar">
                   <i class="fas fa-trash"></i><br><small>Eliminar</small>
                 </button>
@@ -119,7 +145,9 @@
   <h4 class="mt-4">💊 Medicamentos Administrados</h4>
   <div class="card shadow mb-4">
     <div class="card-header bg-primary text-white">
-      <h6 class="mb-0"><i class="fas fa-pills me-2"></i>Historial Completo de Medicamentos</h6>
+      <h6 class="mb-0">
+        <i class="fas fa-pills me-2"></i>Historial Completo de Medicamentos
+      </h6>
     </div>
     <div class="card-body p-0">
       {% if medicamentos %}
@@ -148,8 +176,13 @@
               <td><span class="badge bg-primary">{{ admin.via }}</span></td>
               <td>{{ admin.observaciones or '-' }}</td>
               <td>
-                <form method="POST" action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}" class="d-inline">
-                  <button type="submit" class="btn btn-danger btn-sm px-2 py-1" onclick="return confirm('¿Eliminar medicamento?');" title="🗑️ Eliminar">
+                <form method="POST"
+                      action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}"
+                      class="d-inline">
+                  <button type="submit"
+                          class="btn btn-danger btn-sm px-2 py-1"
+                          onclick="return confirm('¿Eliminar medicamento?');"
+                          title="🗑️ Eliminar">
                     <i class="fas fa-trash"></i>
                   </button>
                 </form>
@@ -163,7 +196,9 @@
       <div class="card-body text-center text-muted p-4">
         <i class="fas fa-pills fa-3x mb-3 opacity-50"></i>
         <p><strong>No hay medicamentos administrados en esta historia</strong></p>
-        <a href="{{ url_for('enfermeria.administrar_medicamentos', registro_id=registros[0].id if registros else '') }}" class="btn btn-warning">
+        <a href="{{ url_for('enfermeria.administrar_medicamentos',
+                            registro_id=registros[0].id if registros else '') }}"
+           class="btn btn-warning">
           <i class="fas fa-plus me-2"></i>Agregar Primer Medicamento
         </a>
       </div>
@@ -171,12 +206,86 @@
     </div>
   </div>
 
+  <!-- 🧴 INSUMOS UTILIZADOS -->
+  <h4 class="mt-4">🧴 Insumos Utilizados</h4>
+  <div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+      <h6 class="mb-0">
+        <i class="fas fa-syringe me-2"></i>Historial de Insumos Administrados
+      </h6>
+    </div>
+    <div class="card-body p-0">
+      {% if insumos_registrados %}
+      <div class="table-responsive" style="max-height: 300px;">
+        <table class="table table-sm mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th style="width:15%">Fecha uso</th>
+              <th style="width:30%">Insumo</th>
+              <th style="width:10%" class="text-center">Solic.</th>
+              <th style="width:10%" class="text-center">Usado</th>
+              <th style="width:10%" class="text-center">Pend.</th>
+              <th style="width:25%">Observaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ins in insumos_registrados %}
+            <tr>
+              <td>{{ ins.fecha_uso }}</td>
+              <td><strong>{{ ins.nombre }}</strong></td>
+              <td class="text-center">{{ ins.solicitado }}</td>
+              <td class="text-center text-success fw-bold">{{ ins.usado }}</td>
+              <td class="text-center {% if ins.pendiente > 0 %}text-danger{% endif %}">
+                {{ ins.pendiente }}
+              </td>
+              <td>{{ ins.observaciones }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body text-center text-muted p-3">
+        <i class="fas fa-syringe fa-2x mb-2 opacity-50"></i>
+        <p class="mb-0">No hay insumos administrados registrados.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- (Opcional) INSUMOS PENDIENTES -->
+  {% if insumos_pendientes %}
+  <h5 class="mt-3">⏳ Insumos pendientes de uso</h5>
+  <table class="table table-sm table-striped">
+    <thead>
+      <tr>
+        <th>Insumo</th>
+        <th class="text-center">Solicitado</th>
+        <th class="text-center">Pendiente</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ins in insumos_pendientes %}
+      <tr class="table-warning">
+        <td>{{ ins.nombre }}</td>
+        <td class="text-center">{{ ins.solicitado }}</td>
+        <td class="text-center">{{ ins.pendiente }}</td>
+        <td>{{ ins.fecha_solicitud }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
   <!-- Botones de navegación -->
   <div class="mt-4">
-    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn btn-secondary me-2">
+    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}"
+       class="btn btn-secondary me-2">
       ← Volver al menú
     </a>
-    <a href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}" class="btn btn-success">
+    <a href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}"
+       class="btn btn-success">
       📄 Descargar PDF Completo
     </a>
   </div>
@@ -185,9 +294,9 @@
 <style>
   .table th { font-size: 0.85rem; }
   .table td { font-size: 0.8rem; vertical-align: middle; }
-  .btn-group-sm .btn { 
-    font-size: 0.7rem; 
-    padding: 0.25rem 0.35rem; 
+  .btn-group-sm .btn {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.35rem;
     line-height: 1.1;
     height: 38px;
     display: flex;

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if medicamento else 'Nuevo' }} Medicamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>{{ 'Editar' if medicamento else 'Nuevo' }} medicamento</h2>
+
+  <form method="POST">
+    <div class="mb-3">
+      <label class="form-label">Código</label>
+      <input type="text" name="codigo" class="form-control"
+             value="{{ medicamento.codigo if medicamento else '' }}" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Nombre</label>
+      <input type="text" name="nombre" class="form-control"
+             value="{{ medicamento.nombre if medicamento else '' }}" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Forma farmacéutica</label>
+      <input type="text" name="forma_farmaceutica" class="form-control"
+             value="{{ medicamento.forma_farmaceutica if medicamento else '' }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Presentación</label>
+      <input type="text" name="presentacion" class="form-control"
+             value="{{ medicamento.presentacion if medicamento else '' }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Cantidad disponible</label>
+      <input type="number" step="0.001" name="cantidad_disponible" class="form-control"
+             value="{{ medicamento.cantidad_disponible if medicamento else 0 }}">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Unidad inventario</label>
+      <input type="text" name="unidad_inventario" class="form-control"
+             value="{{ medicamento.unidad_inventario if medicamento else '' }}">
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('param.medicamentos') }}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

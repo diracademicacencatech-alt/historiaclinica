@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Medicamentos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>💊 Catálogo de Medicamentos</h2>
+
+  <div class="mb-3 d-flex justify-content-between align-items-center">
+    <!-- Nuevo medicamento -->
+    <a href="{{ url_for('param.medicamento_nuevo') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> Nuevo medicamento
+    </a>
+
+    <!-- Buscador -->
+    <form method="GET" action="{{ url_for('param.medicamentos') }}" class="d-flex">
+      <input type="text" name="q" class="form-control form-control-sm me-2"
+             placeholder="Buscar por código o nombre..."
+             value="{{ q or '' }}">
+      <button type="submit" class="btn btn-outline-light btn-sm">
+        <i class="fas fa-search"></i> Buscar
+      </button>
+    </form>
+
+    <!-- Eliminar seleccionados -->
+    <form method="POST"
+          action="{{ url_for('param.medicamentos_eliminar_seleccionados') }}"
+          onsubmit="return confirm('¿Eliminar los medicamentos seleccionados?');">
+      <button type="submit" class="btn btn-danger btn-sm">
+        <i class="fas fa-trash"></i> Eliminar seleccionados
+      </button>
+    </form>
+  </div>
+
+  <form method="POST"
+        action="{{ url_for('param.medicamentos_eliminar_seleccionados') }}">
+    <table class="table table-sm table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th style="width:30px;">
+            <input type="checkbox" id="checkAllMed"
+                   onclick="document.querySelectorAll('.chk-med').forEach(c=>c.checked=this.checked);">
+          </th>
+          <th>ID</th>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Forma</th>
+          <th>Presentación</th>
+          <th class="text-end">Cant. disp.</th>
+          <th>Unidad</th>
+          <th style="width:120px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in medicamentos %}
+        <tr>
+          <td>
+            <input type="checkbox" name="med_ids" value="{{ m.id }}" class="chk-med">
+          </td>
+          <td>{{ m.id }}</td>
+          <td><code>{{ m.codigo }}</code></td>
+          <td>{{ m.nombre }}</td>
+          <td>{{ m.forma_farmaceutica or '-' }}</td>
+          <td>{{ m.presentacion or '-' }}</td>
+          <td class="text-end">{{ m.cantidad_disponible or 0 }}</td>
+          <td>{{ m.unidad_inventario or '-' }}</td>
+          <td>
+            <form method="POST"
+                  action="{{ url_for('param.medicamento_eliminar', med_id=m.id) }}"
+                  style="display:inline"
+                  onsubmit="return confirm('¿Eliminar medicamento {{ m.nombre }}?');">
+              <button type="submit" class="btn btn-danger btn-sm px-3 py-1">
+                <i class="fas fa-trash-alt me-1"></i> ELIMINAR
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+  <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">← Volver al menú</a>
+</div>
+{% endblock %}

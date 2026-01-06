@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Códigos CIE-10{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>📚 Códigos CIE-10</h2>
+
+  <!-- Buscador -->
+  <div class="mb-3 d-flex justify-content-end">
+    <form method="GET" action="{{ url_for('param.cie10') }}" class="d-flex">
+      <input type="text" name="q" class="form-control form-control-sm me-2"
+             placeholder="Buscar por código o nombre..."
+             value="{{ q or '' }}">
+      <button type="submit" class="btn btn-outline-light btn-sm">
+        <i class="fas fa-search"></i> Buscar
+      </button>
+    </form>
+  </div>
+
+  <table class="table table-sm table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>ID</th>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th style="width:110px;">Habilitado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in cie10 %}
+      <tr>
+        <td>{{ d.id }}</td>
+        <td><code>{{ d.codigo }}</code></td>
+        <td>{{ d.nombre }}</td>
+        <td>{{ d.descripcion or '-' }}</td>
+        <td>
+          <form method="POST"
+                action="{{ url_for('param.cie10_toggle', cie_id=d.id) }}"
+                style="display:inline">
+            {% if d.habilitado %}
+            <button type="submit" class="btn btn-success btn-sm px-3 py-1">
+              Sí
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-secondary btn-sm px-3 py-1">
+              No
+            </button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">← Volver al menú</a>
+</div>
+{% endblock %}

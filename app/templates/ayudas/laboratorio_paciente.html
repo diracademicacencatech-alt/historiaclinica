@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Laboratorio - {{ historia.paciente.nombre if historia.paciente else '' }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background:#f8f9fa; }
+    h1 { text-align:center; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td { border:1px solid #ccc; padding:4px 6px; font-size:12px; }
+    th { background:#e9ecef; }
+    .section { margin-bottom:25px; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.06); }
+    .btn { padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
+    .btn-primary { background:#007bff; color:#fff; }
+    .btn-primary:hover { background:#0069d9; }
+    .badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; }
+    .badge-solicitado { background:#ffc107; color:#212529; }
+    .badge-procesado { background:#28a745; color:#fff; }
+    input[type="text"] { width:100%; box-sizing:border-box; }
+  </style>
+</head>
+<body>
+
+<h1>Laboratorio - {{ historia.paciente.nombre if historia.paciente else '' }}</h1>
+<p><strong>N° Historia:</strong> {{ historia.numero_historia }}</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<form method="POST">
+  {% for bloque in items_con_parametros %}
+    {% set item = bloque.item %}
+    {% set examen = bloque.examen %}
+    {% set parametros = bloque.parametros %}
+    {% set resultados = bloque.resultados %}
+
+    <div class="section">
+      <h3>
+        {{ examen.nombre }}{% if examen.grupo %} ({{ examen.grupo }}){% endif %}
+        {% if item.estado == 'procesado' %}
+          <span class="badge badge-procesado">Procesado</span>
+        {% else %}
+          <span class="badge badge-solicitado">Solicitado</span>
+        {% endif %}
+      </h3>
+      <p><strong>Orden médica ID:</strong> {{ item.orden_id }}</p>
+
+      {% if parametros and parametros|length > 0 %}
+        <table>
+          <thead>
+            <tr>
+              <th>Parámetro</th>
+              <th>Unidad</th>
+              <th>Valor ref. mínimo</th>
+              <th>Valor ref. máximo</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in parametros %}
+              {% set res = resultados.get(p.id) %}
+              <tr>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.unidad or '' }}</td>
+                <td>{{ p.valor_ref_min if p.valor_ref_min is not none else '' }}</td>
+                <td>{{ p.valor_ref_max if p.valor_ref_max is not none else '' }}</td>
+                <td>
+                  <input type="text"
+                         name="resultado[{{ p.id }}]"
+                         value="{{ res.valor if res else '' }}">
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No hay parámetros definidos para este examen.</p>
+      {% endif %}
+    </div>
+  {% else %}
+    <p>No hay exámenes de laboratorio solicitados para esta historia clínica.</p>
+  {% endfor %}
+
+  {% if items_con_parametros and items_con_parametros|length > 0 %}
+    <button type="submit" class="btn btn-primary">Guardar resultados</button>
+  {% endif %}
+</form>
+
+</body>
+</html>

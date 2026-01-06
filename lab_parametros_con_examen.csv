@@ -1,0 +1,80 @@
+param_id,examen_id,examen_nombre,examen_grupo,param_nombre,unidad,valor_ref_min,valor_ref_max
+1,1,Hemograma completo,Hematología,Leucocitos,cél/µL,4000,11000
+2,1,Hemograma completo,Hematología,Hemoglobina,g/dL,12,16
+3,1,Hemograma completo,Hematología,Hematocrito,%,36,48
+4,1,Hemograma completo,Hematología,Plaquetas,cél/µL,150000,450000
+5,1,Hemograma completo,Hematología,Eritrocitos,10^6/µL,4,5.8
+6,1,Hemograma completo,Hematología,VCM,fL,80,96
+7,1,Hemograma completo,Hematología,HBM,pg,27,33
+8,1,Hemograma completo,Hematología,CHCM,g/dL,32,36
+9,2,Recuento de neutrófilos,Hematología,Neutrófilos absolutos,cél/µL,1500,8000
+10,3,Recuento de linfocitos,Hematología,Linfocitos absolutos,cél/µL,1000,4000
+11,4,Velocidad de sedimentación,Hematología,VSG,mm/h,0,20
+12,5,Reticulocitos,Hematología,Reticulocitos,%,0.5,2.0
+13,6,Glucosa en ayunas,Química,Glucosa,mg/dL,70,99
+14,7,Nitrógeno ureico (BUN),Química,BUN,mg/dL,7,20
+15,8,Creatinina sérica,Química,Creatinina,mg/dL,0.6,1.3
+16,9,Ácido úrico,Química,Ácido úrico,mg/dL,3.4,7.0
+17,10,Relación BUN/Creatinina,Química,Relación BUN/Creatinina,relación,10,20
+18,11,Sodio sérico,Química,Sodio,mmol/L,135,145
+19,12,Potasio sérico,Química,Potasio,mmol/L,3.5,5.1
+20,13,Cloro sérico,Química,Cloro,mmol/L,98,107
+21,14,Bicarbonato sérico,Química,Bicarbonato,mmol/L,21,32
+22,15,Calcio total,Química,Calcio total,mg/dL,8.5,10.5
+23,16,Fósforo sérico,Química,Fósforo,mg/dL,2.5,4.5
+24,17,Magnesio sérico,Química,Magnesio,mg/dL,1.7,2.4
+25,18,Urea sérica,Química,Urea,mg/dL,15,40
+26,19,Transaminasas hepáticas,Química,ALT (GPT),U/L,4,36
+27,19,Transaminasas hepáticas,Química,AST (GOT),U/L,8,40
+28,20,Fosfatasa alcalina,Química,Fosfatasa alcalina,U/L,40,130
+29,21,Gamma glutamil transferasa,Química,GGT,U/L,5,55
+30,22,Bilirrubina sérica,Química,Bilirrubina total,mg/dL,0.3,1.2
+31,22,Bilirrubina sérica,Química,Bilirrubina directa,mg/dL,0.0,0.3
+32,23,Proteínas séricas,Química,Proteínas totales,g/dL,6.4,8.3
+33,23,Proteínas séricas,Química,Albúmina,g/dL,3.4,5.4
+34,23,Proteínas séricas,Química,Globulinas,g/dL,2.0,3.5
+35,24,Perfil lipídico,Química,Colesterol total,mg/dL,0,199
+36,24,Perfil lipídico,Química,Colesterol HDL,mg/dL,40,90
+37,24,Perfil lipídico,Química,Colesterol LDL calculado,mg/dL,0,129
+38,24,Perfil lipídico,Química,Triglicéridos,mg/dL,0,149
+39,25,Hemoglobina glicosilada,Endocrino,HbA1c,%,4.0,5.6
+40,26,TSH,Endocrino,TSH,µUI/mL,0.4,4.0
+41,27,Tiroxina libre (T4L),Endocrino,T4 libre,ng/dL,0.8,1.8
+42,28,Triyodotironina libre (T3L),Endocrino,T3 libre,pg/mL,2.0,4.4
+43,29,Tiempo de protrombina,Coagulación,TP,seg,11,15
+44,29,Tiempo de protrombina,Coagulación,INR,relación,0.8,1.2
+45,30,Tiempo de tromboplastina parcial,Coagulación,TTPa,seg,25,35
+46,31,Fibrinógeno,Coagulación,Fibrinógeno,mg/dL,200,400
+47,32,Parcial de orina,Orina,Densidad urinaria,relación,1.005,1.030
+48,32,Parcial de orina,Orina,pH urinario,unidades,5.0,8.0
+49,32,Parcial de orina,Orina,Proteínas,cualitativo,0,0
+50,32,Parcial de orina,Orina,Glucosa,cualitativo,0,0
+51,32,Parcial de orina,Orina,Cetonas,cualitativo,0,0
+52,32,Parcial de orina,Orina,Eritrocitos,campo/HPF,0,3
+53,32,Parcial de orina,Orina,Leucocitos,campo/HPF,0,5
+54,32,Parcial de orina,Orina,Cilindros hialinos,campo/LPF,0,1
+55,33,Proteína C reactiva,Inmunología,Proteína C reactiva,mg/L,0,10
+56,34,Factor reumatoide,Inmunología,Factor reumatoide,UI/mL,0,20
+57,35,Ferritina,Química,Ferritina,ng/mL,15,200
+58,36,Vitamina B12,Química,Vitamina B12,pg/mL,200,900
+59,37,Ácido fólico,Química,Ácido fólico,ng/mL,3,17
+60,38,CK total,Química,Creatinfosfoquinasa,U/L,30,200
+61,39,Lactato deshidrogenasa,Química,LDH,U/L,100,250
+62,40,Amilasa sérica,Química,Amilasa,U/L,25,115
+63,41,Lipasa sérica,Química,Lipasa,U/L,13,60
+64,42,Gasometría arterial,Gasometría,pH arterial,unidades,7.35,7.45
+65,42,Gasometría arterial,Gasometría,PaO2,mmHg,80,100
+66,42,Gasometría arterial,Gasometría,PaCO2,mmHg,35,45
+67,42,Gasometría arterial,Gasometría,HCO3-,mmol/L,22,26
+68,43,Clearance de creatinina,Nefrología,Clearance creatinina,mL/min,75,125
+69,44,Electroforesis de proteínas,Hematología,Albúmina,g/dL,3.4,5.4
+70,44,Electroforesis de proteínas,Hematología,Globulinas alfa-1,g/dL,0.1,0.4
+71,44,Electroforesis de proteínas,Hematología,Globulinas alfa-2,g/dL,0.4,0.8
+72,44,Electroforesis de proteínas,Hematología,Globulinas beta,g/dL,0.6,1.2
+73,44,Electroforesis de proteínas,Hematología,Globulinas gamma,g/dL,0.7,1.6
+74,45,Procalcitonina,Infecciosas,Procalcitonina,ng/mL,0,0.1
+75,46,Dímero D,Coagulación,Dímero D,µg/L,0,500
+76,47,Calcio iónico,Química,Calcio iónico,mmol/L,1.14,1.28
+77,48,Osmolaridad sérica,Química,Osmolaridad sérica,mOsm/kg,275,295
+78,49,Osmolaridad urinaria,Orina,Osmolaridad urinaria,mOsm/kg,300,900
+79,50,Relación Albúmina/Creatinina urinaria,Nefrología,Relación ACR,mg/g,0,30

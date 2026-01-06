@@ -533,25 +533,12 @@ def administrar_medicamentos_paciente(paciente_id):
 
 # ---------- 6) BUSCAR PACIENTE JSON ----------
 
-@enfermeria_bp.route('/buscar_paciente_json/<identificacion>')
-@login_required
-def buscar_paciente_json(identificacion):
-    paciente = Paciente.query.filter_by(numero=identificacion).first()
-    if paciente:
-        return jsonify({
-            'nombre': paciente.nombre,
-            'apellido': getattr(paciente, 'apellido', ''),
-            'paciente_id': paciente.id
-        })
-    return jsonify({'error': 'Paciente no encontrado'}), 404
-
-
-# ---------- 7) EXPORTAR PDF ----------
 @enfermeria_bp.route('/paciente/<int:paciente_id>/exportar_pdf', methods=['GET'])
 @login_required
 def exportar_pdf(paciente_id):
     paciente = Paciente.query.get_or_404(paciente_id)
     
+    # 📌 Registros de enfermería
     registros = (
         RegistroEnfermeria.query
         .filter_by(paciente_id=paciente_id)
@@ -559,7 +546,7 @@ def exportar_pdf(paciente_id):
         .all()
     )
 
-    # 🔥 TU CÓDIGO ORIGINAL - Signos vitales
+    # 🔥 Signos vitales
     for r in registros:
         try:
             sv = json.loads(r.signos_vitales or '{}')
@@ -567,15 +554,16 @@ def exportar_pdf(paciente_id):
                 sv = {}
         except Exception:
             sv = {}
+
         r.signos_vitales_dict = {
-            "ta": sv.get("ta") or "",
-            "fc": sv.get("fc") or "",
-            "fr": sv.get("fr") or "",
+            "ta":   sv.get("ta")   or "",
+            "fc":   sv.get("fc")   or "",
+            "fr":   sv.get("fr")   or "",
             "temp": sv.get("temp") or "",
-            "so2": sv.get("so2") or ""
+            "so2":  sv.get("so2")  or ""
         }
 
-        # 🔥 TU CÓDIGO ORIGINAL - Balance líquidos
+        # 💧 Balance de líquidos
         try:
             bl = json.loads(r.balance_liquidos or '{}')
             if not isinstance(bl, dict):
@@ -584,32 +572,62 @@ def exportar_pdf(paciente_id):
             bl = {"administrados": {}, "eliminados": {}}
         r.balance_liquidos_dict = bl
 
-    # 🔥 TU CÓDIGO ORIGINAL - Medicamentos
+    # 💊 Medicamentos administrados
     medicamentos = []
     if registros:
         registro_ids = [r.id for r in registros]
-        medicamentos = db.session.query(AdministracionMedicamento).filter(
-            AdministracionMedicamento.registro.has(RegistroEnfermeria.id.in_(registro_ids))
-        ).order_by(
-            AdministracionMedicamento.hora_administracion.desc()
-        ).limit(50).all()
+        medicamentos = (
+            db.session.query(AdministracionMedicamento)
+            .filter(
+                AdministracionMedicamento.registro.has(
+                    RegistroEnfermeria.id.in_(registro_ids)
+                )
+            )
+            .order_by(AdministracionMedicamento.hora_administracion.desc())
+            .limit(50)
+            .all()
+        )
+
+    # 🧴 INSUMOS: mismos datos que usas en registros_paciente
+    insumos_paciente = InsumoPaciente.query.filter_by(paciente_id=paciente_id).all()
+
+    insumos_registrados = []
+    for ip in insumos_paciente:
+        insumo = InsumoMedico.query.get(ip.insumo_id)
+        if not insumo:
+            continue
+
+        usado = ip.cantidad_usada or 0
+        pendiente = (ip.cantidad or 0) - usado
+
+        if usado > 0:
+            insumos_registrados.append({
+                'nombre': insumo.nombre,
+                'solicitado': ip.cantidad,
+                'usado': usado,
+                'pendiente': pendiente,
+                'fecha_uso': ip.fecha_uso.strftime('%d/%m %H:%M')
+                            if getattr(ip, 'fecha_uso', None) else 'Sin fecha',
+                'observaciones': getattr(ip, 'observaciones', '') or 'Sin observaciones'
+            })
 
     data = {
         'paciente': paciente,
         'registros': registros,
         'medicamentos': medicamentos,
+        'insumos_registrados': insumos_registrados,  # ← NUEVO
         'fecha_generacion': datetime.now().strftime('%d/%m/%Y %H:%M')
     }
-    
+
     html_string = render_template('enfermeria/pdf_enfermeria_limpio.html', **data)
-    
+
     from weasyprint import HTML
     from io import BytesIO
-    
+
     pdf_file = BytesIO()
     HTML(string=html_string).write_pdf(pdf_file)
     pdf_file.seek(0)
-    
+
     return send_file(
         pdf_file,
         as_attachment=True,
@@ -823,6 +841,8 @@ def editar_administracion_medicamento(admin_id):
 @login_required
 def registros_paciente(paciente_id):
     paciente = Paciente.query.get_or_404(paciente_id)
+
+    # 📌 Registros de enfermería
     registros = (
         RegistroEnfermeria.query
         .filter_by(paciente_id=paciente_id)
@@ -830,7 +850,7 @@ def registros_paciente(paciente_id):
         .all()
     )
 
-    # TU CÓDIGO ORIGINAL - Signos vitales
+    # 🔥 Signos vitales (dict seguro)
     for r in registros:
         try:
             sv = json.loads(r.signos_vitales or '{}')
@@ -838,56 +858,69 @@ def registros_paciente(paciente_id):
                 sv = {}
         except Exception:
             sv = {}
+
         r.signos_vitales_dict = {
-            "ta": sv.get("ta") or "",
-            "fc": sv.get("fc") or "",
-            "fr": sv.get("fr") or "",
+            "ta":   sv.get("ta")   or "",
+            "fc":   sv.get("fc")   or "",
+            "fr":   sv.get("fr")   or "",
             "temp": sv.get("temp") or "",
-            "so2": sv.get("so2") or ""
+            "so2":  sv.get("so2")  or ""
         }
 
-        # TU CÓDIGO ORIGINAL - Balance líquidos
+        # 💧 Balance de líquidos (dict seguro)
         try:
             bl = json.loads(r.balance_liquidos or '{}')
             if not isinstance(bl, dict):
                 bl = {"administrados": {}, "eliminados": {}}
         except Exception:
             bl = {"administrados": {}, "eliminados": {}}
+
         r.balance_liquidos_dict = bl
 
-    # TU CÓDIGO ORIGINAL - Medicamentos
+    # 💊 Medicamentos administrados ligados a estos registros
     medicamentos = []
     if registros:
         registro_ids = [r.id for r in registros]
-        medicamentos = db.session.query(AdministracionMedicamento).filter(
-            AdministracionMedicamento.registro.has(RegistroEnfermeria.id.in_(registro_ids))
-        ).order_by(
-            AdministracionMedicamento.hora_administracion.desc()
-        ).limit(50).all()
+        medicamentos = (
+            db.session.query(AdministracionMedicamento)
+            .filter(
+                AdministracionMedicamento.registro.has(
+                    RegistroEnfermeria.id.in_(registro_ids)
+                )
+            )
+            .order_by(AdministracionMedicamento.hora_administracion.desc())
+            .limit(50)
+            .all()
+        )
 
-    # ← NUEVO: INSUMOS REGISTRADOS Y PENDIENTES (CORREGIDO indentación)
+    # 🧴 INSUMOS: usados y pendientes para este paciente
     insumos_paciente = InsumoPaciente.query.filter_by(paciente_id=paciente_id).all()
-    insumos_registrados = []
-    insumos_pendientes = []
+
+    insumos_registrados = []  # usados > 0
+    insumos_pendientes = []   # usados == 0
+
     for ip in insumos_paciente:
         insumo = InsumoMedico.query.get(ip.insumo_id)
         if not insumo:
             continue
-        
-        usado = ip.cantidad_usada or 0  # ← SAFE
-        
-        if usado > 0:  # USADOS
+
+        usado = ip.cantidad_usada or 0
+        pendiente = (ip.cantidad or 0) - usado
+
+        if usado > 0:
             insumos_registrados.append({
                 'nombre': insumo.nombre,
                 'solicitado': ip.cantidad,
                 'usado': usado,
-                'fecha_uso': ip.fecha_uso.strftime('%d/%m %H:%M') if ip.fecha_uso else 'Sin fecha',
+                'pendiente': pendiente,
+                'fecha_uso': ip.fecha_uso.strftime('%d/%m %H:%M') if getattr(ip, 'fecha_uso', None) else 'Sin fecha',
                 'observaciones': getattr(ip, 'observaciones', '') or 'Sin observaciones'
             })
-        else:  # PENDIENTES
+        else:
             insumos_pendientes.append({
                 'nombre': insumo.nombre,
                 'solicitado': ip.cantidad,
+                'pendiente': pendiente,
                 'fecha_solicitud': 'Pendiente'
             })
 
@@ -896,8 +929,8 @@ def registros_paciente(paciente_id):
         paciente=paciente,
         registros=registros,
         medicamentos=medicamentos,
-        insumos_registrados=insumos_registrados,    # ← NUEVO
-        insumos_pendientes=insumos_pendientes       # ← NUEVO
+        insumos_registrados=insumos_registrados,
+        insumos_pendientes=insumos_pendientes
     )
 
 @enfermeria_bp.route('/debug/ordenes/<int:historia_id>')
@@ -1093,7 +1126,7 @@ def solicitar_insumos(paciente_id):
                 cantidad = max(1, int(cantidad_str))
                 
                 insumo = InsumoMedico.query.get(insumo_id)
-                if insumo and insumo.stock_actual >= cantidad:
+                if insumo and (insumo.stock_actual or 0) >= cantidad:
                     insumo_paciente = InsumoPaciente(
                         paciente_id=paciente_id,
                         insumo_id=insumo_id,
@@ -1102,30 +1135,41 @@ def solicitar_insumos(paciente_id):
                     )
                     db.session.add(insumo_paciente)
                     db.session.commit()
-                    flash(f'✅ {insumo.nombre} SOLICITADO', 'success')
+                    flash(f'✅ {insumo.nombre} SOLICITADO ({cantidad} uds)', 'success')
                 else:
                     flash('❌ Stock insuficiente', 'danger')
-            except Exception:
-                flash('❌ Datos inválidos', 'danger')
+            except Exception as e:
+                flash(f'❌ Error: {str(e)[:50]}', 'danger')
         return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
     
-    # GET: insumos disponibles
     insumos_json = InsumoMedico.query.filter(
         InsumoMedico.stock_actual > 0
     ).limit(50).all()
     
-    # GET: TODOS los solicitados para ese paciente
+    # QUERY AGRUPADA
+    insumos_agrupados = db.session.query(
+        InsumoPaciente.insumo_id,
+        InsumoMedico.nombre,
+        func.sum(InsumoPaciente.cantidad).label('total_solicitado'),
+        func.coalesce(func.sum(InsumoPaciente.cantidad_usada), 0).label('total_usado'),
+        func.max(InsumoPaciente.id).label('ultimo_id'),
+        func.count(InsumoPaciente.id).label('num_solicitudes')
+    ).outerjoin(InsumoMedico, InsumoPaciente.insumo_id == InsumoMedico.id)\
+     .filter(InsumoPaciente.paciente_id == paciente_id)\
+     .group_by(InsumoPaciente.insumo_id, InsumoMedico.nombre)\
+     .having(func.coalesce(func.sum(InsumoPaciente.cantidad_usada), 0) < func.sum(InsumoPaciente.cantidad))\
+     .order_by(func.max(InsumoPaciente.id).desc()).all()
+    
     insumos_solicitados = []
-    for ip in InsumoPaciente.query.filter_by(paciente_id=paciente_id).all():
-        insumo = InsumoMedico.query.get(ip.insumo_id)
-        if insumo:
-            insumos_solicitados.append({
-                'id': ip.id,
-                'nombre': insumo.nombre,
-                'cantidad': ip.cantidad,
-                'usado': ip.cantidad_usada or 0,
-                'stock_actual': insumo.stock_actual or 0
-            })
+    for row in insumos_agrupados:
+        insumos_solicitados.append({
+            'nombre': row.nombre,
+            'total_solicitado': float(row.total_solicitado),
+            'total_usado': float(row.total_usado),
+            'pendiente': float(row.total_solicitado - row.total_usado),
+            'ultimo_id': row.ultimo_id,  # ← Solo ID
+            'num_solicitudes': int(row.num_solicitudes)
+        })
     
     return render_template(
         'enfermeria/solicitar_insumos.html',
@@ -1210,3 +1254,44 @@ def registrar_insumos(paciente_id):
         paciente=paciente,
         insumos=insumos_reg
     )
+
+# ✅ 1. LIMPIAR TODOS pendientes
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/limpiar_insumos', methods=['POST'])
+@login_required
+def limpiar_insumos_solicitados(paciente_id):
+    paciente = Paciente.query.get_or_404(paciente_id)
+    eliminados = InsumoPaciente.query.filter(
+        InsumoPaciente.paciente_id == paciente_id,
+        InsumoPaciente.cantidad_usada < InsumoPaciente.cantidad
+    ).delete()
+    db.session.commit()
+    flash(f'🗑️ {eliminados} insumos eliminados', 'success')
+    return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
+
+# ✅ 2. ELIMINAR UNO (usa insumo_paciente_id real de BD)
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/eliminar_insumo/<int:insumo_paciente_id>', methods=['POST'])
+@login_required
+def eliminar_insumo_individual(paciente_id, insumo_paciente_id):
+    ip = InsumoPaciente.query.get_or_404(insumo_paciente_id)
+    if ip.paciente_id != paciente_id or ip.cantidad_usada > 0:
+        flash('❌ No autorizado o ya usado', 'danger')
+        return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
+    
+    nombre = InsumoMedico.query.get(ip.insumo_id).nombre
+    db.session.delete(ip)
+    db.session.commit()
+    flash(f'🗑️ {nombre} eliminado', 'success')
+    return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
+
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/reset_insumos', methods=['POST'])
+@login_required
+def reset_insumos_paciente(paciente_id):
+    paciente = Paciente.query.get_or_404(paciente_id)
+
+    eliminados = InsumoPaciente.query.filter(
+        InsumoPaciente.paciente_id == paciente_id
+    ).delete()  # ← sin filtrar por cantidad_usada
+
+    db.session.commit()
+    flash(f'🧹 {eliminados} solicitudes de insumos eliminadas (HARD RESET)', 'warning')
+    return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
