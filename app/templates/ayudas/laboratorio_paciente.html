@@ -2,21 +2,370 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Laboratorio - {{ historia.paciente.nombre if historia.paciente else '' }}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background:#f8f9fa; }
-    h1 { text-align:center; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { border:1px solid #ccc; padding:4px 6px; font-size:12px; }
-    th { background:#e9ecef; }
-    .section { margin-bottom:25px; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.06); }
-    .btn { padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
-    .btn-primary { background:#007bff; color:#fff; }
-    .btn-primary:hover { background:#0069d9; }
-    .badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; }
-    .badge-solicitado { background:#ffc107; color:#212529; }
-    .badge-procesado { background:#28a745; color:#fff; }
-    input[type="text"] { width:100%; box-sizing:border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #f8f9fa;
+      padding: 20px;
+      color: #212529;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #1a1a1a;
+      font-size: 28px;
+    }
+
+    h3 {
+      color: #1a1a1a;
+      font-size: 18px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    p {
+      margin-bottom: 8px;
+      color: #555;
+      font-size: 14px;
+    }
+
+    /* Tabla */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: #fff;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    th, td {
+      border: 1px solid #dee2e6;
+      padding: 12px;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    th {
+      background: #e9ecef;
+      font-weight: 600;
+      color: #212529;
+    }
+
+    tr:hover {
+      background: #f9fafb;
+    }
+
+    /* Secciones */
+    .section {
+      margin-bottom: 25px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e9ecef;
+    }
+
+    /* Botones principales */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: #007AFF;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: #0056b3;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:active {
+      background: #003d82;
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary:active {
+      background: #4e555b;
+      transform: translateY(0);
+    }
+
+    .btn-full-width {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Botón editar (lápiz) */
+    .btn-edit {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 6px 8px;
+      transition: opacity 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-edit:hover {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-solicitado {
+      background: #ffc107;
+      color: #212529;
+    }
+
+    .badge-procesado {
+      background: #28a745;
+      color: #fff;
+    }
+
+    /* Inputs */
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease;
+    }
+
+    input[type="text"]:read-only {
+      background: #f5f5f5;
+      cursor: not-allowed;
+      color: #666;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #007AFF;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    /* Celda de resultado con botón editar */
+    .resultado-cell {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .resultado-input {
+      flex: 1;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #1a1a1a;
+    }
+
+    .modal-body {
+      margin-bottom: 20px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease;
+    }
+
+    .modal-input:focus {
+      outline: none;
+      border-color: #007AFF;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    /* Alertas */
+    .alert {
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .alert.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert.warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+
+    .alert.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    /* Contenedor de botones finales */
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    @media (min-width: 768px) {
+      .button-container {
+        flex-direction: row;
+        gap: 15px;
+      }
+
+      .btn-full-width {
+        width: auto;
+        flex: 1;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 767px) {
+      body {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .section {
+        padding: 15px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -32,7 +381,7 @@
   {% endif %}
 {% endwith %}
 
-<form method="POST">
+<form method="POST" id="formResultados">
   {% for bloque in items_con_parametros %}
     {% set item = bloque.item %}
     {% set examen = bloque.examen %}
@@ -70,9 +419,20 @@
                 <td>{{ p.valor_ref_min if p.valor_ref_min is not none else '' }}</td>
                 <td>{{ p.valor_ref_max if p.valor_ref_max is not none else '' }}</td>
                 <td>
-                  <input type="text"
-                         name="resultado[{{ p.id }}]"
-                         value="{{ res.valor if res else '' }}">
+                  <div class="resultado-cell">
+                    <input type="text"
+                           class="resultado-input"
+                           id="resultado-{{ p.id }}"
+                           value="{{ res.valor if res else '' }}"
+                           readonly>
+                    <button type="button"
+                            class="btn-edit"
+                            data-param-id="{{ p.id }}"
+                            data-param-name="{{ p.nombre }}"
+                            data-param-valor="{{ res.valor if res else '' }}">
+                      ✏️
+                    </button>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -86,10 +446,101 @@
     <p>No hay exámenes de laboratorio solicitados para esta historia clínica.</p>
   {% endfor %}
 
+  <!-- Contenedor de botones mejorado -->
   {% if items_con_parametros and items_con_parametros|length > 0 %}
-    <button type="submit" class="btn btn-primary">Guardar resultados</button>
+    <div class="button-container">
+      <button type="submit" class="btn btn-primary btn-full-width">
+        💾 Guardar todos los resultados
+      </button>
+      <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}"
+         class="btn btn-secondary btn-full-width">
+        🔙 Volver al menú de ayudas
+      </a>
+    </div>
   {% endif %}
 </form>
+
+<!-- MODAL PARA EDITAR RESULTADO -->
+<div id="modalEditar" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">Editar resultado</div>
+    <div class="modal-body">
+      <p id="modalParametro" style="margin-bottom: 15px;"><strong>Parámetro:</strong></p>
+      <input type="text"
+             id="modalInput"
+             class="modal-input"
+             placeholder="Ingrese el valor">
+    </div>
+    <div class="modal-buttons">
+      <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="guardarResultado()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let parametroActual = null;
+
+function abrirModal(parametroId, nombreParametro, valorActual) {
+  parametroActual = parametroId;
+  document.getElementById('modalParametro').textContent = 'Parámetro: ' + nombreParametro;
+  document.getElementById('modalInput').value = valorActual;
+  document.getElementById('modalEditar').classList.add('active');
+  document.getElementById('modalInput').focus();
+}
+
+function cerrarModal() {
+  document.getElementById('modalEditar').classList.remove('active');
+  parametroActual = null;
+}
+
+function guardarResultado() {
+  if (parametroActual === null) return;
+
+  const nuevoValor = document.getElementById('modalInput').value;
+  document.getElementById('resultado-' + parametroActual).value = nuevoValor;
+  cerrarModal();
+  alert('Resultado actualizado. Haz clic en "Guardar todos los resultados" para guardar en la BD.');
+}
+
+// Event listeners para botones lápiz usando event delegation
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('btn-edit')) {
+    const parametroId = e.target.getAttribute('data-param-id');
+    const nombreParametro = e.target.getAttribute('data-param-name');
+    const valorActual = e.target.getAttribute('data-param-valor');
+    abrirModal(parametroId, nombreParametro, valorActual);
+  }
+});
+
+// Cerrar modal al presionar ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    cerrarModal();
+  }
+});
+
+// Cerrar modal al hacer click fuera
+document.getElementById('modalEditar').addEventListener('click', function(e) {
+  if (e.target === this) {
+    cerrarModal();
+  }
+});
+
+// Al enviar el formulario, incluir los valores actualizados
+document.getElementById('formResultados').addEventListener('submit', function(e) {
+  const inputs = document.querySelectorAll('.resultado-input');
+
+  inputs.forEach((input) => {
+    const parametroId = input.id.replace('resultado-', '');
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'resultado[' + parametroId + ']';
+    hidden.value = input.value;
+    this.appendChild(hidden);
+  });
+});
+</script>
 
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Listado de Pacientes</title>
+    <title>Pacientes</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -28,7 +28,7 @@
     </style>
 </head>
 <body>
-    <h1>📋 Listado de Pacientes</h1>
+    <h1>📋 Pacientes</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -40,22 +40,19 @@
 
     <!-- TARJETA DE ACCIONES SUPERIORES -->
     <div class="card">
-        <div class="card-title">Acciones rápidas</div>
+        <div class="card-title">NUEVOS INGRESOS</div>
         <div class="btn-grid">
-            <a href="{{ url_for('pacientes.crear') }}" class="btn btn-success">
-                ➕ Nuevo Paciente Simple
-            </a>
             <a href="{{ url_for('pacientes.nuevo_ingreso') }}" class="btn btn-primary">
-                🆕 Nuevo Paciente + Historia de Ingreso
+                🆕 Nuevo Ingreso
             </a>
             <a href="{{ url_for('pacientes.carga_masiva') }}" class="btn btn-outline">
-                📥 Carga masiva Pacientes + Historias
+                📥 Carga Masiva
             </a>
         </div>
     </div>
 
     <!-- BUSCADOR -->
-    <h2>Buscar historias por paciente</h2>
+    <h2>Buscar</h2>
     <div class="search-box">
       <label for="pacienteBusqueda">Paciente</label>
       <input type="text" id="pacienteBusqueda"
@@ -126,6 +123,7 @@
 
             data.forEach(h => {
               const tr = document.createElement('tr');
+              const urlVerHistoria = `/pacientes/historias/libro/${h.id}/ver`;
               const urlPdf = urlPdfBase.replace('__ID__', h.id);
               const urlOrden = urlOrdenBase.replace('__ID__', h.id);
 
@@ -136,8 +134,9 @@
                 <td>${h.fecha_registro}</td>
                 <td>${h.regimen}</td>
                 <td>
-                  <a class="btn btn-sm btn-primary" href="${urlPdf}" target="_blank">Ver PDF</a>
-                  <a class="btn btn-sm btn-success" href="${urlOrden}">Añadir Orden Médica</a>
+                  <a class="btn btn-sm btn-info" href="${urlVerHistoria}">👁️ Ver Historia</a>
+                  <a class="btn btn-sm btn-primary" href="${urlPdf}" target="_blank">📄 Ver PDF</a>
+                  <a class="btn btn-sm btn-success" href="${urlOrden}">➕ Añadir Orden Médica</a>
                 </td>`;
               tbody.appendChild(tr);
             });

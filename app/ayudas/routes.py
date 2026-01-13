@@ -7,7 +7,7 @@ from app.ayudas import ayudas_bp
 from app.models import (
     Paciente, HistoriaClinica, AyudaDiagnostica,
     CatLaboratorioExamen, CatLaboratorioParametro,
-    LabSolicitud, LabResultado
+    LabSolicitud, LabResultado, OrdenMedica, OrdenLaboratorioItem
 )
 from app.extensions import db
 from datetime import datetime
@@ -20,28 +20,26 @@ from io import BytesIO
 from app.utils.fechas import ahora_bogota
 
 
-UPLOAD_SUBFOLDER = os.path.join('uploads', 'ayudas')  # carpeta relativa
+UPLOAD_SUBFOLDER = os.path.join('uploads', 'ayudas')
+
 
 def guardar_archivo_ayuda(historia_id: int, tipo: str, file_storage):
-    """
-    Guarda un archivo para una ayuda diagnóstica y devuelve la ruta RELATIVA
-    desde la raíz del proyecto (para guardar en BD).
-    """
+    """Guarda un archivo para una ayuda diagnóstica y devuelve la ruta RELATIVA."""
     if not file_storage or not file_storage.filename:
         return None
 
     nombre_seguro = secure_filename(file_storage.filename)
-
-    # <root>/uploads/ayudas/<tipo>/<historia_id>/
     base_dir = os.path.join(current_app.root_path, UPLOAD_SUBFOLDER, tipo, str(historia_id))
     os.makedirs(base_dir, exist_ok=True)
 
     ruta_absoluta = os.path.join(base_dir, nombre_seguro)
     file_storage.save(ruta_absoluta)
 
-    # ruta relativa, ej: uploads/ayudas/imagenes/10/archivo.png
     ruta_relativa = os.path.relpath(ruta_absoluta, current_app.root_path)
     return ruta_relativa
+
+
+# ========== RUTAS PRINCIPALES ==========
 
 @ayudas_bp.route('/')
 @login_required
@@ -51,6 +49,7 @@ def inicio_ayudas():
         'ayudas/buscar_paciente.html',
         current_user=current_user
     )
+
 
 @ayudas_bp.route('/buscar', methods=['POST'])
 @login_required
@@ -77,8 +76,7 @@ def buscar_paciente():
 
     if len(pacientes) == 1:
         paciente_unico = pacientes[0]
-        return redirect(url_for('ayudas.seleccionar_historia',
-                                paciente_id=paciente_unico.id))
+        return redirect(url_for('ayudas.seleccionar_historia', paciente_id=paciente_unico.id))
 
     return render_template(
         'ayudas/buscar_resultados.html',
@@ -86,6 +84,7 @@ def buscar_paciente():
         criterio=criterio,
         current_user=current_user
     )
+
 
 @ayudas_bp.route('/paciente/<int:paciente_id>/historias')
 @login_required
@@ -110,6 +109,7 @@ def seleccionar_historia(paciente_id):
         current_user=current_user
     )
 
+
 @ayudas_bp.route('/historia/<int:historia_id>/ayudas')
 @login_required
 def menu_ayudas_historia(historia_id):
@@ -124,7 +124,8 @@ def menu_ayudas_historia(historia_id):
         current_user=current_user
     )
 
-# ------- SUBMÓDULO: IMÁGENES (sin carga masiva, con observaciones) -------
+
+# ========== SUBMÓDULO: IMÁGENES ==========
 
 @ayudas_bp.route('/historia/<int:historia_id>/imagenes', methods=['GET', 'POST'])
 @login_required
@@ -133,7 +134,6 @@ def ayudas_imagenes(historia_id):
     paciente = historia.paciente
 
     if request.method == 'POST':
-        # Crear nuevo estudio con observaciones
         if 'nombre_examen' in request.form:
             nombre = request.form.get('nombre_examen', '').strip()
             fecha_str = request.form.get('fecha_resultado', '').strip()
@@ -156,7 +156,6 @@ def ayudas_imagenes(historia_id):
             else:
                 flash('El nombre del examen es obligatorio.', 'warning')
 
-        # Actualizar solo observaciones de un registro existente
         elif 'ayuda_id' in request.form:
             ayuda_id = request.form.get('ayuda_id', type=int)
             ayuda = AyudaDiagnostica.query.get_or_404(ayuda_id)
@@ -179,7 +178,8 @@ def ayudas_imagenes(historia_id):
         current_user=current_user
     )
 
-# ------- SUBMÓDULO: LABORATORIOS AVANZADO -------
+
+# ========== SUBMÓDULO: LABORATORIOS ==========
 
 @ayudas_bp.route('/historia/<int:historia_id>/laboratorios', methods=['GET'])
 @login_required
@@ -203,6 +203,7 @@ def ayudas_laboratorios(historia_id):
         current_user=current_user
     )
 
+
 @ayudas_bp.route('/historia/<int:historia_id>/laboratorios/nueva', methods=['GET', 'POST'])
 @login_required
 def nueva_solicitud_laboratorio(historia_id):
@@ -222,16 +223,14 @@ def nueva_solicitud_laboratorio(historia_id):
 
         examen = CatLaboratorioExamen.query.get_or_404(examen_id)
 
-        # encabezado
         solicitud = LabSolicitud(
             historia_id=historia.id,
-            fecha_solicitud = ahora_bogota(),
+            fecha_solicitud=ahora_bogota(),
             estado='pendiente'
         )
         db.session.add(solicitud)
-        db.session.flush()  # para solicitud.id
+        db.session.flush()
 
-        # resultados vacíos por cada parámetro
         for param in examen.parametros:
             resultado = LabResultado(
                 solicitud_id=solicitud.id,
@@ -253,6 +252,7 @@ def nueva_solicitud_laboratorio(historia_id):
         current_user=current_user
     )
 
+
 @ayudas_bp.route('/laboratorio/solicitud/<int:solicitud_id>', methods=['GET', 'POST'])
 @login_required
 def ver_solicitud_laboratorio(solicitud_id):
@@ -261,7 +261,6 @@ def ver_solicitud_laboratorio(solicitud_id):
     historia = solicitud.historia
     paciente = historia.paciente
 
-    # Guardar valores de parámetros
     if request.method == 'POST':
         for res in solicitud.resultados:
             campo_valor = f"valor_{res.id}"
@@ -271,7 +270,6 @@ def ver_solicitud_laboratorio(solicitud_id):
                 nuevo_valor = request.form.get(campo_valor, '').strip()
                 res.valor = nuevo_valor
 
-                # marcar fuera de rango si hay referencia y valor numérico
                 try:
                     v = float(nuevo_valor.replace(',', '.'))
                     p = res.parametro
@@ -289,7 +287,6 @@ def ver_solicitud_laboratorio(solicitud_id):
         flash('Resultados de laboratorio actualizados.', 'success')
         return redirect(url_for('ayudas.ver_solicitud_laboratorio', solicitud_id=solicitud.id))
 
-    # listado de solicitudes de esta historia (para la columna izquierda)
     solicitudes_historia = (
         LabSolicitud.query
         .filter_by(historia_id=historia.id)
@@ -306,19 +303,16 @@ def ver_solicitud_laboratorio(solicitud_id):
         current_user=current_user
     )
 
-# ------- CARGA MASIVA LABORATORIOS + PLANTILLA -------
+
+# ========== CARGA MASIVA LABORATORIOS ==========
 
 @ayudas_bp.route('/laboratorios/descargar-plantilla', methods=['GET'])
 @login_required
 def descargar_plantilla_laboratorios():
-    """Descarga una plantilla Excel para carga masiva de exámenes, 
-    prellenada con pacientes y con catálogos de exámenes/parámetros."""
-
+    """Descarga una plantilla Excel para carga masiva de exámenes."""
     wb = openpyxl.Workbook()
 
-    # =========================
     # HOJA PRINCIPAL: EXÁMENES
-    # =========================
     ws = wb.active
     ws.title = "Examenes"
 
@@ -341,7 +335,6 @@ def descargar_plantilla_laboratorios():
         'LABORATORIO'
     ]
 
-    # Encabezados
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num)
         cell.value = header
@@ -350,17 +343,14 @@ def descargar_plantilla_laboratorios():
         cell.alignment = center_align
         cell.border = thin_border
 
-    # Pacientes existentes prellenados
     pacientes = Paciente.query.order_by(Paciente.numero).all()
     row_num = 2
     for p in pacientes:
-        # Columna A: NUMERO_PACIENTE
         cell = ws.cell(row=row_num, column=1)
         cell.value = p.numero
         cell.border = thin_border
         cell.alignment = Alignment(horizontal="left", vertical="center")
 
-        # Otras columnas vacías pero formateadas
         for col_num in range(2, len(headers) + 1):
             c = ws.cell(row=row_num, column=col_num)
             c.border = thin_border
@@ -368,17 +358,14 @@ def descargar_plantilla_laboratorios():
 
         row_num += 1
 
-    # Ancho de columnas
-    ws.column_dimensions['A'].width = 18  # NUMERO_PACIENTE
-    ws.column_dimensions['B'].width = 25  # EXAMEN
-    ws.column_dimensions['C'].width = 25  # PARAMETRO
-    ws.column_dimensions['D'].width = 15  # VALOR
-    ws.column_dimensions['E'].width = 20  # FECHA_RESULTADO
-    ws.column_dimensions['F'].width = 20  # LABORATORIO
+    ws.column_dimensions['A'].width = 18
+    ws.column_dimensions['B'].width = 25
+    ws.column_dimensions['C'].width = 25
+    ws.column_dimensions['D'].width = 15
+    ws.column_dimensions['E'].width = 20
+    ws.column_dimensions['F'].width = 20
 
-    # =======================
     # HOJA DE INSTRUCCIONES
-    # =======================
     ws_instruc = wb.create_sheet("Instrucciones", 0)
     ws_instruc.column_dimensions['A'].width = 90
 
@@ -421,9 +408,7 @@ def descargar_plantilla_laboratorios():
         if idx == 1:
             cell.font = Font(bold=True, size=12)
 
-    # ==========================
     # HOJA DE CATÁLOGOS
-    # ==========================
     ws_cat = wb.create_sheet("Catalogos", 2)
 
     ws_cat['A1'] = "EXAMEN_ID"
@@ -463,9 +448,6 @@ def descargar_plantilla_laboratorios():
             ws_cat.cell(row=row, column=3, value=ex.grupo or "")
             row += 1
 
-    # ==========================
-    # DEVOLVER ARCHIVO
-    # ==========================
     output = BytesIO()
     wb.save(output)
     output.seek(0)
@@ -476,6 +458,7 @@ def descargar_plantilla_laboratorios():
         as_attachment=True,
         download_name='Plantilla_Carga_Masiva_Laboratorios.xlsx'
     )
+
 
 @ayudas_bp.route('/laboratorios/carga_masiva', methods=['GET', 'POST'])
 @login_required
@@ -503,7 +486,7 @@ def carga_masiva_laboratorios():
 
             creados = 0
             errores = []
-            
+
             for idx, row in df.iterrows():
                 try:
                     num_pac = str(row['NUMERO_PACIENTE']).strip()
@@ -511,16 +494,15 @@ def carga_masiva_laboratorios():
                     nombre_param = str(row['PARAMETRO']).strip()
                     valor = str(row['VALOR']).strip()
                     lab_nombre = str(row.get('LABORATORIO') or '').strip()
-                    
+
                     fecha_res = None
                     if pd.notna(row.get('FECHA_RESULTADO')):
                         try:
-                            # Soportar DD/MM/YYYY
                             fecha_res = pd.to_datetime(row['FECHA_RESULTADO'], format='%d/%m/%Y').to_pydatetime()
                         except Exception:
                             try:
                                 fecha_res = pd.to_datetime(row['FECHA_RESULTADO']).to_pydatetime()
-                            except Exception as e:
+                            except Exception:
                                 errores.append(f"Fila {idx+2}: Fecha inválida")
                                 continue
 
@@ -556,7 +538,6 @@ def carga_masiva_laboratorios():
                         errores.append(f"Fila {idx+2}: Parámetro '{nombre_param}' no encontrado")
                         continue
 
-                    # Buscar solicitud existente
                     solicitud = None
                     if fecha_res:
                         solicitud = (
@@ -568,7 +549,7 @@ def carga_masiva_laboratorios():
                             .filter(db.func.date(LabSolicitud.fecha_solicitud) == fecha_res.date())
                             .first()
                         )
-                    
+
                     if not solicitud:
                         solicitud = LabSolicitud(
                             historia_id=historia.id,
@@ -594,12 +575,12 @@ def carga_masiva_laboratorios():
                     continue
 
             db.session.commit()
-            
+
             msg = f'Se cargaron {creados} resultados de laboratorio.'
             if errores:
                 msg += f' Se encontraron {len(errores)} errores.'
                 flash(msg, 'warning')
-                for error in errores[:10]:  # Mostrar máximo 10 errores
+                for error in errores[:10]:
                     flash(f"  • {error}", 'warning')
             else:
                 flash(msg, 'success')
@@ -612,7 +593,8 @@ def carga_masiva_laboratorios():
 
     return render_template('laboratorio/carga_masiva.html', current_user=current_user)
 
-# ------- AUTOCOMPLETE PACIENTES -------
+
+# ========== UTILIDADES ==========
 
 @ayudas_bp.route('/autocomplete')
 @login_required
@@ -636,7 +618,6 @@ def autocomplete_pacientes():
     ]
     return jsonify(datos)
 
-# ------- VER ARCHIVO DE AYUDA -------
 
 @ayudas_bp.route('/archivo/<int:ayuda_id>')
 @login_required
@@ -646,7 +627,6 @@ def ver_archivo_ayuda(ayuda_id):
         flash('Este examen no tiene archivo asociado.', 'warning')
         if ayuda.tipo == 'imagen':
             return redirect(url_for('ayudas.ayudas_imagenes', historia_id=ayuda.historia_id))
-        # cualquier otro tipo vuelve a laboratorios
         return redirect(url_for('ayudas.ayudas_laboratorios', historia_id=ayuda.historia_id))
 
     ruta_absoluta = os.path.join(current_app.root_path, ayuda.archivo)
@@ -654,7 +634,6 @@ def ver_archivo_ayuda(ayuda_id):
 
     return send_from_directory(directorio, nombre)
 
-# ------- ELIMINAR AYUDA -------
 
 @ayudas_bp.route('/eliminar/<int:ayuda_id>', methods=['POST'])
 @login_required
@@ -663,7 +642,6 @@ def eliminar_ayuda(ayuda_id):
     historia_id = ayuda.historia_id
     tipo = ayuda.tipo
 
-    # Si tiene archivo, borrar también del disco (opcional)
     if ayuda.archivo:
         ruta_abs = os.path.join(current_app.root_path, ayuda.archivo)
         if os.path.exists(ruta_abs):
@@ -680,251 +658,18 @@ def eliminar_ayuda(ayuda_id):
         return redirect(url_for('ayudas.ayudas_imagenes', historia_id=historia_id))
     return redirect(url_for('ayudas.ayudas_laboratorios', historia_id=historia_id))
 
-@ayudas_bp.route('/laboratorios/gestion-catalogo', methods=['GET', 'POST'])
-@login_required
-def gestion_catalogo_laboratorios():
-    """Ver y gestionar el catálogo de exámenes de laboratorio."""
-    if request.method == 'POST':
-        nombre = request.form.get('nombre', '').strip()
-        grupo = request.form.get('grupo', '').strip()
-        if not nombre:
-            flash('El nombre del examen es obligatorio.', 'warning')
-            return redirect(url_for('ayudas.gestion_catalogo_laboratorios'))
-
-        examen = CatLaboratorioExamen(
-            nombre=nombre,
-            grupo=grupo or None,
-            activo=True
-        )
-        db.session.add(examen)
-        db.session.commit()
-        flash('Examen agregado al catálogo.', 'success')
-        return redirect(url_for('ayudas.gestion_catalogo_laboratorios'))
-
-    examenes = (
-        CatLaboratorioExamen.query
-        .order_by(CatLaboratorioExamen.grupo, CatLaboratorioExamen.nombre)
-        .all()
-    )
-    return render_template(
-        'ayudas/gestion_catalogo_laboratorios.html',
-        examenes=examenes,
-        current_user=current_user
-    )
-
-@ayudas_bp.route('/laboratorios/catalogo/<int:examen_id>/toggle', methods=['POST'])
-@login_required
-def toggle_examen_catalogo(examen_id):
-    """Activa o desactiva un examen del catálogo."""
-    examen = CatLaboratorioExamen.query.get_or_404(examen_id)
-    examen.activo = not bool(examen.activo)
-    db.session.commit()
-    flash('Estado del examen actualizado.', 'success')
-    return redirect(url_for('ayudas.gestion_catalogo_laboratorios'))
-
-@ayudas_bp.route('/laboratorios/cargar-catalogo', methods=['POST'])
-@login_required
-def cargar_catalogo_laboratorios():
-    """Carga masiva del catálogo de exámenes (EXAMEN/GRUPO/PARAMETRO/UNIDAD/RANGOS)."""
-    file = request.files.get('archivo_catalogo')
-    if not file or file.filename == '':
-        flash('Debe seleccionar un archivo de catálogo.', 'warning')
-        return redirect(url_for('ayudas.gestion_catalogo_laboratorios'))
-
-    try:
-        # Leer Excel o CSV
-        if file.filename.endswith(('.xlsx', '.xls')):
-            df = pd.read_excel(file)
-        else:
-            df = pd.read_csv(file)
-
-        columnas_req = ['EXAMEN', 'GRUPO', 'PARAMETRO', 'UNIDAD', 'VALOR_REF_MIN', 'VALOR_REF_MAX', 'TIPO']
-        faltantes = [c for c in columnas_req if c not in df.columns]
-        if faltantes:
-            flash(f'Columnas faltantes en catálogo: {", ".join(faltantes)}', 'danger')
-            return redirect(url_for('ayudas.gestion_catalogo_laboratorios'))
-
-        # Opcional: borrar catálogo anterior
-        # CatLaboratorioParametro.query.delete()
-        # CatLaboratorioExamen.query.delete()
-        # db.session.commit()
-
-        creados_examenes = 0
-        creados_parametros = 0
-
-        for _, row in df.iterrows():
-            nombre_exam = str(row['EXAMEN']).strip()
-            grupo = str(row['GRUPO']).strip() if not pd.isna(row['GRUPO']) else None
-            nombre_param = str(row['PARAMETRO']).strip()
-            unidad = str(row['UNIDAD']).strip() if not pd.isna(row['UNIDAD']) else None
-            ref_min = row['VALOR_REF_MIN'] if not pd.isna(row['VALOR_REF_MIN']) else None
-            ref_max = row['VALOR_REF_MAX'] if not pd.isna(row['VALOR_REF_MAX']) else None
-
-            if not nombre_exam:
-                continue
-
-            # Buscar o crear examen
-            examen = CatLaboratorioExamen.query.filter_by(nombre=nombre_exam).first()
-            if not examen:
-                examen = CatLaboratorioExamen(
-                    nombre=nombre_exam,
-                    grupo=grupo,
-                    activo=True
-                )
-                db.session.add(examen)
-                db.session.flush()
-                creados_examenes += 1
-            else:
-                # Actualizar grupo si cambió
-                examen.grupo = grupo
-
-            # Parámetro (puede haber filas sin parámetro)
-            if nombre_param and nombre_param.lower() != 'nan':
-                param = CatLaboratorioParametro.query.filter_by(
-                    examen_id=examen.id,
-                    nombre=nombre_param
-                ).first()
-                if not param:
-                    param = CatLaboratorioParametro(
-                        examen_id=examen.id,
-                        nombre=nombre_param,
-                        unidad=unidad,
-                        valor_ref_min=ref_min,
-                        valor_ref_max=ref_max
-                    )
-                    db.session.add(param)
-                    creados_parametros += 1
-                else:
-                    param.unidad = unidad
-                    param.valor_ref_min = ref_min
-                    param.valor_ref_max = ref_max
-
-        db.session.commit()
-        flash(f'Catálogo actualizado. Exámenes nuevos: {creados_examenes}, parámetros nuevos: {creados_parametros}.', 'success')
-
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error procesando catálogo: {e}', 'danger')
-
-    return redirect(url_for('ayudas.gestion_catalogo_laboratorios'))
-
-
-@ayudas_bp.route('/laboratorios/descargar-catalogo-template', methods=['GET'])
-@login_required
-def descargar_catalogo_template():
-    """Genera y descarga el catálogo completo de laboratorios."""
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Catalogo"
-
-    # Estilos
-    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF", size=11)
-    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    left_align = Alignment(horizontal="left", vertical="center")
-    thin_border = Border(
-        left=Side(style='thin'), right=Side(style='thin'),
-        top=Side(style='thin'), bottom=Side(style='thin')
-    )
-
-    # Encabezados
-    headers = ['EXAMEN', 'GRUPO', 'PARAMETRO', 'UNIDAD', 'VALOR_REF_MIN', 'VALOR_REF_MAX', 'TIPO']
-    for col_num, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_num, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = center_align
-        cell.border = thin_border
-
-    # Datos del catálogo (41 parámetros comunes)
-    catalogo = [
-        # HEMOGRAMA
-        ('Hemograma Completo', 'Hematología', 'Hemoglobina', 'g/dL', 12.0, 16.0, 'Numérico'),
-        ('Hemograma Completo', 'Hematología', 'Hematocrito', '%', 36.0, 46.0, 'Numérico'),
-        ('Hemograma Completo', 'Hematología', 'Glóbulos Rojos', 'x10^6/µL', 4.2, 5.4, 'Numérico'),
-        ('Hemograma Completo', 'Hematología', 'Glóbulos Blancos', 'x10^3/µL', 4.5, 11.0, 'Numérico'),
-        ('Hemograma Completo', 'Hematología', 'Plaquetas', 'x10^3/µL', 150, 400, 'Numérico'),
-        # GLUCOSA
-        ('Glucosa en Ayunas', 'Química Sanguínea', 'Glucosa', 'mg/dL', 70.0, 100.0, 'Numérico'),
-        # LIPIDOGRAMA
-        ('Lipidograma', 'Química Sanguínea', 'Colesterol Total', 'mg/dL', None, 200.0, 'Numérico'),
-        ('Lipidograma', 'Química Sanguínea', 'LDL', 'mg/dL', None, 130.0, 'Numérico'),
-        ('Lipidograma', 'Química Sanguínea', 'HDL', 'mg/dL', 40.0, None, 'Numérico'),
-        ('Lipidograma', 'Química Sanguínea', 'Triglicéridos', 'mg/dL', None, 150.0, 'Numérico'),
-        # HEPÁTICO
-        ('Función Hepática', 'Química Sanguínea', 'AST', 'U/L', 10.0, 40.0, 'Numérico'),
-        ('Función Hepática', 'Química Sanguínea', 'ALT', 'U/L', 7.0, 56.0, 'Numérico'),
-        ('Función Hepática', 'Química Sanguínea', 'Bilirrubina Total', 'mg/dL', 0.1, 1.2, 'Numérico'),
-        # RENAL
-        ('Función Renal', 'Química Sanguínea', 'Creatinina', 'mg/dL', 0.7, 1.3, 'Numérico'),
-        ('Función Renal', 'Química Sanguínea', 'Urea', 'mg/dL', 7.0, 20.0, 'Numérico'),
-        # ORINA
-        ('Parcial de Orina', 'Uroanálisis', 'Color', None, None, None, 'Cualitativo'),
-        ('Parcial de Orina', 'Uroanálisis', 'Aspecto', None, None, None, 'Cualitativo'),
-        ('Parcial de Orina', 'Uroanálisis', 'Densidad', 'g/mL', 1.005, 1.030, 'Numérico'),
-        ('Parcial de Orina', 'Uroanálisis', 'pH', None, 5.0, 9.0, 'Numérico'),
-        ('Parcial de Orina', 'Uroanálisis', 'Nitritos', None, None, None, 'Cualitativo'),
-        ('Parcial de Orina', 'Uroanálisis', 'Leucocitos', 'Leuco/µL', 0, 5, 'Numérico'),
-        ('Parcial de Orina', 'Uroanálisis', 'Proteínas', 'mg/dL', None, 10.0, 'Numérico'),
-        ('Parcial de Orina', 'Uroanálisis', 'Glucosa', 'mg/dL', None, 10.0, 'Numérico'),
-        ('Parcial de Orina', 'Uroanálisis', 'Cetonas', None, None, None, 'Cualitativo'),
-        ('Parcial de Orina', 'Uroanálisis', 'Sangre', 'Ery/µL', 0, 5, 'Numérico'),
-        ('Parcial de Orina', 'Uroanálisis', 'Sedimento', None, None, None, 'Cualitativo'),
-        # COAGULACIÓN
-        ('Coagulación', 'Coagulación', 'PT', 'seg', 11.0, 13.5, 'Numérico'),
-        ('Coagulación', 'Coagulación', 'INR', None, 0.8, 1.1, 'Numérico'),
-        # TIROIDES
-        ('Perfil Tiroideo', 'Endocrinología', 'TSH', 'mIU/L', 0.4, 4.0, 'Numérico'),
-        ('Perfil Tiroideo', 'Endocrinología', 'T4 Libre', 'ng/dL', 0.8, 1.8, 'Numérico'),
-    ]
-
-    row = 2
-    for examen, grupo, parametro, unidad, ref_min, ref_max, tipo in catalogo:
-        ws.cell(row=row, column=1, value=examen).border = thin_border
-        ws.cell(row=row, column=1).alignment = left_align
-        ws.cell(row=row, column=2, value=grupo).border = thin_border
-        ws.cell(row=row, column=2).alignment = left_align
-        ws.cell(row=row, column=3, value=parametro).border = thin_border
-        ws.cell(row=row, column=3).alignment = left_align
-        ws.cell(row=row, column=4, value=unidad).border = thin_border
-        ws.cell(row=row, column=4).alignment = left_align
-        if ref_min: ws.cell(row=row, column=5, value=ref_min).border = thin_border
-        if ref_max: ws.cell(row=row, column=6, value=ref_max).border = thin_border
-        ws.cell(row=row, column=7, value=tipo).border = thin_border
-        row += 1
-
-    # Anchos
-    for col, width in zip('ABCDEFG', [25,18,28,15,15,15,12]):
-        ws.column_dimensions[col].width = width
-
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    
-    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                     as_attachment=True, download_name='Catalogo_Laboratorios.xlsx')
-
-from app.models import (
-    HistoriaClinica,
-    OrdenMedica,
-    OrdenLaboratorioItem,
-    CatLaboratorioParametro,
-    LabResultado,
-)
 
 @ayudas_bp.route('/laboratorio/paciente/<int:historia_id>', methods=['GET', 'POST'])
 @login_required
 def laboratorio_paciente(historia_id):
     historia = HistoriaClinica.query.get_or_404(historia_id)
 
-    # 1) Órdenes médicas de esta historia
     ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
     orden_ids = [o.id for o in ordenes]
 
     if not orden_ids:
         items = []
     else:
-        # 2) Ítems de lab (exámenes) asociados a esas órdenes
         items = (
             db.session.query(OrdenLaboratorioItem)
             .filter(OrdenLaboratorioItem.orden_id.in_(orden_ids))
@@ -932,21 +677,18 @@ def laboratorio_paciente(historia_id):
             .all()
         )
 
-    # 3) Asegurarse de que exista una LabSolicitud para esta historia
     solicitud = LabSolicitud.query.filter_by(historia_id=historia_id).first()
     if solicitud is None:
         solicitud = LabSolicitud(historia_id=historia_id)
         db.session.add(solicitud)
         db.session.commit()
 
-    # POST: guardar solo valor de resultados
     if request.method == 'POST':
         form = request.form
-        # campos tipo: resultado[parametro_id]
         for key, value in form.items():
             if not key.startswith('resultado['):
                 continue
-            # resultado[123]
+
             try:
                 parametro_id = int(key[len('resultado['):-1])
             except ValueError:
@@ -960,7 +702,6 @@ def laboratorio_paciente(historia_id):
             ).first()
 
             if res is None and valor:
-                # Necesitamos saber a qué examen pertenece este parámetro
                 param = CatLaboratorioParametro.query.get(parametro_id)
                 if not param:
                     continue
@@ -979,16 +720,14 @@ def laboratorio_paciente(historia_id):
         flash('Resultados de laboratorio actualizados', 'success')
         return redirect(url_for('ayudas.laboratorio_paciente', historia_id=historia_id))
 
-    # 4) Armar datos para la plantilla: por cada examen solicitado, sus parámetros y resultados
     items_con_parametros = []
-    # cache de resultados por parametro_id
     resultados_existentes = {
         r.parametro_id: r
         for r in LabResultado.query.filter_by(solicitud_id=solicitud.id).all()
     }
 
     for it in items:
-        examen = it.examen  # CatLaboratorioExamen
+        examen = it.examen
         parametros = (
             CatLaboratorioParametro.query
             .filter_by(examen_id=it.examen_id)
@@ -1000,7 +739,7 @@ def laboratorio_paciente(historia_id):
             'item': it,
             'examen': examen,
             'parametros': parametros,
-            'resultados': resultados_existentes,  # mismo dict para todos
+            'resultados': resultados_existentes,
         })
 
     return render_template(
@@ -1009,4 +748,3 @@ def laboratorio_paciente(historia_id):
         items_con_parametros=items_con_parametros,
         solicitud=solicitud,
     )
-

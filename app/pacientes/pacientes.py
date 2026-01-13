@@ -20,25 +20,22 @@ from app.models import (
 from app.utils.fechas import ahora_bogota
 from app.utils.fechas import tz_bogota
 from weasyprint import HTML
-from datetime import timedelta
+from datetime import datetime
 
 pacientes_bp = Blueprint('pacientes', __name__, url_prefix='/pacientes')
 
-@pacientes_bp.route('/listar')
+@pacientes_bp.route('/listar', methods=['GET'], endpoint='listar')
 @login_required
 def listar():
-    pacientes = Paciente.query.order_by(Paciente.nombre.asc()).all()
-    historias = (
-        HistoriaClinica.query
-        .order_by(HistoriaClinica.fecha_registro.desc())
-        .all()
-    )
+    """Lista todos los pacientes con paginación"""
+    page = request.args.get('page', 1, type=int)
+    pacientes = Paciente.query.paginate(page=page, per_page=10)
+    
     return render_template(
         'pacientes/listar.html',
-        pacientes=pacientes,
-        historias=historias
+        pacientes=pacientes.items,
+        pagination=pacientes
     )
-
 
 @pacientes_bp.route('/crear', methods=['GET', 'POST'], endpoint='crear')
 @login_required
@@ -73,12 +70,13 @@ def crear():
             return redirect(url_for('pacientes.crear'))
 
     return render_template('pacientes/crear_simple.html')
+
 @pacientes_bp.route('/pacientes/nuevo_ingreso', methods=['GET', 'POST'])
 def nuevo_ingreso():
     if request.method == 'POST':
         form = request.form
 
-        # 1. Crear paciente
+        # ==================== 1. CREAR PACIENTE ====================
         paciente = Paciente(
             nombre=form.get('nombre'),
             numero=form.get('numero'),
@@ -87,7 +85,7 @@ def nuevo_ingreso():
         db.session.add(paciente)
         db.session.flush()
 
-        # 2. Armar lista de medicamentos (con vía)
+        # ==================== 2. PROCESAR MEDICAMENTOS ====================
         medicamentos = []
         idx = 0
         while True:
@@ -107,17 +105,27 @@ def nuevo_ingreso():
                 })
             idx += 1
 
-        # 3. Crear historia clínica
+        # ==================== 3. CONVERTIR FECHA ====================
+        fecha_nac = None
+        if form.get('fecha_nacimiento'):
+            try:
+                fecha_nac = datetime.strptime(
+                    form.get('fecha_nacimiento'),
+                    '%Y-%m-%d'
+                ).date()
+            except:
+                fecha_nac = None
+
+        # ==================== 4. CREAR HISTORIA CLÍNICA ====================
         historia = HistoriaClinica(
             paciente_id=paciente.id,
             tipo_historia='ingreso',
             numero_historia=form.get('numero_historia'),
             numero_ingreso=form.get('numero_ingreso'),
             nombre_paciente=form.get('nombre'),
-            cama=form.get('cama'),
             cie10_principal=form.get('cie10_principal'),
             servicio_hospitalario=form.get('servicio_hospitalario'),
-            fecha_nacimiento=form.get('fecha_nacimiento') or None,
+            fecha_nacimiento=fecha_nac,
             edad=form.get('edad') or None,
             direccion=form.get('direccion'),
             procedencia=form.get('procedencia'),
@@ -131,17 +139,50 @@ def nuevo_ingreso():
             direccion_responsable=form.get('direccion_responsable'),
             nombre_padre=form.get('nombre_padre'),
             nombre_madre=form.get('nombre_madre'),
+            fecha_registro=ahora_bogota().date(),
             subjetivos=form.get('subjetivos'),
             objetivos=form.get('objetivos'),
             analisis=form.get('analisis'),
             plan=form.get('plan'),
-            medicamentos_json=json.dumps(medicamentos, ensure_ascii=False)
+            medicamentos_json=json.dumps(medicamentos, ensure_ascii=False),
+            
+            # ==================== ANTECEDENTES NUEVOS ====================
+            antecedentes_medicos=form.get('antecedentes_medicos', '').strip() or None,
+            antecedentes_farmacologicos=form.get('antecedentes_farmacologicos', '').strip() or None,
+            antecedentes_quirurgicos=form.get('antecedentes_quirurgicos', '').strip() or None,
+            antecedentes_toxicos=form.get('antecedentes_toxicos', '').strip() or None,
+            antecedentes_alergicos=form.get('antecedentes_alergicos', '').strip() or None,
+            antecedentes_ginecobstetricos=form.get('antecedentes_ginecobstetricos', '').strip() or None,
+            
+            # ==================== RIESGOS NUEVOS ====================
+            riesgos_general=form.get('riesgos_general', '').strip() or None,
+            riesgo_caidas_dowton=form.get('riesgo_caidas_dowton', '').strip() or None,
+            riesgo_upp_braden=form.get('riesgo_upp_braden', '').strip() or None,
+            riesgos_evaluacion=form.get('riesgos_evaluacion', '').strip() or None,
+            
+            # ==================== ALERGIAS NUEVAS ====================
+            tiene_alergias=form.get('tiene_alergias', 'no').strip(),
+            descripcion_alergias=form.get('descripcion_alergias', '').strip() or None,
         )
         db.session.add(historia)
+        db.session.flush()
 
-        # 4. Signos vitales
+        # ==================== 5. VALIDAR ALERGIAS ====================
+        if historia.tiene_alergias == 'si' and not historia.descripcion_alergias:
+            db.session.rollback()
+            flash('❌ Debe describir las alergias si marca SÍ tiene alergias.', 'danger')
+            diagnosticos_cie10 = DiagnosticoCIE10.query.order_by(DiagnosticoCIE10.codigo).all()
+            medicamentos_catalogo = Medicamento.query.order_by(Medicamento.nombre).all()
+            return render_template(
+                'pacientes/nuevo_ingreso.html',
+                diagnosticos_cie10=diagnosticos_cie10,
+                medicamentos_catalogo=medicamentos_catalogo,
+                form_data=form
+            )
+
+        # ==================== 6. SIGNOS VITALES ====================
         sv = SignosVitales(
-            historia_clinica=historia,
+            historia_id=historia.id,
             tension_arterial=form.get('tension_arterial'),
             frecuencia_cardiaca=form.get('frecuencia_cardiaca'),
             frecuencia_respiratoria=form.get('frecuencia_respiratoria'),
@@ -157,17 +198,19 @@ def nuevo_ingreso():
         db.session.add(sv)
 
         db.session.commit()
-        flash('Paciente e historia de ingreso creados correctamente', 'success')
+        flash('✅ Paciente e historia de ingreso creados correctamente con antecedentes, riesgos y alergias', 'success')
         return redirect(url_for('pacientes.listar'))
 
-    # GET: cargar catálogos
+        # GET: cargar catálogos
     diagnosticos_cie10 = DiagnosticoCIE10.query.order_by(DiagnosticoCIE10.codigo).all()
     medicamentos_catalogo = Medicamento.query.order_by(Medicamento.nombre).all()
     return render_template(
         'pacientes/nuevo_ingreso.html',
         diagnosticos_cie10=diagnosticos_cie10,
-        medicamentos_catalogo=medicamentos_catalogo
+        medicamentos_catalogo=medicamentos_catalogo,
+        historia=None  # ✅ NUEVA LÍNEA
     )
+
 
 @pacientes_bp.route('/eliminar/<int:paciente_id>', methods=['POST'], endpoint='eliminar')
 @login_required
@@ -191,7 +234,6 @@ def eliminar_paciente(paciente_id):
 
     return redirect(url_for('pacientes.listar'))
 
-
 @pacientes_bp.route('/carga-masiva', methods=['GET', 'POST'], endpoint='carga_masiva')
 @login_required
 def carga_masiva():
@@ -205,7 +247,6 @@ def carga_masiva():
             if file.filename.endswith('.xlsx') or file.filename.endswith('.xls'):
                 df = pd.read_excel(file)
             else:
-                # Importante: indicar el separador correcto si usas ';'
                 df = pd.read_csv(file, sep=';', encoding='utf-8')
 
             columnas_requeridas = [
@@ -264,7 +305,25 @@ def carga_masiva():
                         objetivos=str(row.get('OBJETIVOS', '') or '').strip(),
                         analisis=str(row.get('ANALISIS', '') or '').strip(),
                         plan=str(row.get('PLAN', '') or '').strip(),
-                        fecha_registro=ahora_bogota()
+                        fecha_registro=ahora_bogota(),
+                        
+                        # Nuevos campos - ANTECEDENTES (de carga masiva si existen)
+                        antecedentes_medicos=str(row.get('ANTECEDENTES_MEDICOS', '') or '').strip() or None,
+                        antecedentes_farmacologicos=str(row.get('ANTECEDENTES_FARM', '') or '').strip() or None,
+                        antecedentes_quirurgicos=str(row.get('ANTECEDENTES_QUIRURG', '') or '').strip() or None,
+                        antecedentes_toxicos=str(row.get('ANTECEDENTES_TOXICOS', '') or '').strip() or None,
+                        antecedentes_alergicos=str(row.get('ANTECEDENTES_ALERGICOS', '') or '').strip() or None,
+                        antecedentes_ginecobstetricos=str(row.get('ANTECEDENTES_GINEC', '') or '').strip() or None,
+                        
+                        # Nuevos campos - RIESGOS (de carga masiva si existen)
+                        riesgos_general=str(row.get('RIESGOS_GENERAL', '') or '').strip() or None,
+                        riesgo_caidas_dowton=str(row.get('RIESGO_CAIDAS', '') or '').strip() or None,
+                        riesgo_upp_braden=str(row.get('RIESGO_UPP', '') or '').strip() or None,
+                        riesgos_evaluacion=str(row.get('RIESGOS_EVAL', '') or '').strip() or None,
+                        
+                        # Nuevos campos - ALERGIAS (de carga masiva si existen)
+                        tiene_alergias=str(row.get('TIENE_ALERGIAS', 'no') or 'no').strip().lower(),
+                        descripcion_alergias=str(row.get('DESC_ALERGIAS', '') or '').strip() or None,
                     )
                     db.session.add(historia)
                     db.session.flush()
@@ -312,18 +371,27 @@ def carga_masiva():
 
     return render_template('pacientes/carga_masiva.html')
 
-
 @pacientes_bp.route('/descargar-plantilla', endpoint='descargar_plantilla')
 @login_required
 def descargar_plantilla():
     try:
         columnas = [
+            # Datos básicos
             'NOMBRE', 'NUMERO', 'CAMA', 'NUMERO_HC', 'NUMERO_INGRESO',
             'SERVICIO', 'REGIMEN', 'ESTRATO', 'PLAN_BENEFICIOS',
             'ACUDIENTE', 'TEL_ACUDIENTE', 'DIR_ACUDIENTE', 'PADRE', 'MADRE',
+            # SOAP
             'SUBJETIVOS', 'OBJETIVOS', 'ANALISIS', 'PLAN',
+            # Signos vitales
             'TENSION_ARTERIAL', 'FC', 'FR', 'TEMPERATURA', 'SATUROMETRIA',
-            'ESCALA_DOLOR', 'FIO2', 'GLUCOMETRIA', 'PESO', 'TALLA', 'IMC'
+            'ESCALA_DOLOR', 'FIO2', 'GLUCOMETRIA', 'PESO', 'TALLA', 'IMC',
+            # NUEVOS - ANTECEDENTES
+            'ANTECEDENTES_MEDICOS', 'ANTECEDENTES_FARM', 'ANTECEDENTES_QUIRURG',
+            'ANTECEDENTES_TOXICOS', 'ANTECEDENTES_ALERGICOS', 'ANTECEDENTES_GINEC',
+            # NUEVOS - RIESGOS
+            'RIESGOS_GENERAL', 'RIESGO_CAIDAS', 'RIESGO_UPP', 'RIESGOS_EVAL',
+            # NUEVOS - ALERGIAS
+            'TIENE_ALERGIAS', 'DESC_ALERGIAS'
         ]
 
         data = [{
@@ -355,7 +423,20 @@ def descargar_plantilla():
             'GLUCOMETRIA': 120,
             'PESO': 25,
             'TALLA': 1.20,
-            'IMC': 17.4
+            'IMC': 17.4,
+            # NUEVOS
+            'ANTECEDENTES_MEDICOS': 'Diabetes tipo 2, Hipertensión',
+            'ANTECEDENTES_FARM': 'Metformina 500mg c/8h, Losartán 50mg c/día',
+            'ANTECEDENTES_QUIRURG': 'Apendicectomía 2015',
+            'ANTECEDENTES_TOXICOS': 'Tabaco negado, Alcohol negado',
+            'ANTECEDENTES_ALERGICOS': 'Penicilina (rash)',
+            'ANTECEDENTES_GINEC': 'G2P2C0, ciclos regulares',
+            'RIESGOS_GENERAL': 'Riesgo de caídas por edad',
+            'RIESGO_CAIDAS': 'Bajo (0-2)',
+            'RIESGO_UPP': 'Moderado (15-18)',
+            'RIESGOS_EVAL': 'Vigilancia continua, cambios posición',
+            'TIENE_ALERGIAS': 'si',
+            'DESC_ALERGIAS': 'Penicilina → rash generalizado'
         }]
 
         df = pd.DataFrame(data, columns=columnas)
@@ -365,14 +446,14 @@ def descargar_plantilla():
         df.to_csv(text_buffer, sep=';', index=False)
         csv_text = text_buffer.getvalue()
 
-        # Añadir BOM UTF‑8 para que Excel detecte bien acentos
+        # Añadir BOM UTF‑8
         bom = '\ufeff'
         csv_bytes = (bom + csv_text).encode('utf-8')
 
         return send_file(
             io.BytesIO(csv_bytes),
             as_attachment=True,
-            download_name='plantilla_carga_pacientes.csv',
+            download_name='plantilla_carga_pacientes_completa.csv',
             mimetype='text/csv; charset=utf-8'
         )
     except Exception as e:
@@ -541,6 +622,7 @@ def pdf_libro_historia(historia_id):
         ordenes_con_meds=ordenes_con_meds,
         diag_cie10=diag_cie10,
         medicamentos=medicamentos,
+        now=datetime.now(),
     )
     pdf = HTML(string=html).write_pdf()
     response = make_response(pdf)
@@ -549,4 +631,76 @@ def pdf_libro_historia(historia_id):
         f'inline; filename=libro_historia_{historia_id}.pdf'
     )
     return response
+
+@pacientes_bp.route('/historias/libro/<int:historia_id>/ver')
+@login_required
+def ver_historia(historia_id):
+    """Visualiza la historia clínica sin convertir a PDF"""
+    historia = HistoriaClinica.query.get_or_404(historia_id)
+    ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
+
+    fecha_ingreso_local = None
+    if historia.fecha_registro:
+        fecha_ingreso_local = historia.fecha_registro
+
+    diag_cie10 = None
+    if historia.cie10_principal:
+        diag_cie10 = DiagnosticoCIE10.query.filter_by(
+            codigo=historia.cie10_principal
+        ).first()
+
+    medicamentos = []
+    if getattr(historia, 'medicamentos_json', None):
+        try:
+            medicamentos = json.loads(historia.medicamentos_json)
+        except ValueError:
+            medicamentos = []
+
+    # Medicamentos y exámenes por cada orden médica
+    ordenes_con_meds = []
+    for orden in ordenes:
+        meds_orden = []
+        if orden.medicamentos_json:
+            try:
+                meds_orden = json.loads(orden.medicamentos_json)
+            except ValueError:
+                meds_orden = []
+
+        ordenes_con_meds.append({
+            'orden': orden,
+            'medicamentos': meds_orden,
+            'examenes_lab': orden.examenes_lab
+        })
+
+    return render_template(
+        'pacientes/ver_historia.html',
+        historia=historia,
+        fecha_ingreso_local=fecha_ingreso_local,
+        ordenes_con_meds=ordenes_con_meds,
+        diag_cie10=diag_cie10,
+        medicamentos=medicamentos,
+    )
+
+@pacientes_bp.route('/api/medicamentos/buscar', methods=['GET'])
+@login_required
+def buscar_medicamentos():
+    """API para buscar medicamentos por nombre o código"""
+    q = request.args.get('q', '').lower()
+    
+    if len(q) < 2:
+        return jsonify([])
+    
+    medicamentos = Medicamento.query.filter(
+        db.or_(
+            Medicamento.codigo.ilike(f'%{q}%'),
+            Medicamento.nombre.ilike(f'%{q}%')
+        )
+    ).limit(10).all()
+    
+    return jsonify([{
+        'codigo': m.codigo,
+        'nombre': m.nombre if m.nombre else f'Medicamento {m.codigo}',
+        'dosis': m.dosis,
+        'frecuencia': m.frecuencia
+    } for m in medicamentos])
 

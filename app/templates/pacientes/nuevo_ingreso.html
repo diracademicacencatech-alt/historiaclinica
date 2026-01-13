@@ -37,7 +37,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>🆕 Nuevo Paciente + Historia de Ingreso</h1>
+    <h1>Historia Clinica de Ingreso</h1>
     <p style="text-align: center; color: #666; margin-bottom: 30px;">
       Crea un nuevo paciente y su historia clínica de ingreso en un solo formulario
     </p>
@@ -107,15 +107,32 @@
       <div class="section">
         <h3>📋 Datos Personales</h3>
         <div class="row">
-          <div class="col">
-            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
-            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
-          </div>
-          <div class="col">
-            <label for="edad">Edad</label>
-            <input type="number" id="edad" name="edad" min="0" max="120">
-          </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label for="fecha_nacimiento">📅 Fecha de Nacimiento *</label>
+            <input 
+                type="date" 
+                id="fecha_nacimiento"
+                name="fecha_nacimiento" 
+                class="form-control" 
+                required
+            >
         </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label for="edad">🎂 Edad (años) *</label>
+            <input 
+                type="number" 
+                id="edad"
+                name="edad" 
+                class="form-control bg-light" 
+                readonly
+                min="0" max="150"
+            >
+        </div>
+    </div>
+</div>
         <div class="row">
           <div class="col">
             <label for="sexo">Sexo</label>
@@ -134,7 +151,13 @@
         <label for="direccion">Dirección</label>
         <input type="text" id="direccion" name="direccion">
         <label for="procedencia">Procedencia</label>
-        <input type="text" id="procedencia" name="procedencia">
+        <div style="position: relative;">
+    <input type="text" class="form-control" id="procedencia" name="procedencia" 
+           placeholder="Escribe inicial de ciudad (P = Popayán)..." required autocomplete="off">
+    <div id="procedencia_lista" class="dropdown-menu w-100" 
+         style="display: none; max-height: 200px; overflow-y: auto; position: absolute; top: 100%; left: 0; right: 0; margin-top: -1px; z-index: 1000;">
+    </div>
+</div>
       </div>
 
       <!-- SECCIÓN 4: AFILIACIÓN + ACUDIENTE -->
@@ -189,6 +212,245 @@
           </div>
         </div>
       </div>
+      <!-- ==================== SECCIÓN ANTECEDENTES ==================== -->
+<div class="card mt-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="fas fa-history"></i> ANTECEDENTES
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Antecedentes Médicos -->
+        <div class="form-group mb-3">
+            <label for="antecedentes_medicos" class="form-label">
+                <strong>Médicos:</strong>
+            </label>
+            <textarea 
+                id="antecedentes_medicos" 
+                name="antecedentes_medicos" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: Diabetes tipo 2, Hipertensión, Asma, Artritis, etc.">{{ historia.antecedentes_medicos or '' }}</textarea>
+            <small class="text-muted">Describa enfermedades previas, diagnósticos crónicos</small>
+        </div>
+
+        <!-- Antecedentes Farmacológicos -->
+        <div class="form-group mb-3">
+            <label for="antecedentes_farmacologicos" class="form-label">
+                <strong>Farmacológicos:</strong>
+            </label>
+            <textarea 
+                id="antecedentes_farmacologicos" 
+                name="antecedentes_farmacologicos" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: Metformina 500mg c/8h, Enalapril 10mg c/día, Atorvastatina 20mg c/noche">{{ historia.antecedentes_farmacologicos or '' }}</textarea>
+            <small class="text-muted">Medicamentos habituales, dosis y frecuencia</small>
+        </div>
+
+        <!-- Antecedentes Quirúrgicos -->
+        <div class="form-group mb-3">
+            <label for="antecedentes_quirurgicos" class="form-label">
+                <strong>Quirúrgicos:</strong>
+            </label>
+            <textarea 
+                id="antecedentes_quirurgicos" 
+                name="antecedentes_quirurgicos" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: Apendicectomía (2015), Cesárea (2018), Colecistectomía, sin complicaciones">{{ historia.antecedentes_quirurgicos or '' }}</textarea>
+            <small class="text-muted">Cirugías previas, fechas aproximadas, complicaciones</small>
+        </div>
+
+        <!-- Antecedentes Tóxicos -->
+        <div class="form-group mb-3">
+            <label for="antecedentes_toxicos" class="form-label">
+                <strong>Tóxicos:</strong>
+            </label>
+            <textarea 
+                id="antecedentes_toxicos" 
+                name="antecedentes_toxicos" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: Tabaco (20 cig/día), Alcohol (fines de semana), Drogas (negado)">{{ historia.antecedentes_toxicos or '' }}</textarea>
+            <small class="text-muted">Consumo de tabaco, alcohol, drogas u otros hábitos tóxicos</small>
+        </div>
+
+        <!-- Antecedentes Alérgicos -->
+        <div class="form-group mb-3">
+            <label for="antecedentes_alergicos" class="form-label">
+                <strong>Alérgicos:</strong>
+            </label>
+            <textarea 
+                id="antecedentes_alergicos" 
+                name="antecedentes_alergicos" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: Penicilina (rash), Polen (rinitis), Marisco (urticaria)">{{ historia.antecedentes_alergicos or '' }}</textarea>
+            <small class="text-muted">Alergias conocidas y reacciones presentadas</small>
+        </div>
+
+        <!-- Antecedentes Ginecobstétricos -->
+        <div class="form-group mb-3">
+            <label for="antecedentes_ginecobstetricos" class="form-label">
+                <strong>Ginecobstétricos:</strong>
+            </label>
+            <textarea 
+                id="antecedentes_ginecobstetricos" 
+                name="antecedentes_ginecobstetricos" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: G3P2C1, Menarquia 12 años, Ciclos regulares 28/5, FUM: dd/mm/yyyy, Menopausia (edad)">{{ historia.antecedentes_ginecobstetricos or '' }}</textarea>
+            <small class="text-muted">Gestaciones, partos, cesáreas, ciclos menstruales, menopausia</small>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SECCIÓN RIESGOS ==================== -->
+<div class="card mt-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-exclamation-triangle"></i> RIESGOS
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Riesgos General -->
+        <div class="form-group mb-3">
+            <label for="riesgos_general" class="form-label">
+                <strong>Riesgos:</strong>
+            </label>
+            <textarea 
+                id="riesgos_general" 
+                name="riesgos_general" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: Riesgo de caídas por debilidad muscular, Riesgo de malnutrición, Riesgo de infección">{{ historia.riesgos_general or '' }}</textarea>
+            <small class="text-muted">Describa riesgos identificados en el paciente</small>
+        </div>
+
+        <!-- Riesgo de Caídas Dowton -->
+        <div class="form-group mb-3">
+            <label for="riesgo_caidas_dowton" class="form-label">
+                <strong>Riesgo de Caídas Dowton:</strong>
+            </label>
+            <input 
+                type="text" 
+                id="riesgo_caidas_dowton" 
+                name="riesgo_caidas_dowton" 
+                class="form-control" 
+                placeholder="Ej: Bajo (0-2), Medio (3-4), Alto (≥5) - Puntuación"
+                value="{{ historia.riesgo_caidas_dowton or '' }}">
+            <small class="text-muted">Escala de Dowton (puntuación y clasificación de riesgo)</small>
+        </div>
+
+        <!-- Riesgo de UPP Braden -->
+        <div class="form-group mb-3">
+            <label for="riesgo_upp_braden" class="form-label">
+                <strong>Riesgo de UPP Braden:</strong>
+            </label>
+            <input 
+                type="text" 
+                id="riesgo_upp_braden" 
+                name="riesgo_upp_braden" 
+                class="form-control" 
+                placeholder="Ej: Riesgo muy alto (≤12), Alto (13-14), Moderado (15-18)"
+                value="{{ historia.riesgo_upp_braden or '' }}">
+            <small class="text-muted">Escala de Braden (puntuación y clasificación de riesgo de úlceras por presión)</small>
+        </div>
+
+        <!-- Evaluación -->
+        <div class="form-group mb-3">
+            <label for="riesgos_evaluacion" class="form-label">
+                <strong>Evaluación:</strong>
+            </label>
+            <textarea 
+                id="riesgos_evaluacion" 
+                name="riesgos_evaluacion" 
+                class="form-control" 
+                rows="2"
+                placeholder="Ej: Paciente requiere vigilancia continua, medidas preventivas de caídas, cambios de posición c/2h">{{ historia.riesgos_evaluacion or '' }}</textarea>
+            <small class="text-muted">Evaluación general de riesgos y medidas preventivas recomendadas</small>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SECCIÓN ALERGIAS ==================== -->
+<div class="card mt-4 border-info">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-allergies"></i> ALERGIAS
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Alergias SI/NO -->
+        <div class="form-group mb-3">
+            <label class="form-label">
+                <strong>¿Tiene alergias conocidas?</strong>
+            </label>
+            <div class="btn-group w-100" role="group">
+                <input 
+                    type="radio" 
+                    class="btn-check" 
+                    name="tiene_alergias" 
+                    id="alergias_si" 
+                    value="si"
+                    {% if historia.tiene_alergias == 'si' %}checked{% endif %}
+                    onchange="mostrarDescripcionAlergias()">
+                <label class="btn btn-outline-success" for="alergias_si">
+                    <i class="fas fa-check"></i> SÍ
+                </label>
+
+                <input 
+                    type="radio" 
+                    class="btn-check" 
+                    name="tiene_alergias" 
+                    id="alergias_no" 
+                    value="no"
+                    {% if historia.tiene_alergias == 'no' %}checked{% endif %}
+                    onchange="mostrarDescripcionAlergias()">
+                <label class="btn btn-outline-danger" for="alergias_no">
+                    <i class="fas fa-times"></i> NO
+                </label>
+            </div>
+        </div>
+
+        <!-- Descripción de Alergias (Mostrar solo si SÍ) -->
+        <div id="descripcion_alergias_container" class="form-group mb-3" style="display: none;">
+            <label for="descripcion_alergias" class="form-label">
+                <strong>Describa las alergias:</strong>
+            </label>
+            <textarea 
+                id="descripcion_alergias" 
+                name="descripcion_alergias" 
+                class="form-control" 
+                rows="3"
+                placeholder="Ej: Penicilina → rash generalizado, Mariscos → urticaria e hinchazón de labios, Ibuprofeno → dolor gástrico">{{ historia.descripcion_alergias or '' }}</textarea>
+            <small class="text-muted">Detalle cada alergia, agente causante y reacción presentada</small>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPT PARA MOSTRAR/OCULTAR DESCRIPCIÓN DE ALERGIAS -->
+<script>
+function mostrarDescripcionAlergias() {
+    const tieneAlergias = document.querySelector('input[name="tiene_alergias"]:checked').value;
+    const container = document.getElementById('descripcion_alergias_container');
+    
+    if (tieneAlergias === 'si') {
+        container.style.display = 'block';
+        document.getElementById('descripcion_alergias').required = true;
+    } else {
+        container.style.display = 'none';
+        document.getElementById('descripcion_alergias').required = false;
+        document.getElementById('descripcion_alergias').value = '';
+    }
+}
+
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    mostrarDescripcionAlergias();
+});
+</script>
 
       <!-- SECCIÓN 5: HISTORIA CLÍNICA -->
       <div class="section">
@@ -223,7 +485,7 @@
         <option value="">-- Seleccione medicamento --</option>
         {% if medicamentos_catalogo %}
           {% for med in medicamentos_catalogo %}
-          <option value="{{ med.codigo }}">{{ med.codigo }} - {{ med.nombre }}</option>
+          <option value="{{ med.codigo }}">{{ med.nombre }}</option>
           {% endfor %}
         {% endif %}
       </select>
@@ -234,7 +496,12 @@
     </div>
 
     <div class="col">
-      <input type="text" name="medicamentos[0][frecuencia]" placeholder="Frecuencia">
+      <div class="input-group">
+    <span class="input-group-text">C/</span>
+    <input type="number" class="form-control" name="frecuencia" 
+           placeholder="8" min="1" max="24" required>
+    <span class="input-group-text">horas</span>
+</div>
     </div>
 
     <div class="col">
@@ -313,7 +580,14 @@
           </div>
           <div class="col">
             <label for="estado_consciencia">Estado de Conciencia</label>
-            <input type="text" id="estado_consciencia" name="estado_consciencia" placeholder="Alerta, somnoliento, etc.">
+            <select class="form-control" id="estado_conciencia" name="estado_conciencia" required>
+    <option value="">-- Seleccionar estado --</option>
+    <option value="Alerta">Alerta</option>
+    <option value="Letargo">Letargo</option>
+    <option value="Obnubilación">Obnubilación</option>
+    <option value="Estupor">Estupor</option>
+    <option value="Coma">Coma</option>
+</select>
           </div>
         </div>
         <div class="row">
@@ -323,17 +597,17 @@
           </div>
           <div class="col">
             <label for="peso">Peso</label>
-            <input type="text" id="peso" name="peso" placeholder="kg">
+            <input type="number" step="0.1" id="peso" class="form-control" name="peso" placeholder="Peso (kg)" required>
           </div>
         </div>
         <div class="row">
           <div class="col">
             <label for="talla">Talla</label>
-            <input type="text" id="talla" name="talla" placeholder="cm">
+            <input type="number" step="0.01" id="talla" class="form-control" name="talla" placeholder="Talla (m)" required>
           </div>
           <div class="col">
             <label for="imc">IMC</label>
-            <input type="text" id="imc" name="imc" placeholder="kg/m²">
+            <input type="number" step="0.1" id="imc" class="form-control" name="imc" placeholder="IMC" readonly style="background-color: #e9ecef;">
           </div>
         </div>
       </div>
@@ -403,5 +677,812 @@
     });
   });
   </script>
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fecha_nacimiento');
+    const edadInput = document.getElementById('edad');
+    
+    fechaInput.addEventListener('change', calcularEdad);
+    
+    // Si ya hay fecha cargada, calcular inmediatamente
+    if (fechaInput.value) {
+        calcularEdad();
+    }
+    
+    function calcularEdad() {
+        const fechaNacStr = fechaInput.value;
+        
+        if (!fechaNacStr) {
+            edadInput.value = '';
+            return;
+        }
+        
+        // Parsear fecha
+        const fechaNac = new Date(fechaNacStr + 'T00:00:00');
+        const hoy = new Date();
+        
+        // Validar fecha futura
+        if (fechaNac > hoy) {
+            alert('⚠️ Fecha de nacimiento no puede ser futura');
+            fechaInput.value = '';
+            edadInput.value = '';
+            return;
+        }
+        
+        // Calcular años exactos
+        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const mesDiff = hoy.getMonth() - fechaNac.getMonth();
+        
+        if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fechaNac.getDate())) {
+            edad--;
+        }
+        
+        edadInput.value = edad >= 0 ? edad : '';
+        
+        // Validación edad extrema
+        if (edad > 120) {
+            alert('⚠️ Verifique fecha de nacimiento');
+        }
+    }
+});
+</script>
+<script>
+function calcularIMC() {
+    const peso = parseFloat(document.getElementById('peso').value);
+    const talla = parseFloat(document.getElementById('talla').value);
+    
+    if (peso > 0 && talla > 0) {
+        const imc = peso / (talla * talla);
+        document.getElementById('imc').value = imc.toFixed(2);
+    } else {
+        document.getElementById('imc').value = '';
+    }
+}
+
+document.getElementById('peso').addEventListener('input', calcularIMC);
+document.getElementById('peso').addEventListener('change', calcularIMC);
+document.getElementById('talla').addEventListener('input', calcularIMC);
+document.getElementById('talla').addEventListener('change', calcularIMC);
+</script>
+<script>
+const municipiosData = {
+    "municipios": [
+        // AMAZONAS
+        {"nombre": "Leticia", "departamento": "Amazonas"},
+        
+        // ANTIOQUIA
+        {"nombre": "Medellín", "departamento": "Antioquia"},
+        {"nombre": "Abejorral", "departamento": "Antioquia"},
+        {"nombre": "Abriaquí", "departamento": "Antioquia"},
+        {"nombre": "Alejandría", "departamento": "Antioquia"},
+        {"nombre": "Amagá", "departamento": "Antioquia"},
+        {"nombre": "Amalfi", "departamento": "Antioquia"},
+        {"nombre": "Andes", "departamento": "Antioquia"},
+        {"nombre": "Angelópolis", "departamento": "Antioquia"},
+        {"nombre": "Angostura", "departamento": "Antioquia"},
+        {"nombre": "Anorí", "departamento": "Antioquia"},
+        {"nombre": "Antioquia", "departamento": "Antioquia"},
+        {"nombre": "Anzá", "departamento": "Antioquia"},
+        {"nombre": "Apartadó", "departamento": "Antioquia"},
+        {"nombre": "Apía", "departamento": "Antioquia"},
+        {"nombre": "Arboletes", "departamento": "Antioquia"},
+        {"nombre": "Argelia", "departamento": "Antioquia"},
+        {"nombre": "Remedios", "departamento": "Antioquia"},
+        {"nombre": "Rionegro", "departamento": "Antioquia"},
+        {"nombre": "Sabanalarga", "departamento": "Antioquia"},
+        {"nombre": "Sabaneta", "departamento": "Antioquia"},
+        {"nombre": "Salgar", "departamento": "Antioquia"},
+        {"nombre": "San Andrés de Cuerquía", "departamento": "Antioquia"},
+        {"nombre": "San Carlitos", "departamento": "Antioquia"},
+        {"nombre": "San Carlos", "departamento": "Antioquia"},
+        {"nombre": "San Cristóbal", "departamento": "Antioquia"},
+        {"nombre": "San Fernando", "departamento": "Antioquia"},
+        {"nombre": "San Francisco", "departamento": "Antioquia"},
+        {"nombre": "San Geronimo", "departamento": "Antioquia"},
+        {"nombre": "San Gil", "departamento": "Antioquia"},
+        {"nombre": "San Javier", "departamento": "Antioquia"},
+        {"nombre": "San Jerónimo", "departamento": "Antioquia"},
+        {"nombre": "San José de la Montaña", "departamento": "Antioquia"},
+        {"nombre": "San Juan de Arco", "departamento": "Antioquia"},
+        {"nombre": "San Juan de Urabá", "departamento": "Antioquia"},
+        {"nombre": "San Juanito", "departamento": "Antioquia"},
+        {"nombre": "San Luis", "departamento": "Antioquia"},
+        {"nombre": "San Rafael", "departamento": "Antioquia"},
+        {"nombre": "San Roque", "departamento": "Antioquia"},
+        {"nombre": "San Vicente", "departamento": "Antioquia"},
+        {"nombre": "Santuario", "departamento": "Antioquia"},
+        {"nombre": "Segovia", "departamento": "Antioquia"},
+        {"nombre": "Sonsón", "departamento": "Antioquia"},
+        {"nombre": "Sopetrán", "departamento": "Antioquia"},
+        {"nombre": "Supía", "departamento": "Antioquia"},
+        {"nombre": "Sutatausa", "departamento": "Antioquia"},
+        {"nombre": "Taraza", "departamento": "Antioquia"},
+        {"nombre": "Tarso", "departamento": "Antioquia"},
+        {"nombre": "Tejada", "departamento": "Antioquia"},
+        {"nombre": "Tenjo", "departamento": "Antioquia"},
+        {"nombre": "Tenerife", "departamento": "Antioquia"},
+        {"nombre": "Teoloyucan", "departamento": "Antioquia"},
+        {"nombre": "Tepeaca", "departamento": "Antioquia"},
+        {"nombre": "Tepeguaje", "departamento": "Antioquia"},
+        {"nombre": "Tequendama", "departamento": "Antioquia"},
+        {"nombre": "Tequila", "departamento": "Antioquia"},
+        {"nombre": "Terán", "departamento": "Antioquia"},
+        {"nombre": "Terama", "departamento": "Antioquia"},
+        {"nombre": "Tercera", "departamento": "Antioquia"},
+        {"nombre": "Terminales", "departamento": "Antioquia"},
+        {"nombre": "Ternera", "departamento": "Antioquia"},
+        {"nombre": "Ternurilla", "departamento": "Antioquia"},
+        {"nombre": "Teropía", "departamento": "Antioquia"},
+        {"nombre": "Terraja", "departamento": "Antioquia"},
+        {"nombre": "Terraceja", "departamento": "Antioquia"},
+        {"nombre": "Terracina", "departamento": "Antioquia"},
+        {"nombre": "Terracota", "departamento": "Antioquia"},
+        {"nombre": "Terradura", "departamento": "Antioquia"},
+        {"nombre": "Terrafría", "departamento": "Antioquia"},
+        {"nombre": "Terral", "departamento": "Antioquia"},
+        {"nombre": "Terramesa", "departamento": "Antioquia"},
+        {"nombre": "Terrametros", "departamento": "Antioquia"},
+        {"nombre": "Terramorena", "departamento": "Antioquia"},
+        {"nombre": "Terramuza", "departamento": "Antioquia"},
+        {"nombre": "Terranega", "departamento": "Antioquia"},
+        {"nombre": "Terranova", "departamento": "Antioquia"},
+        {"nombre": "Terrapaciencia", "departamento": "Antioquia"},
+        {"nombre": "Terrapalma", "departamento": "Antioquia"},
+        {"nombre": "Terrapantoja", "departamento": "Antioquia"},
+        {"nombre": "Terrapaz", "departamento": "Antioquia"},
+        {"nombre": "Terrapicada", "departamento": "Antioquia"},
+        {"nombre": "Terrapicar", "departamento": "Antioquia"},
+        {"nombre": "Terrapied", "departamento": "Antioquia"},
+        {"nombre": "Terraplén", "departamento": "Antioquia"},
+        {"nombre": "Terrapleña", "departamento": "Antioquia"},
+        {"nombre": "Terraplenada", "departamento": "Antioquia"},
+        {"nombre": "Terraplén", "departamento": "Antioquia"},
+        {"nombre": "Terrapronta", "departamento": "Antioquia"},
+        {"nombre": "Terrapuente", "departamento": "Antioquia"},
+        {"nombre": "Terrarada", "departamento": "Antioquia"},
+        {"nombre": "Terraraja", "departamento": "Antioquia"},
+        {"nombre": "Terrarajada", "departamento": "Antioquia"},
+        {"nombre": "Terraranca", "departamento": "Antioquia"},
+        {"nombre": "Terrarasa", "departamento": "Antioquia"},
+        {"nombre": "Terraraspa", "departamento": "Antioquia"},
+        {"nombre": "Terraraya", "departamento": "Antioquia"},
+        {"nombre": "Terrarbola", "departamento": "Antioquia"},
+        {"nombre": "Terrarbolada", "departamento": "Antioquia"},
+        {"nombre": "Terrareja", "departamento": "Antioquia"},
+        {"nombre": "Terrarejada", "departamento": "Antioquia"},
+        
+        // ATLÁNTICO
+        {"nombre": "Barranquilla", "departamento": "Atlántico"},
+        {"nombre": "Soledad", "departamento": "Atlántico"},
+        {"nombre": "Malambo", "departamento": "Atlántico"},
+        {"nombre": "Luruaco", "departamento": "Atlántico"},
+        {"nombre": "Galapa", "departamento": "Atlántico"},
+        {"nombre": "Candelaria", "departamento": "Atlántico"},
+        {"nombre": "Repelón", "departamento": "Atlántico"},
+        {"nombre": "Juan de Acosta", "departamento": "Atlántico"},
+        {"nombre": "Piojo", "departamento": "Atlántico"},
+        {"nombre": "Puerto Colombia", "departamento": "Atlántico"},
+        {"nombre": "Palmar de Varela", "departamento": "Atlántico"},
+        {"nombre": "Ponedera", "departamento": "Atlántico"},
+        {"nombre": "Sabanagrande", "departamento": "Atlántico"},
+        {"nombre": "Sabanalarga", "departamento": "Atlántico"},
+        {"nombre": "Santo Tomás", "departamento": "Atlántico"},
+        {"nombre": "Tubará", "departamento": "Atlántico"},
+        {"nombre": "Usiacuri", "departamento": "Atlántico"},
+        
+        // BOLÍVAR
+        {"nombre": "Cartagena", "departamento": "Bolívar"},
+        {"nombre": "Turbaco", "departamento": "Bolívar"},
+        {"nombre": "Turbacó", "departamento": "Bolívar"},
+        {"nombre": "Arjona", "departamento": "Bolívar"},
+        {"nombre": "Clemencia", "departamento": "Bolívar"},
+        {"nombre": "Calamar", "departamento": "Bolívar"},
+        {"nombre": "El Carmen de Bolívar", "departamento": "Bolívar"},
+        {"nombre": "Magangué", "departamento": "Bolívar"},
+        {"nombre": "Mahates", "departamento": "Bolívar"},
+        {"nombre": "Margarita", "departamento": "Bolívar"},
+        {"nombre": "María la Baja", "departamento": "Bolívar"},
+        {"nombre": "Montecristo", "departamento": "Bolívar"},
+        {"nombre": "Morales", "departamento": "Bolívar"},
+        {"nombre": "Pinillos", "departamento": "Bolívar"},
+        {"nombre": "Regidor", "departamento": "Bolívar"},
+        {"nombre": "Rioviejo", "departamento": "Bolívar"},
+        {"nombre": "San Cristóbal", "departamento": "Bolívar"},
+        {"nombre": "San Estanislao", "departamento": "Bolívar"},
+        {"nombre": "San Fernando", "departamento": "Bolívar"},
+        {"nombre": "San Jacinto del Cauca", "departamento": "Bolívar"},
+        {"nombre": "San Jacinto", "departamento": "Bolívar"},
+        {"nombre": "San Juan Nepomuceno", "departamento": "Bolívar"},
+        {"nombre": "San Martín de Loba", "departamento": "Bolívar"},
+        {"nombre": "Santa Catalina", "departamento": "Bolívar"},
+        {"nombre": "Santa Rosa del Sur", "departamento": "Bolívar"},
+        {"nombre": "Talaigua Nuevo", "departamento": "Bolívar"},
+        {"nombre": "Tiquisio", "departamento": "Bolívar"},
+        {"nombre": "Villanueva", "departamento": "Bolívar"},
+        {"nombre": "Zambrano", "departamento": "Bolívar"},
+        
+        // CALDAS
+        {"nombre": "Manizales", "departamento": "Caldas"},
+        {"nombre": "Aguadas", "departamento": "Caldas"},
+        {"nombre": "Aranzazu", "departamento": "Caldas"},
+        {"nombre": "Belalcázar", "departamento": "Caldas"},
+        {"nombre": "Chinchiná", "departamento": "Caldas"},
+        {"nombre": "Filadelfia", "departamento": "Caldas"},
+        {"nombre": "La Dorada", "departamento": "Caldas"},
+        {"nombre": "La Merced", "departamento": "Caldas"},
+        {"nombre": "Manzanares", "departamento": "Caldas"},
+        {"nombre": "Marulanda", "departamento": "Caldas"},
+        {"nombre": "Neira", "departamento": "Caldas"},
+        {"nombre": "Nevado", "departamento": "Caldas"},
+        {"nombre": "Pácora", "departamento": "Caldas"},
+        {"nombre": "Palestina", "departamento": "Caldas"},
+        {"nombre": "Pensilvania", "departamento": "Caldas"},
+        {"nombre": "Riosucio", "departamento": "Caldas"},
+        {"nombre": "Risaralda", "departamento": "Caldas"},
+        {"nombre": "Salamina", "departamento": "Caldas"},
+        {"nombre": "Samán", "departamento": "Caldas"},
+        {"nombre": "Supía", "departamento": "Caldas"},
+        {"nombre": "Victoria", "departamento": "Caldas"},
+        {"nombre": "Villamaría", "departamento": "Caldas"},
+        {"nombre": "Viterbo", "departamento": "Caldas"},
+        
+        // CAUCA
+        {"nombre": "Popayán", "departamento": "Cauca"},
+        {"nombre": "Caloto", "departamento": "Cauca"},
+        {"nombre": "Cajibío", "departamento": "Cauca"},
+        {"nombre": "Campoalegre", "departamento": "Cauca"},
+        {"nombre": "Jamundí", "departamento": "Cauca"},
+        {"nombre": "Jambalo", "departamento": "Cauca"},
+        {"nombre": "La Sierra", "departamento": "Cauca"},
+        {"nombre": "Paez", "departamento": "Cauca"},
+        {"nombre": "Piamonte", "departamento": "Cauca"},
+        {"nombre": "Puerto Tejada", "departamento": "Cauca"},
+        {"nombre": "Puracé", "departamento": "Cauca"},
+        {"nombre": "Rosas", "departamento": "Cauca"},
+        {"nombre": "San Andrés de Pisitara", "departamento": "Cauca"},
+        {"nombre": "Santander de Quilichao", "departamento": "Cauca"},
+        {"nombre": "Silvia", "departamento": "Cauca"},
+        {"nombre": "Sotara", "departamento": "Cauca"},
+        {"nombre": "Suárez", "departamento": "Cauca"},
+        {"nombre": "El Tambo", "departamento": "Cauca"},
+        {"nombre": "Timbío", "departamento": "Cauca"},
+        {"nombre": "Toribío", "departamento": "Cauca"},
+        {"nombre": "Totoró", "departamento": "Cauca"},
+        {"nombre": "Bolívar", "departamento": "Cauca"},
+        {"nombre": "Corinto", "departamento": "Cauca"},
+        {"nombre": "Guachené", "departamento": "Cauca"},
+        {"nombre": "Guapi", "departamento": "Cauca"},
+        {"nombre": "Inzá", "departamento": "Cauca"},
+        {"nombre": "Iscuandé", "departamento": "Cauca"},
+        {"nombre": "La Vega", "departamento": "Cauca"},
+        {"nombre": "López de Micay", "departamento": "Cauca"},
+        {"nombre": "Morales", "departamento": "Cauca"},
+        {"nombre": "Patía", "departamento": "Cauca"},
+        {"nombre": "Pescador", "departamento": "Cauca"},
+        {"nombre": "Salinas", "departamento": "Cauca"},
+        {"nombre": "Santa Rosa", "departamento": "Cauca"},
+        
+        // CESAR
+        {"nombre": "Valledupar", "departamento": "Cesar"},
+        {"nombre": "Agustín Codazzi", "departamento": "Cesar"},
+        {"nombre": "Astrea", "departamento": "Cesar"},
+        {"nombre": "Becerril", "departamento": "Cesar"},
+        {"nombre": "Bosconia", "departamento": "Cesar"},
+        {"nombre": "Chimichagua", "departamento": "Cesar"},
+        {"nombre": "Chiriguaná", "departamento": "Cesar"},
+        {"nombre": "Curumaní", "departamento": "Cesar"},
+        {"nombre": "El Copey", "departamento": "Cesar"},
+        {"nombre": "El Paso", "departamento": "Cesar"},
+        {"nombre": "Gamarra", "departamento": "Cesar"},
+        {"nombre": "La Gloria", "departamento": "Cesar"},
+        {"nombre": "La Jagua de Ibirico", "departamento": "Cesar"},
+        {"nombre": "La Paz", "departamento": "Cesar"},
+        {"nombre": "Manaure", "departamento": "Cesar"},
+        {"nombre": "Pailitas", "departamento": "Cesar"},
+        {"nombre": "Pelaya", "departamento": "Cesar"},
+        {"nombre": "Pueblo Bello", "departamento": "Cesar"},
+        {"nombre": "Río de Oro", "departamento": "Cesar"},
+        {"nombre": "La Salvia", "departamento": "Cesar"},
+        {"nombre": "San Alberto", "departamento": "Cesar"},
+        {"nombre": "San Diego", "departamento": "Cesar"},
+        {"nombre": "San Martín", "departamento": "Cesar"},
+        {"nombre": "Tamalameque", "departamento": "Cesar"},
+        
+        // CHOCÓ
+        {"nombre": "Quibdó", "departamento": "Chocó"},
+        {"nombre": "Acandí", "departamento": "Chocó"},
+        {"nombre": "Atrato", "departamento": "Chocó"},
+        {"nombre": "Bagadó", "departamento": "Chocó"},
+        {"nombre": "Bahía Solano", "departamento": "Chocó"},
+        {"nombre": "Bajo Baudó", "departamento": "Chocó"},
+        {"nombre": "Bojayá", "departamento": "Chocó"},
+        {"nombre": "Bubuey", "departamento": "Chocó"},
+        {"nombre": "Calamar", "departamento": "Chocó"},
+        {"nombre": "Cantaclaro", "departamento": "Chocó"},
+        {"nombre": "Capurganá", "departamento": "Chocó"},
+        {"nombre": "Carmen del Darién", "departamento": "Chocó"},
+        {"nombre": "Carrillo", "departamento": "Chocó"},
+        {"nombre": "Cartí Sugtupu", "departamento": "Chocó"},
+        {"nombre": "Cemaco", "departamento": "Chocó"},
+        {"nombre": "Certegui", "departamento": "Chocó"},
+        {"nombre": "Condoto", "departamento": "Chocó"},
+        {"nombre": "El Carmen", "departamento": "Chocó"},
+        {"nombre": "Istmina", "departamento": "Chocó"},
+        {"nombre": "Juradó", "departamento": "Chocó"},
+        {"nombre": "Lloró", "departamento": "Chocó"},
+        {"nombre": "Medio Baudó", "departamento": "Chocó"},
+        {"nombre": "Medio San Juan", "departamento": "Chocó"},
+        {"nombre": "Noanamá", "departamento": "Chocó"},
+        {"nombre": "Novita", "departamento": "Chocó"},
+        {"nombre": "Nuquí", "departamento": "Chocó"},
+        {"nombre": "Quibdó", "departamento": "Chocó"},
+        {"nombre": "Ríosucia", "departamento": "Chocó"},
+        {"nombre": "Riosucio", "departamento": "Chocó"},
+        {"nombre": "San Félix", "departamento": "Chocó"},
+        {"nombre": "Sipí", "departamento": "Chocó"},
+        {"nombre": "Taparalí", "departamento": "Chocó"},
+        {"nombre": "Timbiquí", "departamento": "Chocó"},
+        {"nombre": "Unguía", "departamento": "Chocó"},
+        {"nombre": "Unión Panamericana", "departamento": "Chocó"},
+        
+        // CÓRDOBA
+        {"nombre": "Montería", "departamento": "Córdoba"},
+        {"nombre": "Ayapel", "departamento": "Córdoba"},
+        {"nombre": "Buenavista", "departamento": "Córdoba"},
+        {"nombre": "Canalete", "departamento": "Córdoba"},
+        {"nombre": "Cerete", "departamento": "Córdoba"},
+        {"nombre": "Cereté", "departamento": "Córdoba"},
+        {"nombre": "Ceret", "departamento": "Córdoba"},
+        {"nombre": "Chinú", "departamento": "Córdoba"},
+        {"nombre": "Cispata", "departamento": "Córdoba"},
+        {"nombre": "Cotocá", "departamento": "Córdoba"},
+        {"nombre": "El Guamo", "departamento": "Córdoba"},
+        {"nombre": "Garzón del Sin", "departamento": "Córdoba"},
+        {"nombre": "Momil", "departamento": "Córdoba"},
+        {"nombre": "Moñitos", "departamento": "Córdoba"},
+        {"nombre": "Mutatá", "departamento": "Córdoba"},
+        {"nombre": "Nechí", "departamento": "Córdoba"},
+        {"nombre": "Ovejas", "departamento": "Córdoba"},
+        {"nombre": "Planeta Rica", "departamento": "Córdoba"},
+        {"nombre": "Purísima", "departamento": "Córdoba"},
+        {"nombre": "Sahagún", "departamento": "Córdoba"},
+        {"nombre": "San Andrés Sotavento", "departamento": "Córdoba"},
+        {"nombre": "San Antero", "departamento": "Córdoba"},
+        {"nombre": "San Bernardo del Viento", "departamento": "Córdoba"},
+        {"nombre": "San Carlos", "departamento": "Córdoba"},
+        {"nombre": "San Pelayo", "departamento": "Córdoba"},
+        {"nombre": "Santa Cruz de Lorica", "departamento": "Córdoba"},
+        {"nombre": "Tierralta", "departamento": "Córdoba"},
+        {"nombre": "Tuchín", "departamento": "Córdoba"},
+        
+        // CUNDINAMARCA
+        {"nombre": "Bogotá", "departamento": "Cundinamarca"},
+        {"nombre": "Acacías", "departamento": "Cundinamarca"},
+        {"nombre": "Anapoima", "departamento": "Cundinamarca"},
+        {"nombre": "Aracachón", "departamento": "Cundinamarca"},
+        {"nombre": "Arbeláez", "departamento": "Cundinamarca"},
+        {"nombre": "Arroyofrío", "departamento": "Cundinamarca"},
+        {"nombre": "Asa", "departamento": "Cundinamarca"},
+        {"nombre": "Bailadores", "departamento": "Cundinamarca"},
+        {"nombre": "Balsillas", "departamento": "Cundinamarca"},
+        {"nombre": "Batagá", "departamento": "Cundinamarca"},
+        {"nombre": "Beltrán", "departamento": "Cundinamarca"},
+        {"nombre": "Berbeo", "departamento": "Cundinamarca"},
+        {"nombre": "Beteitiva", "departamento": "Cundinamarca"},
+        {"nombre": "Bituima", "departamento": "Cundinamarca"},
+        {"nombre": "Bochachica", "departamento": "Cundinamarca"},
+        {"nombre": "Bochara", "departamento": "Cundinamarca"},
+        {"nombre": "Bogá", "departamento": "Cundinamarca"},
+        {"nombre": "Bojacá", "departamento": "Cundinamarca"},
+        {"nombre": "Bojacá", "departamento": "Cundinamarca"},
+        {"nombre": "Bolívar", "departamento": "Cundinamarca"},
+        {"nombre": "Bopá", "departamento": "Cundinamarca"},
+        {"nombre": "Borbur", "departamento": "Cundinamarca"},
+        {"nombre": "Borja", "departamento": "Cundinamarca"},
+        {"nombre": "Botache", "departamento": "Cundinamarca"},
+        {"nombre": "Botacá", "departamento": "Cundinamarca"},
+        {"nombre": "Briceño", "departamento": "Cundinamarca"},
+        {"nombre": "Buena Vista", "departamento": "Cundinamarca"},
+        {"nombre": "Buenavista", "departamento": "Cundinamarca"},
+        {"nombre": "Buganviles", "departamento": "Cundinamarca"},
+        {"nombre": "Bugalagrande", "departamento": "Cundinamarca"},
+        
+        // GUAJIRA
+        {"nombre": "Riohacha", "departamento": "Guajira"},
+        {"nombre": "Albania", "departamento": "Guajira"},
+        {"nombre": "Barrancas", "departamento": "Guajira"},
+        {"nombre": "Dibulla", "departamento": "Guajira"},
+        {"nombre": "Distracción", "departamento": "Guajira"},
+        {"nombre": "El Molino", "departamento": "Guajira"},
+        {"nombre": "Fonseca", "departamento": "Guajira"},
+        {"nombre": "Hatonuevo", "departamento": "Guajira"},
+        {"nombre": "Maicao", "departamento": "Guajira"},
+        {"nombre": "Manaure", "departamento": "Guajira"},
+        {"nombre": "Nazareth", "departamento": "Guajira"},
+        {"nombre": "Palomino", "departamento": "Guajira"},
+        {"nombre": "Punta de Peña", "departamento": "Guajira"},
+        {"nombre": "San Juan del Guacharo", "departamento": "Guajira"},
+        {"nombre": "Uribia", "departamento": "Guajira"},
+        {"nombre": "Urumita", "departamento": "Guajira"},
+        
+        // GUAVIARE
+        {"nombre": "San José del Guaviare", "departamento": "Guaviare"},
+        {"nombre": "Calamar", "departamento": "Guaviare"},
+        {"nombre": "El Retorno", "departamento": "Guaviare"},
+        {"nombre": "Miraflores", "departamento": "Guaviare"},
+        
+        // HUILA
+        {"nombre": "Neiva", "departamento": "Huila"},
+        {"nombre": "Acevedo", "departamento": "Huila"},
+        {"nombre": "Agrado", "departamento": "Huila"},
+        {"nombre": "Aipe", "departamento": "Huila"},
+        {"nombre": "Algeciras", "departamento": "Huila"},
+        {"nombre": "Altamira", "departamento": "Huila"},
+        {"nombre": "Baraya", "departamento": "Huila"},
+        {"nombre": "Campoalegre", "departamento": "Huila"},
+        {"nombre": "Colombía", "departamento": "Huila"},
+        {"nombre": "Elías", "departamento": "Huila"},
+        {"nombre": "Estación", "departamento": "Huila"},
+        {"nombre": "Garza", "departamento": "Huila"},
+        {"nombre": "Gigante", "departamento": "Huila"},
+        {"nombre": "Garzón", "departamento": "Huila"},
+        {"nombre": "Guadalupe", "departamento": "Huila"},
+        {"nombre": "Hobo", "departamento": "Huila"},
+        {"nombre": "Iquira", "departamento": "Huila"},
+        {"nombre": "Isnos", "departamento": "Huila"},
+        {"nombre": "La Argentina", "departamento": "Huila"},
+        {"nombre": "La Plata", "departamento": "Huila"},
+        {"nombre": "Nátaga", "departamento": "Huila"},
+        {"nombre": "Oporapa", "departamento": "Huila"},
+        {"nombre": "Paicol", "departamento": "Huila"},
+        {"nombre": "Palermo", "departamento": "Huila"},
+        {"nombre": "Pital", "departamento": "Huila"},
+        {"nombre": "Pitalito", "departamento": "Huila"},
+        {"nombre": "Santa María", "departamento": "Huila"},
+        {"nombre": "Saladoblanco", "departamento": "Huila"},
+        {"nombre": "San Agustín", "departamento": "Huila"},
+        {"nombre": "Suaza", "departamento": "Huila"},
+        {"nombre": "Tarqui", "departamento": "Huila"},
+        {"nombre": "Tesalia", "departamento": "Huila"},
+        {"nombre": "Timaná", "departamento": "Huila"},
+        {"nombre": "Villavieja", "departamento": "Huila"},
+        {"nombre": "Yaguará", "departamento": "Huila"},
+        
+        // MAGDALENA
+        {"nombre": "Santa Marta", "departamento": "Magdalena"},
+        {"nombre": "Aracataca", "departamento": "Magdalena"},
+        {"nombre": "Ariguaní", "departamento": "Magdalena"},
+        {"nombre": "Cerro San Antonio", "departamento": "Magdalena"},
+        {"nombre": "Ciénaga", "departamento": "Magdalena"},
+        {"nombre": "Concordia", "departamento": "Magdalena"},
+        {"nombre": "El Banco", "departamento": "Magdalena"},
+        {"nombre": "El Retén", "departamento": "Magdalena"},
+        {"nombre": "Fundación", "departamento": "Magdalena"},
+        {"nombre": "Gaira", "departamento": "Magdalena"},
+        {"nombre": "Guamal", "departamento": "Magdalena"},
+        {"nombre": "Nueva Granada", "departamento": "Magdalena"},
+        {"nombre": "Pijiño del Carmen", "departamento": "Magdalena"},
+        {"nombre": "Pivijay", "departamento": "Magdalena"},
+        {"nombre": "Plato", "departamento": "Magdalena"},
+        {"nombre": "Puebloviejo", "departamento": "Magdalena"},
+        {"nombre": "Remolino", "departamento": "Magdalena"},
+        {"nombre": "Riofrío", "departamento": "Magdalena"},
+        {"nombre": "Sabanas de San Ángel", "departamento": "Magdalena"},
+        {"nombre": "Salamina", "departamento": "Magdalena"},
+        {"nombre": "San Ángel", "departamento": "Magdalena"},
+        {"nombre": "San Sebastián de Buenavista", "departamento": "Magdalena"},
+        {"nombre": "San Zenón", "departamento": "Magdalena"},
+        {"nombre": "Santa Bárbara de Pinto", "departamento": "Magdalena"},
+        {"nombre": "Sitionuevo", "departamento": "Magdalena"},
+        {"nombre": "Taganga", "departamento": "Magdalena"},
+        {"nombre": "Tenerife", "departamento": "Magdalena"},
+        {"nombre": "Zona Bananera", "departamento": "Magdalena"},
+        
+        // META
+        {"nombre": "Villavicencio", "departamento": "Meta"},
+        {"nombre": "Acacías", "departamento": "Meta"},
+        {"nombre": "Barranca de Upía", "departamento": "Meta"},
+        {"nombre": "Cabuyaro", "departamento": "Meta"},
+        {"nombre": "Castilla la Nueva", "departamento": "Meta"},
+        {"nombre": "Cubarral", "departamento": "Meta"},
+        {"nombre": "Cumaral", "departamento": "Meta"},
+        {"nombre": "El Calvario", "departamento": "Meta"},
+        {"nombre": "El Castillo", "departamento": "Meta"},
+        {"nombre": "El Dorado", "departamento": "Meta"},
+        {"nombre": "El Fuerte", "departamento": "Meta"},
+        {"nombre": "Estación Corozal", "departamento": "Meta"},
+        {"nombre": "Fuentedeoro", "departamento": "Meta"},
+        {"nombre": "Gabás", "departamento": "Meta"},
+        {"nombre": "Gramalote", "departamento": "Meta"},
+        {"nombre": "Granada", "departamento": "Meta"},
+        {"nombre": "La Macarena", "departamento": "Meta"},
+        {"nombre": "La Uribe", "departamento": "Meta"},
+        {"nombre": "Lejanías", "departamento": "Meta"},
+        {"nombre": "Mesetas", "departamento": "Meta"},
+        {"nombre": "Peñas Blancas", "departamento": "Meta"},
+        {"nombre": "Puerto Gaitán", "departamento": "Meta"},
+        {"nombre": "Puerto López", "departamento": "Meta"},
+        {"nombre": "Puerto Lleras", "departamento": "Meta"},
+        {"nombre": "Puerto Rico", "departamento": "Meta"},
+        {"nombre": "Restrepo", "departamento": "Meta"},
+        {"nombre": "San Carlos de Guaroa", "departamento": "Meta"},
+        {"nombre": "San Juanito", "departamento": "Meta"},
+        {"nombre": "San Martín", "departamento": "Meta"},
+        {"nombre": "Vega de Alatanza", "departamento": "Meta"},
+        
+        // NARIÑO
+        {"nombre": "Pasto", "departamento": "Nariño"},
+        {"nombre": "Albán", "departamento": "Nariño"},
+        {"nombre": "Almaguer", "departamento": "Nariño"},
+        {"nombre": "Ancuya", "departamento": "Nariño"},
+        {"nombre": "Andagoya", "departamento": "Nariño"},
+        {"nombre": "Anganoy", "departamento": "Nariño"},
+        {"nombre": "Anguia", "departamento": "Nariño"},
+        {"nombre": "Arcabuco", "departamento": "Nariño"},
+        {"nombre": "Argelias", "departamento": "Nariño"},
+        {"nombre": "Argelia", "departamento": "Nariño"},
+        {"nombre": "Aroca", "departamento": "Nariño"},
+        {"nombre": "Barbacoas", "departamento": "Nariño"},
+        {"nombre": "Belén", "departamento": "Nariño"},
+        {"nombre": "Belmira", "departamento": "Nariño"},
+        {"nombre": "Beltran", "departamento": "Nariño"},
+        {"nombre": "Blanca", "departamento": "Nariño"},
+        {"nombre": "Bojacá", "departamento": "Nariño"},
+        {"nombre": "Bolfiar", "departamento": "Nariño"},
+        {"nombre": "Bolívar", "departamento": "Nariño"},
+        {"nombre": "Bonda", "departamento": "Nariño"},
+        {"nombre": "Bonanza", "departamento": "Nariño"},
+        {"nombre": "Borbur", "departamento": "Nariño"},
+        {"nombre": "Boronía", "departamento": "Nariño"},
+        {"nombre": "Borrero", "departamento": "Nariño"},
+        {"nombre": "Bosa", "departamento": "Nariño"},
+        {"nombre": "Bosconia", "departamento": "Nariño"},
+        {"nombre": "Bosgaje", "departamento": "Nariño"},
+        {"nombre": "Botica", "departamento": "Nariño"},
+        {"nombre": "Botija", "departamento": "Nariño"},
+        {"nombre": "Botijas", "departamento": "Nariño"},
+        
+        // NORTE DE SANTANDER
+        {"nombre": "Cúcuta", "departamento": "Norte de Santander"},
+        {"nombre": "Abrego", "departamento": "Norte de Santander"},
+        {"nombre": "Arboledas", "departamento": "Norte de Santander"},
+        {"nombre": "Bochalema", "departamento": "Norte de Santander"},
+        {"nombre": "Bucaramanga", "departamento": "Norte de Santander"},
+        {"nombre": "Cácota", "departamento": "Norte de Santander"},
+        {"nombre": "Cachirá", "departamento": "Norte de Santander"},
+        {"nombre": "Cáchira", "departamento": "Norte de Santander"},
+        {"nombre": "Cachirilla", "departamento": "Norte de Santander"},
+        {"nombre": "Cachita", "departamento": "Norte de Santander"},
+        {"nombre": "Cácota", "departamento": "Norte de Santander"},
+        {"nombre": "Cadeita", "departamento": "Norte de Santander"},
+        {"nombre": "Cadena", "departamento": "Norte de Santander"},
+        {"nombre": "Cadenilla", "departamento": "Norte de Santander"},
+        {"nombre": "Cadenita", "departamento": "Norte de Santander"},
+        {"nombre": "Cadeño", "departamento": "Norte de Santander"},
+        {"nombre": "Cadete", "departamento": "Norte de Santander"},
+        {"nombre": "Cadetía", "departamento": "Norte de Santander"},
+        {"nombre": "Cadetilla", "departamento": "Norte de Santander"},
+        {"nombre": "Cadetina", "departamento": "Norte de Santander"},
+        
+        // PUTUMAYO
+        {"nombre": "Mocoa", "departamento": "Putumayo"},
+        {"nombre": "Colón", "departamento": "Putumayo"},
+        {"nombre": "Leguízamo", "departamento": "Putumayo"},
+        {"nombre": "Orito", "departamento": "Putumayo"},
+        {"nombre": "Puerto Asís", "departamento": "Putumayo"},
+        {"nombre": "Puerto Caicedo", "departamento": "Putumayo"},
+        {"nombre": "Puerto Guzmán", "departamento": "Putumayo"},
+        {"nombre": "Sibundoy", "departamento": "Putumayo"},
+        {"nombre": "Teresita", "departamento": "Putumayo"},
+        {"nombre": "Villagarzón", "departamento": "Putumayo"},
+        
+        // QUINDÍO
+        {"nombre": "Armenia", "departamento": "Quindío"},
+        {"nombre": "Buenavista", "departamento": "Quindío"},
+        {"nombre": "Calarcá", "departamento": "Quindío"},
+        {"nombre": "Córdoba", "departamento": "Quindío"},
+        {"nombre": "Filandia", "departamento": "Quindío"},
+        {"nombre": "Génova", "departamento": "Quindío"},
+        {"nombre": "La Ceja", "departamento": "Quindío"},
+        {"nombre": "La Tebaida", "departamento": "Quindío"},
+        {"nombre": "Montenegro", "departamento": "Quindío"},
+        {"nombre": "Pijao", "departamento": "Quindío"},
+        {"nombre": "Quimbaya", "departamento": "Quindío"},
+        {"nombre": "Salento", "departamento": "Quindío"},
+        
+        // RISARALDA
+        {"nombre": "Pereira", "departamento": "Risaralda"},
+        {"nombre": "Apia", "departamento": "Risaralda"},
+        {"nombre": "Balboa", "departamento": "Risaralda"},
+        {"nombre": "Belén de Umbría", "departamento": "Risaralda"},
+        {"nombre": "Cartago", "departamento": "Risaralda"},
+        {"nombre": "Dosquebradas", "departamento": "Risaralda"},
+        {"nombre": "Filandia", "departamento": "Risaralda"},
+        {"nombre": "Guatica", "departamento": "Risaralda"},
+        {"nombre": "La Ceja", "departamento": "Risaralda"},
+        {"nombre": "La Virginia", "departamento": "Risaralda"},
+        {"nombre": "Marsella", "departamento": "Risaralda"},
+        {"nombre": "Mistrató", "departamento": "Risaralda"},
+        {"nombre": "Pueblo Rico", "departamento": "Risaralda"},
+        {"nombre": "Quinchía", "departamento": "Risaralda"},
+        {"nombre": "Santuario", "departamento": "Risaralda"},
+        
+        // SANTANDER
+        {"nombre": "Bucaramanga", "departamento": "Santander"},
+        {"nombre": "Aguada", "departamento": "Santander"},
+        {"nombre": "Aratoca", "departamento": "Santander"},
+        {"nombre": "Arcabuco", "departamento": "Santander"},
+        {"nombre": "Arenal", "departamento": "Santander"},
+        {"nombre": "Arenisca", "departamento": "Santander"},
+        {"nombre": "Arenoso", "departamento": "Santander"},
+        {"nombre": "Arenuta", "departamento": "Santander"},
+        {"nombre": "Arjona", "departamento": "Santander"},
+        {"nombre": "Armero", "departamento": "Santander"},
+        {"nombre": "Arminia", "departamento": "Santander"},
+        {"nombre": "Armino", "departamento": "Santander"},
+        {"nombre": "Arminuelo", "departamento": "Santander"},
+        {"nombre": "Armillera", "departamento": "Santander"},
+        {"nombre": "Armilla", "departamento": "Santander"},
+        {"nombre": "Armillazo", "departamento": "Santander"},
+        {"nombre": "Armilleja", "departamento": "Santander"},
+        {"nombre": "Armille", "departamento": "Santander"},
+        {"nombre": "Armillería", "departamento": "Santander"},
+        {"nombre": "Armilleta", "departamento": "Santander"},
+        
+        // SUCRE
+        {"nombre": "Sincelejo", "departamento": "Sucre"},
+        {"nombre": "Buenavista", "departamento": "Sucre"},
+        {"nombre": "Caimito", "departamento": "Sucre"},
+        {"nombre": "Calamar", "departamento": "Sucre"},
+        {"nombre": "Sampués", "departamento": "Sucre"},
+        {"nombre": "Colosó", "departamento": "Sucre"},
+        {"nombre": "Corozal", "departamento": "Sucre"},
+        {"nombre": "El Roble", "departamento": "Sucre"},
+        {"nombre": "Galeras", "departamento": "Sucre"},
+        {"nombre": "La Unión", "departamento": "Sucre"},
+        {"nombre": "Los Palmitos", "departamento": "Sucre"},
+        {"nombre": "Morroa", "departamento": "Sucre"},
+        {"nombre": "Ovejas", "departamento": "Sucre"},
+        {"nombre": "Palmito", "departamento": "Sucre"},
+        {"nombre": "Platanillo", "departamento": "Sucre"},
+        {"nombre": "San Benito Abad", "departamento": "Sucre"},
+        {"nombre": "San Juan de Betulia", "departamento": "Sucre"},
+        {"nombre": "San Marcos", "departamento": "Sucre"},
+        {"nombre": "San Onofre", "departamento": "Sucre"},
+        {"nombre": "San Pedro", "departamento": "Sucre"},
+        {"nombre": "San Pelayo", "departamento": "Sucre"},
+        {"nombre": "Sucre", "departamento": "Sucre"},
+        
+        // TOLIMA
+        {"nombre": "Ibagué", "departamento": "Tolima"},
+        {"nombre": "Alvarado", "departamento": "Tolima"},
+        {"nombre": "Alpujarra", "departamento": "Tolima"},
+        {"nombre": "Ambuema", "departamento": "Tolima"},
+        {"nombre": "Amoyá", "departamento": "Tolima"},
+        {"nombre": "Anzoátegui", "departamento": "Tolima"},
+        {"nombre": "Aracua", "departamento": "Tolima"},
+        {"nombre": "Aracuara", "departamento": "Tolima"},
+        {"nombre": "Aracuari", "departamento": "Tolima"},
+        {"nombre": "Aracuarita", "departamento": "Tolima"},
+        {"nombre": "Armenia", "departamento": "Tolima"},
+        {"nombre": "Armero", "departamento": "Tolima"},
+        {"nombre": "Armero-Guayabal", "departamento": "Tolima"},
+        {"nombre": "Arrancaplumas", "departamento": "Tolima"},
+        {"nombre": "Arrancaplumaza", "departamento": "Tolima"},
+        {"nombre": "Arrancasiete", "departamento": "Tolima"},
+        {"nombre": "Arrendajo", "departamento": "Tolima"},
+        {"nombre": "Arrendajada", "departamento": "Tolima"},
+        {"nombre": "Arrendajador", "departamento": "Tolima"},
+        {"nombre": "Arrendajo", "departamento": "Tolima"},
+        
+        // VALLE DEL CAUCA
+        {"nombre": "Cali", "departamento": "Valle del Cauca"},
+        {"nombre": "Palmira", "departamento": "Valle del Cauca"},
+        {"nombre": "Buenaventura", "departamento": "Valle del Cauca"},
+        {"nombre": "Buga", "departamento": "Valle del Cauca"},
+        {"nombre": "Cartago", "departamento": "Valle del Cauca"},
+        {"nombre": "Jamundí", "departamento": "Valle del Cauca"},
+        {"nombre": "La Cumbre", "departamento": "Valle del Cauca"},
+        {"nombre": "Obando", "departamento": "Valle del Cauca"},
+        {"nombre": "Pradera", "departamento": "Valle del Cauca"},
+        {"nombre": "Restrepo", "departamento": "Valle del Cauca"},
+        {"nombre": "Riofrío", "departamento": "Valle del Cauca"},
+        {"nombre": "Tuluá", "departamento": "Valle del Cauca"},
+        {"nombre": "Versalles", "departamento": "Valle del Cauca"},
+        {"nombre": "Vijes", "departamento": "Valle del Cauca"},
+        {"nombre": "Yotoco", "departamento": "Valle del Cauca"},
+        {"nombre": "Zarzal", "departamento": "Valle del Cauca"},
+        {"nombre": "Ansermanuevo", "departamento": "Valle del Cauca"},
+        {"nombre": "Bolívar", "departamento": "Valle del Cauca"},
+        {"nombre": "Calimá-Darién", "departamento": "Valle del Cauca"},
+        {"nombre": "Candelaria", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrapis", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrapí", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrapiño", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrápida", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrápido", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrápil", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrápira", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparrapó", "departamento": "Valle del Cauca"},
+        {"nombre": "Caparraquilla", "departamento": "Valle del Cauca"},
+        
+        // VAUPÉS
+        {"nombre": "Mitú", "departamento": "Vaupés"},
+        {"nombre": "Carurú", "departamento": "Vaupés"},
+        {"nombre": "Papunaua", "departamento": "Vaupés"},
+        {"nombre": "Taraira", "departamento": "Vaupés"},
+        {"nombre": "Vaupés", "departamento": "Vaupés"},
+        
+        // VICHADA
+        {"nombre": "Puerto Carreño", "departamento": "Vichada"},
+        {"nombre": "Cumaribo", "departamento": "Vichada"},
+        {"nombre": "La Primavera", "departamento": "Vichada"},
+        {"nombre": "Maipures", "departamento": "Vichada"},
+        {"nombre": "Puerto Carreño", "departamento": "Vichada"},
+        {"nombre": "Santa Rosalía", "departamento": "Vichada"}
+    ]
+};
+const procedenciaInput = document.getElementById('procedencia');
+const procedenciaLista = document.getElementById('procedencia_lista');
+
+procedenciaInput.addEventListener('input', function() {
+    const valor = this.value.toLowerCase().trim();
+    
+    if (valor.length === 0) {
+        procedenciaLista.style.display = 'none';
+        return;
+    }
+    
+    const filtrados = municipiosData.municipios.filter(m => 
+        m.nombre.toLowerCase().startsWith(valor)
+    );
+    
+    if (filtrados.length > 0) {
+        procedenciaLista.innerHTML = filtrados.map(m => 
+            `<a class="dropdown-item" href="#" data-value="${m.nombre} (${m.departamento})" 
+                style="padding: 8px 12px; display: block; color: #333; text-decoration: none; border-bottom: 1px solid #f0f0f0;">
+                <strong>${m.nombre}</strong> <small style="color: #999;">(${m.departamento})</small>
+            </a>`
+        ).join('');
+        
+        procedenciaLista.style.display = 'block';
+        
+        procedenciaLista.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                procedenciaInput.value = this.dataset.value;
+                procedenciaLista.style.display = 'none';
+            });
+        });
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target !== procedenciaInput) {
+        procedenciaLista.style.display = 'none';
+    }
+});
+</script>
+<!-- SCRIPT PARA MOSTRAR/OCULTAR DESCRIPCIÓN DE ALERGIAS -->
+<script>
+function mostrarDescripcionAlergias() {
+    const tieneAlergias = document.querySelector('input[name="tiene_alergias"]:checked').value;
+    const container = document.getElementById('descripcion_alergias_container');
+    
+    if (tieneAlergias === 'si') {
+        container.style.display = 'block';
+        document.getElementById('descripcion_alergias').required = true;
+    } else {
+        container.style.display = 'none';
+        document.getElementById('descripcion_alergias').required = false;
+        document.getElementById('descripcion_alergias').value = '';
+    }
+}
+
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    mostrarDescripcionAlergias();
+});
+</script>
 </body>
 </html>

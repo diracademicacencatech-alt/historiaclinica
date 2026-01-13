@@ -127,6 +127,20 @@ class HistoriaClinica(db.Model):
         back_populates='historia'
     )
 
+    antecedentes_medicos = db.Column(db.Text, nullable=True)
+    antecedentes_farmacologicos = db.Column(db.Text, nullable=True)
+    antecedentes_quirurgicos = db.Column(db.Text, nullable=True)
+    antecedentes_toxicos = db.Column(db.Text, nullable=True)
+    antecedentes_alergicos = db.Column(db.Text, nullable=True)
+    antecedentes_ginecobstetricos = db.Column(db.Text, nullable=True)
+    
+    riesgos_general = db.Column(db.Text, nullable=True)
+    riesgo_caidas_dowton = db.Column(db.String(100), nullable=True)
+    riesgo_upp_braden = db.Column(db.String(100), nullable=True)
+    riesgos_evaluacion = db.Column(db.Text, nullable=True)
+    
+    tiene_alergias = db.Column(db.String(2), default='no', nullable=True)
+    descripcion_alergias = db.Column(db.Text, nullable=True)
 
 class OrdenMedica(db.Model):
     __tablename__ = 'ordenes_medicas'
