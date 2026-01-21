@@ -581,104 +581,121 @@ def orden_medica(historia_id):
 def pdf_libro_historia(historia_id):
     historia = HistoriaClinica.query.get_or_404(historia_id)
     ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
-
-    fecha_ingreso_local = None
-    if historia.fecha_registro:
-        fecha_ingreso_local = historia.fecha_registro
+    fecha_ingreso_local = historia.fecha_registro if historia.fecha_registro else None
 
     diag_cie10 = None
     if historia.cie10_principal:
-        diag_cie10 = DiagnosticoCIE10.query.filter_by(
-            codigo=historia.cie10_principal
-        ).first()
+        diag_cie10 = DiagnosticoCIE10.query.filter_by(codigo=historia.cie10_principal).first()
 
+    # --- PROCESAR MEDICAMENTOS GENERALES DE LA HISTORIA ---
     medicamentos = []
     if getattr(historia, 'medicamentos_json', None):
         try:
-            medicamentos = json.loads(historia.medicamentos_json)
-        except ValueError:
-            medicamentos = []
+            datos_json = json.loads(historia.medicamentos_json)
+            for m in datos_json:
+                cod = str(m.get('codigo', '')).strip()
+                med_db = Medicamento.query.filter_by(codigo=cod).first()
+                m['nombre'] = med_db.nombre if med_db else f"Cod: {cod}"
+                medicamentos.append(m)
+        except Exception as e:
+            print(f"Error procesando medicamentos para el PDF: {e}")
 
-    # Medicamentos y exámenes por cada orden médica
-    ordenes_con_meds = []
+    # --- PROCESAR ÓRDENES (MEDICAMENTOS Y LABORATORIOS) ---
+    ordenes_con_todo = []
     for orden in ordenes:
+        # 1. Procesar Medicamentos de la Orden (JSON)
         meds_orden = []
         if orden.medicamentos_json:
             try:
-                meds_orden = json.loads(orden.medicamentos_json)
-            except ValueError:
+                meds_lista_orden = json.loads(orden.medicamentos_json)
+                for mo in meds_lista_orden:
+                    cod_o = str(mo.get('codigo', '')).strip()
+                    med_db_o = Medicamento.query.filter_by(codigo=cod_o).first()
+                    mo['nombre'] = med_db_o.nombre if med_db_o else f"Cod: {cod_o}"
+                    meds_orden.append(mo)
+            except:
                 meds_orden = []
 
-        ordenes_con_meds.append({
+        # 2. PROCESAR LABORATORIOS (Relación SQLAlchemy)
+        # Según tu modelo, orden.examenes_lab es una lista de OrdenLaboratorioItem
+        labs_orden = []
+        if orden.examenes_lab:
+            for item_lab in orden.examenes_lab:
+                # Accedemos al nombre a través de la relación item_lab.examen
+                labs_orden.append({
+                    'nombre': item_lab.examen.nombre if item_lab.examen else "Examen no encontrado",
+                    'estado': item_lab.estado
+                })
+
+        ordenes_con_todo.append({
             'orden': orden,
             'medicamentos': meds_orden,
-            'examenes_lab': orden.examenes_lab  # relación OrdenLaboratorioItem
+            'laboratorios': labs_orden
         })
 
     html = render_template(
         'pacientes/pdf_libro.html',
         historia=historia,
         fecha_ingreso_local=fecha_ingreso_local,
-        ordenes_con_meds=ordenes_con_meds,
+        ordenes_con_meds=ordenes_con_todo,
         diag_cie10=diag_cie10,
         medicamentos=medicamentos,
         now=datetime.now(),
     )
+    
     pdf = HTML(string=html).write_pdf()
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = (
-        f'inline; filename=libro_historia_{historia_id}.pdf'
-    )
+    response.headers['Content-Disposition'] = f'inline; filename=libro_historia_{historia_id}.pdf'
     return response
 
 @pacientes_bp.route('/historias/libro/<int:historia_id>/ver')
 @login_required
 def ver_historia(historia_id):
-    """Visualiza la historia clínica sin convertir a PDF"""
     historia = HistoriaClinica.query.get_or_404(historia_id)
     ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
-
-    fecha_ingreso_local = None
-    if historia.fecha_registro:
-        fecha_ingreso_local = historia.fecha_registro
+    fecha_ingreso_local = historia.fecha_registro if historia.fecha_registro else None
 
     diag_cie10 = None
     if historia.cie10_principal:
-        diag_cie10 = DiagnosticoCIE10.query.filter_by(
-            codigo=historia.cie10_principal
-        ).first()
+        diag_cie10 = DiagnosticoCIE10.query.filter_by(codigo=historia.cie10_principal).first()
 
-    medicamentos = []
-    if getattr(historia, 'medicamentos_json', None):
-        try:
-            medicamentos = json.loads(historia.medicamentos_json)
-        except ValueError:
-            medicamentos = []
-
-    # Medicamentos y exámenes por cada orden médica
-    ordenes_con_meds = []
+    ordenes_con_todo = []
     for orden in ordenes:
+        # Medicamentos
         meds_orden = []
         if orden.medicamentos_json:
             try:
-                meds_orden = json.loads(orden.medicamentos_json)
-            except ValueError:
+                meds_lista = json.loads(orden.medicamentos_json)
+                for m in meds_lista:
+                    cod = m.get('codigo', '').strip()
+                    med_db = Medicamento.query.filter_by(codigo=cod).first()
+                    m['nombre'] = med_db.nombre if med_db else f"No encontrado ({cod})"
+                    meds_orden.append(m)
+            except Exception as e:
                 meds_orden = []
 
-        ordenes_con_meds.append({
+        # Laboratorios (Usando la relación definida en el modelo OrdenMedica)
+        labs_orden = []
+        if orden.examenes_lab:
+            for item_lab in orden.examenes_lab:
+                labs_orden.append({
+                    'nombre': item_lab.examen.nombre if item_lab.examen else "Examen no definido",
+                    'estado': item_lab.estado
+                })
+
+        ordenes_con_todo.append({
             'orden': orden,
             'medicamentos': meds_orden,
-            'examenes_lab': orden.examenes_lab
+            'laboratorios': labs_orden
         })
 
     return render_template(
         'pacientes/ver_historia.html',
         historia=historia,
         fecha_ingreso_local=fecha_ingreso_local,
-        ordenes_con_meds=ordenes_con_meds,
+        ordenes_con_meds=ordenes_con_todo,
         diag_cie10=diag_cie10,
-        medicamentos=medicamentos,
     )
 
 @pacientes_bp.route('/api/medicamentos/buscar', methods=['GET'])

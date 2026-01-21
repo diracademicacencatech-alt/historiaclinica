@@ -1,368 +1,226 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- HEADER CON INFO PACIENTE -->
-    <div class="row mb-4">
-        <div class="col">
-            <h2>📋 Historia Clínica #{{ historia.numero_historia }}</h2>
-            <p class="text-muted">
-                <strong>Paciente:</strong> {{ historia.nombre_paciente }} | 
-                <strong>Doc:</strong> {{ historia.paciente.numero if historia.paciente else 'N/A' }} |
-                <strong>Fecha:</strong> {{ historia.fecha_registro.strftime('%d/%m/%Y') if historia.fecha_registro else 'N/A' }}
-            </p>
-        </div>
-        <div class="col-auto">
-            <a href="{{ url_for('pacientes.pdf_libro_historia', historia_id=historia.id) }}" class="btn btn-success" target="_blank">
-                <i class="fas fa-file-pdf"></i> Descargar PDF
-            </a>
-        </div>
-    </div>
 
-    <!-- 1. PACIENTE E INGRESO -->
-    <div class="card mb-4 border-info">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0"><i class="fas fa-user"></i> Paciente e Ingreso</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Nombre:</strong> {{ historia.nombre_paciente }}</p>
-                    <p><strong>Documento:</strong> {{ historia.paciente.numero if historia.paciente else 'N/A' }}</p>
-                    <p><strong>Cama:</strong> {{ historia.paciente.cama if historia.paciente and historia.paciente.cama else 'N/A' }}</p>
+<div class="container py-4 d-flex justify-content-center">
+    <div class="documento-clinico">
+
+        <div class="hc-header-informe">
+            <div class="row align-items-center">
+                <div class="col-7">
+                    <h1 class="titulo-entidad">HISTORIA CLÍNICA DE INGRESO</h1>
+                    <p class="mb-0 text-uppercase"><strong>Servicio:</strong> {{ historia.servicio_hospitalario or 'No asignado' }}</p>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>N° Historia:</strong> {{ historia.numero_historia }}</p>
-                    <p><strong>N° Ingreso:</strong> {{ historia.numero_ingreso }}</p>
-                    <p><strong>Servicio:</strong> {{ historia.servicio_hospitalario }}</p>
+                <div class="col-5 text-end small">
+                    <p class="mb-0"><strong>N° Ingreso:</strong> {{ historia.numero_ingreso }}</p>
+                    <p class="mb-0">
+    <strong>Fecha de Consulta:</strong> 
+    {{ ahora_bogota().strftime('%d/%m/%Y %H:%M') if ahora_bogota else '17/01/2026 08:09' }}
+</p>
+
+<p class="mb-0 text-muted">
+    F. Registro Orig: {{ historia.fecha_registro.strftime('%d/%m/%Y %H:%M') if historia.fecha_registro else 'N/A' }}
+</p>
                 </div>
             </div>
+            <div class="linea-separadora"></div>
         </div>
-    </div>
 
-    <!-- 2. DATOS PERSONALES -->
-    <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0"><i class="fas fa-id-card"></i> Datos Personales</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Fecha Nacimiento:</strong> {{ historia.fecha_nacimiento.strftime('%d/%m/%Y') if historia.fecha_nacimiento else 'N/A' }}</p>
-                    <p><strong>Edad:</strong> {{ historia.edad }} años</p>
-                    <p><strong>Sexo:</strong> {{ historia.sexo }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Teléfono:</strong> {{ historia.telefono }}</p>
-                    <p><strong>Dirección:</strong> {{ historia.direccion }}</p>
-                    <p><strong>Procedencia:</strong> {{ historia.procedencia }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
+        <section class="seccion-informe">
+            <h6 class="titulo-seccion">1. IDENTIFICACIÓN DEL PACIENTE</h6>
+            <table class="tabla-datos-paciente">
+                <tr>
+                    <td><strong>Paciente:</strong> {{ historia.nombre_paciente }}</td>
+                    <td><strong>Documento:</strong> {{ historia.paciente.numero }}</td>
+                    <td><strong>Sexo:</strong> {{ historia.sexo }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Edad:</strong> {{ historia.edad }} años</td>
+                    <td><strong>F. Nacimiento:</strong> {{ historia.fecha_nacimiento.strftime('%d/%m/%Y') }}</td>
+                    <td><strong>Cama:</strong> {{ historia.paciente.cama or 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Ocupación:</strong> {{ historia.ocupacion or 'N/A' }}</td>
+                    <td><strong>Régimen:</strong> {{ historia.regimen or 'N/A' }}</td>
+                    <td><strong>Estrato:</strong> {{ historia.estrato or 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <td colspan="2"><strong>Plan Beneficios:</strong> {{ historia.plan_beneficios or 'N/A' }}</td>
+                    <td><strong>Procedencia:</strong> {{ historia.procedencia }}</td>
+                </tr>
+            </table>
+        </section>
 
-    <!-- 3. AFILIACIÓN Y RESPONSABLE -->
-    <div class="card mb-4 border-warning">
-        <div class="card-header bg-warning text-dark">
-            <h5 class="mb-0"><i class="fas fa-hospital"></i> Afiliación y Responsable</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Régimen:</strong> {{ historia.regimen }}</p>
-                    <p><strong>Estrato:</strong> {{ historia.estrato }}</p>
-                    <p><strong>Plan Beneficios:</strong> {{ historia.plan_beneficios }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Responsable:</strong> {{ historia.acudiente_responsable }}</p>
-                    <p><strong>Tel Resp:</strong> {{ historia.telefono_responsable }}</p>
-                    <p><strong>Dir Resp:</strong> {{ historia.direccion_responsable }}</p>
-                    <p><strong>Padre:</strong> {{ historia.nombre_padre }}</p>
-                    <p><strong>Madre:</strong> {{ historia.nombre_madre }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. DIAGNÓSTICO Y HISTORIA CLÍNICA -->
-    <div class="card mb-4 border-danger">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0"><i class="fas fa-stethoscope"></i> Diagnóstico y Datos Clínicos</h5>
-        </div>
-        <div class="card-body">
-            <!-- DIAGNÓSTICO CIE-10 -->
-            <div class="row mb-3">
-                <div class="col-12">
-                    <p>
-                        <strong>CIE-10:</strong> {{ historia.cie10_principal or 'N/A' }}
-                        {% if diag_cie10 %}
-                        - <em>{{ diag_cie10.nombre }}</em>
-                        {% endif %}
-                    </p>
-                </div>
-            </div>
-
-            <!-- SOAPIE -->
-            <div class="row">
-                <div class="col-md-6">
-                    <strong>Subjetivo:</strong>
-                    <div class="border p-2 bg-light" style="min-height: 80px; border-radius: 4px;">
-                        {{ historia.subjetivos or 'N/A' }}
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <strong>Objetivo:</strong>
-                    <div class="border p-2 bg-light" style="min-height: 80px; border-radius: 4px;">
-                        {{ historia.objetivos or 'N/A' }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <strong>Análisis:</strong>
-                    <div class="border p-2 bg-light" style="min-height: 80px; border-radius: 4px;">
-                        {{ historia.analisis or 'N/A' }}
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <strong>Plan:</strong>
-                    <div class="border p-2 bg-light" style="min-height: 80px; border-radius: 4px;">
-                        {{ historia.plan or 'N/A' }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- MEDICAMENTOS -->
-            {% if medicamentos %}
-            <div class="row mt-4">
-                <div class="col-12">
-                    <strong><i class="fas fa-pills"></i> Medicamentos de Ingreso:</strong>
-                    <table class="table table-sm table-striped mt-2 table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Código</th>
-                                <th>Dosis</th>
-                                <th>Frecuencia</th>
-                                <th>Vía</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for med in medicamentos %}
-                            <tr>
-                                <td><strong>{{ med.codigo }}</strong></td>
-                                <td>{{ med.dosis or 'N/A' }}</td>
-                                <td>{{ med.frecuencia or 'N/A' }}</td>
-                                <td>{{ med.via_administracion or 'N/A' }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <section class="seccion-informe">
+            <h6 class="titulo-seccion">2. SIGNOS VITALES</h6>
+            {% if historia.signos_vitales %}
+            <table class="tabla-informe text-center">
+                <thead>
+                    <tr>
+                        <th>T.A</th><th>F.C</th><th>F.R</th><th>Temp</th><th>SatO2</th><th>Gluco</th><th>IMC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ historia.signos_vitales.tension_arterial }}</td>
+                        <td>{{ historia.signos_vitales.frecuencia_cardiaca }}</td>
+                        <td>{{ historia.signos_vitales.frecuencia_respiratoria }}</td>
+                        <td>{{ historia.signos_vitales.temperatura }}°C</td>
+                        <td>{{ historia.signos_vitales.saturometria }}%</td>
+                        <td>{{ historia.signos_vitales.glucometria }}</td>
+                        <td>{{ historia.signos_vitales.imc }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% else %}
+            <p class="small text-muted">No hay registro de signos vitales vinculados.</p>
             {% endif %}
-        </div>
-    </div>
+        </section>
 
-    <!-- 5. ANTECEDENTES -->
-    <div class="card mb-4 border-secondary" style="border-left: 4px solid #ffc107;">
-        <div class="card-header" style="background-color: #fff3cd; color: #000;">
-            <h5 class="mb-0"><i class="fas fa-history"></i> Antecedentes</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Médicos:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.antecedentes_medicos or 'No registrado' }}</div>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Farmacológicos:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.antecedentes_farmacologicos or 'No registrado' }}</div>
-                </div>
+        <section class="seccion-informe">
+            <h6 class="titulo-seccion">3. ANTECEDENTES</h6>
+            <div class="cuadro-texto small">
+                <p><strong>Médicos:</strong> {{ historia.antecedentes_medicos or 'Negativo' }}</p>
+                <p><strong>Farmacológicos:</strong> {{ historia.antecedentes_farmacologicos or 'Negativo' }}</p>
+                <p><strong>Quirúrgicos:</strong> {{ historia.antecedentes_quirurgicos or 'Negativo' }}</p>
+                <p><strong>Tóxicos:</strong> {{ historia.antecedentes_toxicos or 'Negativo' }}</p>
+                <p><strong>Alergias:</strong> {{ historia.descripcion_alergias if historia.tiene_alergias == 'si' else 'Negativo' }}</p>
+                <p><strong>Ginecobstétricos:</strong> {{ historia.antecedentes_ginecobstetricos or 'N/A' }}</p>
             </div>
+        </section>
 
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <p><strong>Quirúrgicos:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.antecedentes_quirurgicos or 'No registrado' }}</div>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Tóxicos:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.antecedentes_toxicos or 'No registrado' }}</div>
-                </div>
+        <section class="seccion-informe">
+            <h6 class="titulo-seccion">4. EVALUACIÓN DE RIESGOS</h6>
+            <div style="display: flex; gap: 10px; font-size: 12px; border: 1px solid #eee; padding: 10px;">
+                <div style="flex: 1;"><strong>Riesgo Caídas (Downton):</strong> {{ historia.riesgo_caidas_dowton or 'No evaluado' }}</div>
+                <div style="flex: 1; border-left: 1px solid #eee; padding-left: 10px;"><strong>Riesgo UPP (Braden):</strong> {{ historia.riesgo_upp_braden or 'No evaluado' }}</div>
             </div>
+            <div class="mt-2 small"><strong>Evaluación General:</strong> {{ historia.riesgos_evaluacion or 'Sin observaciones' }}</div>
+        </section>
 
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <p><strong>Alérgicos:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.antecedentes_alergicos or 'No registrado' }}</div>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Ginecobstétricos:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.antecedentes_ginecobstetricos or 'No registrado' }}</div>
-                </div>
+        <section class="seccion-informe">
+            <h6 class="titulo-seccion">5. DIAGNÓSTICO Y EVOLUCIÓN (SOAP)</h6>
+            <p class="mb-2"><strong>CIE-10:</strong> {{ historia.cie10_principal }} {% if diag_cie10 %}- {{ diag_cie10.nombre }}{% endif %}</p>
+            <div class="cuadro-texto">
+                <p class="mb-1"><strong>S:</strong> {{ historia.subjetivos }}</p>
+                <p class="mb-1"><strong>O:</strong> {{ historia.objetivos }}</p>
+                <p class="mb-1"><strong>A:</strong> {{ historia.analisis }}</p>
+                <p class="mb-0"><strong>P:</strong> {{ historia.plan }}</p>
             </div>
+        </section>
+        {% if ordenes_con_meds %}
+<section class="seccion-informe" style="page-break-before: always;">
+    <h6 class="titulo-seccion">6. ÓRDENES MÉDICAS Y PLAN DE TRATAMIENTO</h6>
+    
+    {% for item in ordenes_con_meds %}
+    <div class="contenedor-orden" style="border: 1px solid #0056b3; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+        <div class="orden-header" style="background: #e9ecef; padding: 5px 10px; border-bottom: 1px solid #0056b3; margin-bottom: 10px;">
+            <strong>ORDEN MÉDICA N°: {{ item.orden.id }}</strong> 
+            <span style="float: right;" class="small">
+                Fecha: {{ item.orden.fecha_orden.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_orden else 'S/F' }}
+            </span>
         </div>
-    </div>
 
-    <!-- 6. RIESGOS -->
-    <div class="card mb-4 border-secondary" style="border-left: 4px solid #dc3545;">
-        <div class="card-header" style="background-color: #f8d7da; color: #721c24;">
-            <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Riesgos</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Riesgos General:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.riesgos_general or 'No registrado' }}</div>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Riesgo de Caídas (Dowton):</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.riesgo_caidas_dowton or 'No registrado' }}</div>
-                </div>
-            </div>
-
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <p><strong>Riesgo de UPP (Braden):</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.riesgo_upp_braden or 'No registrado' }}</div>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Evaluación:</strong></p>
-                    <div class="border p-2 bg-light" style="min-height: 60px;">{{ historia.riesgos_evaluacion or 'No registrado' }}</div>
-                </div>
+        {% if item.orden.indicaciones_medicas %}
+        <div class="mb-2">
+            <p class="mb-1"><strong>Indicaciones Generales:</strong></p>
+            <div class="indicaciones-box" style="font-size: 11px; background: #fdfdfd; padding: 8px; border: 1px solid #eee;">
+                {{ item.orden.indicaciones_medicas }}
             </div>
         </div>
-    </div>
+        {% endif %}
 
-    <!-- 7. ALERGIAS -->
-    <div class="card mb-4 border-secondary" style="border-left: 4px solid #0dcaf0;">
-        <div class="card-header" style="background-color: #cfe2ff; color: #084298;">
-            <h5 class="mb-0"><i class="fas fa-allergies"></i> Alergias</h5>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <p><strong>¿Tiene alergias conocidas?</strong></p>
-                    {% if historia.tiene_alergias == 'si' %}
-                        <span class="badge bg-danger fs-6"><i class="fas fa-check"></i> SÍ</span>
-                    {% else %}
-                        <span class="badge bg-success fs-6"><i class="fas fa-times"></i> NO</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if historia.tiene_alergias == 'si' and historia.descripcion_alergias %}
-            <div class="row">
-                <div class="col-12">
-                    <p><strong>Descripción de Alergias:</strong></p>
-                    <div class="border p-3 bg-warning bg-opacity-10" style="border-left: 4px solid #ffc107;">
-                        {{ historia.descripcion_alergias }}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- 8. SIGNOS VITALES DE INGRESO -->
-    {% if historia.signos_vitales %}
-    <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-heartbeat"></i> Signos Vitales de Ingreso</h5>
-        </div>
-        <div class="card-body">
-            <div class="row text-center">
-                <div class="col-md-2">
-                    <h6>FC (lpm)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.frecuencia_cardiaca or 'N/A' }}</p>
-                </div>
-                <div class="col-md-2">
-                    <h6>FR (rpm)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.frecuencia_respiratoria or 'N/A' }}</p>
-                </div>
-                <div class="col-md-2">
-                    <h6>TA (mmHg)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.tension_arterial or 'N/A' }}</p>
-                </div>
-                <div class="col-md-2">
-                    <h6>T° (°C)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.temperatura or 'N/A' }}</p>
-                </div>
-                <div class="col-md-2">
-                    <h6>SatO2 (%)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.saturometria or 'N/A' }}</p>
-                </div>
-                <div class="col-md-2">
-                    <h6>FiO2 (%)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.fi02 or 'N/A' }}</p>
-                </div>
-            </div>
-
-            <hr>
-
-            <div class="row text-center">
-                <div class="col-md-3">
-                    <h6>Dolor (0-10)</h6>
-                    <p class="h5 fw-bold text-danger">{{ historia.signos_vitales.escala_dolor or 'N/A' }}</p>
-                </div>
-                <div class="col-md-3">
-                    <h6>Glucometría (mg/dl)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.glucometria or 'N/A' }}</p>
-                </div>
-                <div class="col-md-3">
-                    <h6>Peso (kg)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.peso or 'N/A' }}</p>
-                </div>
-                <div class="col-md-3">
-                    <h6>Talla (m)</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.talla or 'N/A' }}</p>
-                </div>
-            </div>
-
-            <hr>
-
-            <div class="row text-center">
-                <div class="col-md-6">
-                    <h6>IMC</h6>
-                    <p class="h5 fw-bold text-primary">{{ (historia.signos_vitales.imc|float|round(1)) if historia.signos_vitales.imc else 'N/A' }}</p>
-                </div>
-                <div class="col-md-6">
-                    <h6>Estado de Conciencia</h6>
-                    <p class="h5 fw-bold text-primary">{{ historia.signos_vitales.estado_conciencia or 'Alerta' }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- 9. ÓRDENES MÉDICAS -->
-    {% if ordenes_con_meds %}
-    <div class="card mb-4 border-secondary">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0"><i class="fas fa-prescription-bottle"></i> Órdenes Médicas</h5>
-        </div>
-        <div class="card-body">
-            {% for item in ordenes_con_meds %}
-            <div class="border-bottom pb-3 mb-3">
-                <h6 class="text-primary"><i class="fas fa-arrow-right"></i> Orden #{{ item.orden.id }} - {{ item.orden.fecha_orden.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_orden else 'N/A' }}</h6>
-                
-                {% if item.medicamentos %}
-                <strong class="d-block mt-2">Medicamentos:</strong>
-                <ul class="list-unstyled ps-3">
+        {% if item.medicamentos %}
+        <div class="mb-2">
+            <p class="mb-1" style="color: #0056b3;"><strong>💊 Medicamentos Prescritos:</strong></p>
+            <table class="tabla-informe" style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                <thead>
+                    <tr style="background: #f2f2f2;">
+                        <th style="width: 40%;">Medicamento</th>
+                        <th style="width: 20%;">Dosis</th>
+                        <th style="width: 20%;">Frecuencia</th>
+                        <th style="width: 20%;">Vía</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {% for med in item.medicamentos %}
-                    <li class="mb-1">
-                        <span class="badge bg-info">{{ med.codigo }}</span>
-                        {{ med.dosis }} - {{ med.frecuencia }}
-                        {% if med.via_administracion %}<span class="text-muted">({{ med.via_administracion }})</span>{% endif %}
-                    </li>
+                    <tr>
+                        <td><strong>{{ med.nombre }}</strong></td>
+                        <td>{{ med.dosis }}</td>
+                        <td>{{ med.frecuencia }}</td>
+                        <td>{{ med.via_administracion or med.via }}</td>
+                    </tr>
                     {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-            {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
-    {% endif %}
+        {% endif %}
 
-</div>
+        {% if item.laboratorios %}
+        <div class="mb-2" style="margin-top: 10px;">
+            <p class="mb-1" style="color: #d35400;"><strong>🔬 Laboratorios y Ayudas Diagnósticas:</strong></p>
+            <table class="tabla-informe" style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                <thead>
+                    <tr style="background: #fff4e5;">
+                        <th style="width: 70%; border: 1px solid #f39c12; padding: 5px;">Examen Solicitado</th>
+                        <th style="width: 30%; border: 1px solid #f39c12; padding: 5px;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lab in item.laboratorios %}
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 5px; text-align: left;">
+                            <strong>{{ lab.nombre }}</strong>
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 5px; text-transform: uppercase;">
+                            {{ lab.estado }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+
+<style>
+/* Reset General */
+.documento-clinico {
+    width: 100%;
+    max-width: 850px;
+    background: #fff;
+    padding: 40px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    font-family: "Times New Roman", serif;
+    color: #000;
+    border: 1px solid #ccc;
+    line-height: 1.3;
+}
+
+.hc-header-informe { margin-bottom: 15px; }
+.titulo-entidad { font-size: 22px; font-weight: bold; margin-bottom: 0; }
+.linea-separadora { border-top: 2px solid #000; border-bottom: 1px solid #000; height: 4px; margin: 10px 0; }
+
+.seccion-informe { margin-bottom: 20px; width: 100%; clear: both; }
+.titulo-seccion { background: #eee; padding: 5px; font-weight: bold; border: 1px solid #000; margin-bottom: 8px; text-transform: uppercase; font-size: 13px; }
+
+/* Tablas */
+.tabla-datos-paciente { width: 100%; font-size: 13px; margin-bottom: 10px; }
+.tabla-datos-paciente td { padding: 4px 0; border-bottom: 1px solid #eee; }
+
+.tabla-informe { width: 100% !important; border-collapse: collapse; table-layout: fixed; margin-bottom: 10px; }
+.tabla-informe th, .tabla-informe td { border: 1px solid #000; padding: 4px; font-size: 11px; text-align: center; word-wrap: break-word; }
+
+/* Órdenes */
+.contenedor-orden { border: 1px solid #000; padding: 10px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
+.orden-header { border-bottom: 1px solid #000; margin-bottom: 8px; padding-bottom: 4px; font-size: 13px; }
+.indicaciones-box { padding: 8px; border: 1px dashed #ccc; background: #fdfdfd; font-size: 12px; white-space: pre-line; }
+.nota-orden { margin-top: 5px; font-size: 11px; font-style: italic; }
+
+.cuadro-texto { border: 1px solid #eee; padding: 10px; font-size: 12px; background: #fcfcfc; }
+</style>
+
 {% endblock %}

@@ -372,30 +372,41 @@ def eliminar_nota_enfermeria(registro_id):
 @enfermeria_bp.route('/registro/<int:registro_id>/medicamentos', methods=['GET', 'POST'])
 @login_required
 def administrar_medicamentos(registro_id):
+    """
+    Gestiona la administración de medicamentos para un registro de enfermería.
+    
+    GET: Muestra medicamentos formulados, formulario y historial
+    POST: Guarda la administración del medicamento
+    """
+    
     registro = RegistroEnfermeria.query.get_or_404(registro_id)
-
-    # --- POST: GUARDAR con HORA EDITABLE ---
+    paciente = Paciente.query.get(registro.paciente_id)
+    
+    # ========== MANEJO DE POST (GUARDAR ADMINISTRACIÓN) ==========
     if request.method == 'POST' and 'codigo_medicamento' in request.form:
-        codigo = request.form['codigo_medicamento']
-        cantidad = request.form['cantidad']
+        codigo = request.form.get('codigo_medicamento')
+        cantidad = request.form.get('cantidad')
         hora_str = request.form.get('hora_administracion', '') or ahora_bogota().strftime('%Y-%m-%dT%H:%M')
         unidad = request.form.get('unidad', 'tab')
         via = request.form.get('via', 'VO')
         observaciones = request.form.get('observaciones', '')
-
+        
         try:
             cantidad_dec = Decimal(cantidad)
+            
+            # Buscar medicamento
             med = Medicamento.query.filter_by(codigo=codigo).first()
             if not med:
-                flash('❌ Medicamento no encontrado', 'danger')
+                flash(f'❌ Medicamento {codigo} no encontrado', 'danger')
                 return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
-
-            # HORA EDITABLE o actual
+            
+            # Parsear hora
             if hora_str:
                 hora_admin = datetime.strptime(hora_str, '%Y-%m-%dT%H:%M')
             else:
                 hora_admin = ahora_bogota()
-
+            
+            # Crear registro de administración
             admin = AdministracionMedicamento(
                 registro_enfermeria_id=registro.id,
                 medicamento_id=med.id,
@@ -405,32 +416,41 @@ def administrar_medicamentos(registro_id):
                 observaciones=observaciones,
                 hora_administracion=hora_admin
             )
+            
             db.session.add(admin)
             db.session.commit()
-            flash(f'✅ {codigo} x{cantidad_dec} a las {hora_admin.strftime("%H:%M")}', 'success')
+            
+            flash(f'✅ {med.nombre} x{cantidad_dec} {unidad} a las {hora_admin.strftime("%H:%M")}', 'success')
+        
+        except ValueError as e:
+            db.session.rollback()
+            flash(f'❌ Error en los datos: {str(e)}', 'danger')
         except Exception as e:
             db.session.rollback()
             flash(f'❌ Error: {str(e)}', 'danger')
-
+        
         return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
-
-    # --- GET: TODO IGUAL QUE FUNCIONABA ---
+    
+    
+    # ========== MANEJO DE GET (MOSTRAR FORMULARIO) ==========
+    
     medicamentos_formulados = []
+    
     if registro.historia_clinica_id:
         historia_id = registro.historia_clinica_id
         todos_medicamentos = []
         
-        # Historia
+        # Obtener medicamentos de la Historia Clínica
         historia = HistoriaClinica.query.get(historia_id)
         if historia and historia.medicamentos_json:
             try:
                 bruto = json.loads(historia.medicamentos_json)
                 if isinstance(bruto, list):
                     todos_medicamentos.extend(bruto)
-            except:
+            except json.JSONDecodeError:
                 pass
         
-        # Órdenes
+        # Obtener medicamentos de las Órdenes Médicas
         ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
         for orden in ordenes:
             if orden.medicamentos_json:
@@ -438,25 +458,33 @@ def administrar_medicamentos(registro_id):
                     meds = json.loads(orden.medicamentos_json)
                     if isinstance(meds, list):
                         todos_medicamentos.extend(meds)
-                except:
+                except json.JSONDecodeError:
                     pass
         
-        # Agrupar por código
-        meds_por_codigo = defaultdict(lambda: {'total': 0, 'detalle': {}})
+        # Agrupar por código de medicamento
+        meds_por_codigo = defaultdict(lambda: {'total': 0, 'detalle': {}, 'medicamento_bd': None})
+        
         for med in todos_medicamentos:
             codigo = med.get('codigo', '')
             if codigo:
+                # Buscar medicamento en BD para obtener nombre completo
+                med_bd = Medicamento.query.filter_by(codigo=codigo).first()
+                
                 meds_por_codigo[codigo]['total'] += float(med.get('cantidad_solicitada', 0))
+                meds_por_codigo[codigo]['medicamento_bd'] = med_bd
                 meds_por_codigo[codigo]['detalle'].update({
+                    'nombre': med_bd.nombre if med_bd else med.get('nombre', 'Sin nombre'),
                     'dosis': med.get('dosis', ''),
                     'frecuencia': med.get('frecuencia', ''),
-                    'unidad_inventario': med.get('unidad_inventario', 'tab')
+                    'unidad_inventario': med.get('unidad_inventario', 'tab'),
+                    'via': med.get('via', 'VO')
                 })
         
         # Calcular pendientes
         for codigo, data in meds_por_codigo.items():
             formulada = Decimal(str(data['total']))
             
+            # Sumar cantidad administrada
             admin_total = db.session.query(
                 db.func.coalesce(db.func.sum(AdministracionMedicamento.cantidad), 0)
             ).join(Medicamento).filter(
@@ -469,52 +497,92 @@ def administrar_medicamentos(registro_id):
             
             medicamentos_formulados.append({
                 'codigo': codigo,
+                'nombre': data['detalle'].get('nombre', 'Sin nombre'),
                 'dosis': data['detalle'].get('dosis', ''),
                 'frecuencia': data['detalle'].get('frecuencia', ''),
+                'via': data['detalle'].get('via', 'VO'),
                 'cantidad_formulada': formulada,
                 'cantidad_administrada': admin_total,
                 'pendiente': pendiente,
                 'unidad': data['detalle'].get('unidad_inventario', 'tab')
             })
-
-    # Administraciones
+    
+    # Obtener historial de administraciones
     administraciones = AdministracionMedicamento.query.filter_by(
         registro_enfermeria_id=registro.id
     ).outerjoin(Medicamento).order_by(
         AdministracionMedicamento.hora_administracion.desc()
-    ).limit(20).all()
-
-    # HORA ACTUAL para formulario
+    ).limit(50).all()
+    
+    # Hora actual para auto-llenar formulario
     hora_actual = ahora_bogota().strftime('%Y-%m-%dT%H:%M')
+    
+    # Obtener todos los medicamentos para dropdown
+           # ========== DROPDOWN: SOLO MEDICAMENTOS FORMULADOS ==========
+    medicamentos_dropdown = []
+        
+        # Extraer códigos únicos de medicamentos formulados
+    codigos_formulados = []
+    for med in medicamentos_formulados:
+        codigos_formulados.append(med['codigo'])
+        
+        # Buscar solo esos medicamentos en BD
+        if codigos_formulados:
+            medicamentos_dropdown = Medicamento.query.filter(
+                Medicamento.codigo.in_(codigos_formulados)
+            ).all()
+        else:
+            # Fallback si no hay formulados
+            medicamentos_dropdown = Medicamento.query.limit(10).all()
+        
+        # Hora actual para formulario
+        hora_actual = ahora_bogota().strftime('%Y-%m-%dT%H:%M')
+        
+        # Renderizar template
+        return render_template(
+            'enfermeria/administrar_medicamentos.html',
+            registro=registro,
+            paciente=paciente,
+            medicamentos_formulados=medicamentos_formulados,
+            administraciones=administraciones,
+            hora_actual=hora_actual,
+            medicamentos=medicamentos_dropdown
+        )
 
-    return render_template('enfermeria/administrar_medicamentos.html',
-                         registro=registro,
-                         medicamentos_formulados=medicamentos_formulados,
-                         administraciones=administraciones,
-                         hora_actual=hora_actual)
 
-# ---------- 5.bis) DESDE MENÚ PACIENTE -> ÚLTIMO REGISTRO PARA MEDICAMENTOS ----------
+# ============================================================
+# 2) ADMINISTRAR MEDICAMENTOS DESDE MENÚ PACIENTE
+# ============================================================
 
 @enfermeria_bp.route('/paciente/<int:paciente_id>/medicamentos')
 @login_required
 def administrar_medicamentos_paciente(paciente_id):
+    """
+    Ruta de acceso rápido desde el menú de paciente.
+    Obtiene o crea el último registro de enfermería y redirige.
+    """
+    
     paciente = Paciente.query.get_or_404(paciente_id)
-
+    
+    # Buscar último registro de enfermería
     registro = (
         RegistroEnfermeria.query
         .filter_by(paciente_id=paciente_id)
         .order_by(RegistroEnfermeria.fecha_registro.desc())
         .first()
     )
-
+    
+    # Si no existe, crear uno nuevo
     if not registro:
+        # Buscar última historia clínica
         historia = (
             HistoriaClinica.query
             .filter_by(paciente_id=paciente_id)
             .order_by(HistoriaClinica.fecha_registro.desc())
             .first()
         )
-
+        
+        # Crear nuevo registro
         registro = RegistroEnfermeria(
             paciente_id=paciente_id,
             historia_clinica_id=historia.id if historia else None,
@@ -524,13 +592,101 @@ def administrar_medicamentos_paciente(paciente_id):
             control_glicemia=None,
             observaciones=None,
         )
+        
         db.session.add(registro)
         db.session.commit()
+    
+    return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro.id))
 
-    return redirect(url_for('enfermeria.administrar_medicamentos',
-                            registro_id=registro.id))
 
+# ============================================================
+# 3) API AUXILIAR: OBTENER MEDICAMENTOS POR REGISTRO (OPCIONAL)
+# ============================================================
 
+@enfermeria_bp.route('/api/registro/<int:registro_id>/medicamentos-formulados')
+@login_required
+def api_medicamentos_formulados(registro_id):
+    """
+    API para obtener medicamentos formulados de un registro (AJAX).
+    Retorna JSON con medicamentos y sus detalles.
+    """
+    
+    try:
+        registro = RegistroEnfermeria.query.get_or_404(registro_id)
+        medicamentos_formulados = []
+        
+        if registro.historia_clinica_id:
+            historia_id = registro.historia_clinica_id
+            todos_medicamentos = []
+            
+            # Historia
+            historia = HistoriaClinica.query.get(historia_id)
+            if historia and historia.medicamentos_json:
+                try:
+                    bruto = json.loads(historia.medicamentos_json)
+                    if isinstance(bruto, list):
+                        todos_medicamentos.extend(bruto)
+                except json.JSONDecodeError:
+                    pass
+            
+            # Órdenes
+            ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
+            for orden in ordenes:
+                if orden.medicamentos_json:
+                    try:
+                        meds = json.loads(orden.medicamentos_json)
+                        if isinstance(meds, list):
+                            todos_medicamentos.extend(meds)
+                    except json.JSONDecodeError:
+                        pass
+            
+            # Agrupar
+            meds_por_codigo = defaultdict(lambda: {'total': 0, 'detalle': {}})
+            for med in todos_medicamentos:
+                codigo = med.get('codigo', '')
+                if codigo:
+                    meds_por_codigo[codigo]['total'] += float(med.get('cantidad_solicitada', 0))
+                    meds_por_codigo[codigo]['detalle'].update({
+                        'dosis': med.get('dosis', ''),
+                        'frecuencia': med.get('frecuencia', ''),
+                        'unidad_inventario': med.get('unidad_inventario', 'tab')
+                    })
+            
+            # Calcular pendientes
+            for codigo, data in meds_por_codigo.items():
+                formulada = Decimal(str(data['total']))
+                
+                admin_total = db.session.query(
+                    db.func.coalesce(db.func.sum(AdministracionMedicamento.cantidad), 0)
+                ).join(Medicamento).filter(
+                    AdministracionMedicamento.registro_enfermeria_id == registro.id,
+                    Medicamento.codigo == codigo
+                ).scalar()
+                
+                admin_total = Decimal(str(admin_total))
+                pendiente = max(formulada - admin_total, Decimal('0'))
+                
+                medicamentos_formulados.append({
+                    'codigo': codigo,
+                    'dosis': data['detalle'].get('dosis', ''),
+                    'frecuencia': data['detalle'].get('frecuencia', ''),
+                    'cantidad_formulada': float(formulada),
+                    'cantidad_administrada': float(admin_total),
+                    'pendiente': float(pendiente),
+                    'unidad': data['detalle'].get('unidad_inventario', 'tab')
+                })
+        
+        return jsonify({
+            'success': True,
+            'medicamentos': medicamentos_formulados
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
 # ---------- 6) BUSCAR PACIENTE JSON ----------
 
 @enfermeria_bp.route('/paciente/<int:paciente_id>/exportar_pdf', methods=['GET'])

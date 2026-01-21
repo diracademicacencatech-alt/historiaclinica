@@ -2,623 +2,223 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historia Clínica #{{ historia.numero_historia }}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        /* CONFIGURACIÓN DE PÁGINA PROFESIONAL */
+        @page {
+            size: letter;
+            margin: 1.5cm;
+            @bottom-right {
+                content: "Página " counter(page);
+                font-size: 8pt;
+                color: #999;
+            }
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
+            font-family: 'Helvetica', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
             color: #333;
             background: white;
         }
-        
-        .page { page-break-after: always; padding: 20px; }
-        .page-break { page-break-after: always; }
-        
+
+        /* HEADER CONTINUO */
         .header {
             text-align: center;
-            border-bottom: 3px solid #0056b3;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
+            border-bottom: 2px solid #0056b3;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
         }
-        
-        .header h1 {
-            font-size: 24px;
-            color: #0056b3;
-            margin-bottom: 5px;
+        .header h1 { font-size: 18pt; color: #0056b3; margin: 0; text-transform: uppercase; }
+        .header p { font-size: 9pt; color: #666; margin: 2px 0; }
+
+        /* SECCIONES ESTILO LIBRO */
+        .section {
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            page-break-inside: avoid; /* Evita que se rompan a mitad */
         }
-        
-        .header p {
-            font-size: 12px;
-            color: #666;
-        }
-        
         .section-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
             background-color: #0056b3;
-            padding: 10px 15px;
-            margin: 20px 0 15px 0;
-            border-radius: 4px;
-        }
-        
-        .section-title.yellow { background-color: #ffc107; color: #000; }
-        .section-title.red { background-color: #dc3545; color: white; }
-        .section-title.blue { background-color: #0dcaf0; color: #000; }
-        
-        .info-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 15px;
-        }
-        
-        .info-item {
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 4px;
-            background: #f9f9f9;
-        }
-        
-        .info-item strong {
-            display: block;
-            color: #0056b3;
-            margin-bottom: 5px;
-            font-size: 12px;
-        }
-        
-        .info-item p {
-            margin: 0;
-            font-size: 12px;
-            color: #333;
-        }
-        
-        .info-text {
-            border: 1px solid #ddd;
-            padding: 12px;
-            background: #f9f9f9;
-            min-height: 60px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .soapie-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .soapie-item {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .soapie-header {
-            background: #e9ecef;
-            padding: 8px 12px;
+            color: white;
+            padding: 4px 10px;
             font-weight: bold;
+            font-size: 10pt;
+            text-transform: uppercase;
+        }
+        .section-title.yellow { background-color: #f1c40f; color: #000; }
+        .section-title.red { background-color: #c0392b; }
+        .section-title.blue { background-color: #2980b9; }
+
+        /* CONTENIDO DE DATOS */
+        .content-grid {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .row { display: table-row; }
+        .cell {
+            display: table-cell;
+            padding: 6px 10px;
+            border: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+        .cell strong {
+            display: block;
+            font-size: 7.5pt;
             color: #0056b3;
-            font-size: 12px;
+            text-transform: uppercase;
         }
-        
-        .soapie-content {
-            padding: 10px;
-            min-height: 80px;
-            font-size: 11px;
-            color: #333;
-            background: #f9f9f9;
+
+        /* TEXTOS LARGOS (SOAPIE) */
+        .text-area {
+            padding: 8px 10px;
+            background-color: #fafafa;
+            border-bottom: 1px solid #eee;
         }
-        
+        .text-area b { font-size: 8pt; color: #555; text-transform: uppercase; }
+
+        /* TABLAS DE MEDICAMENTOS */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
-            font-size: 11px;
         }
-        
-        table thead {
-            background: #0056b3;
-            color: white;
-        }
-        
-        table th {
-            padding: 10px;
+        th {
+            background-color: #f2f2f2;
             text-align: left;
-            font-weight: bold;
-            border: 1px solid #0056b3;
+            padding: 6px 10px;
+            font-size: 8.5pt;
+            border-bottom: 2px solid #0056b3;
         }
-        
-        table td {
-            padding: 8px 10px;
-            border: 1px solid #ddd;
+        td {
+            padding: 5px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 9pt;
         }
-        
-        table tbody tr:nth-child(even) {
-            background: #f9f9f9;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        
-        .badge-danger { background: #dc3545; color: white; }
-        .badge-success { background: #28a745; color: white; }
-        
-        .vitals-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .vital-card {
-            border: 1px solid #ddd;
-            padding: 10px;
+
+        /* SIGNOS VITALES ESTILO REPORTE */
+        .vitals-box {
+            display: table;
+            width: 100%;
             text-align: center;
-            background: #f9f9f9;
-            border-radius: 4px;
+            background: #f8f9fa;
         }
-        
-        .vital-card strong {
-            display: block;
-            font-size: 10px;
-            color: #0056b3;
-            margin-bottom: 5px;
+        .vital-item {
+            display: table-cell;
+            padding: 8px;
+            border-right: 1px solid #eee;
         }
-        
-        .vital-card .value {
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .antecedentes-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .antecedente-item {
-            border: 1px solid #ffc107;
-            background: #fffacd;
-            padding: 12px;
-            border-radius: 4px;
-        }
-        
-        .antecedente-item strong {
-            display: block;
-            color: #856404;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        
-        .antecedente-item p {
-            margin: 0;
-            font-size: 11px;
-            color: #333;
-            line-height: 1.4;
-        }
-        
-        .riesgo-item {
-            border: 1px solid #dc3545;
-            background: #f8d7da;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 12px;
-        }
-        
-        .riesgo-item strong {
-            color: #721c24;
-            display: block;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        
-        .riesgo-item p {
-            margin: 0;
-            font-size: 11px;
-            color: #333;
-            line-height: 1.4;
-        }
-        
-        .alergia-item {
-            border: 1px solid #0dcaf0;
-            background: #cfe2ff;
-            padding: 12px;
-            border-radius: 4px;
-        }
-        
-        .alergia-item strong {
-            color: #084298;
-            display: block;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        
-        .alergia-item p {
-            margin: 0;
-            font-size: 11px;
-            color: #333;
-            line-height: 1.4;
-        }
-        
-        hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
-        
-        .footer {
-            text-align: center;
-            font-size: 10px;
-            color: #999;
-            margin-top: 30px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-        }
+        .vital-item small { display: block; font-size: 7pt; color: #666; }
+        .vital-item span { font-weight: bold; font-size: 11pt; color: #d35400; }
+
+        .footer { text-align: center; font-size: 8pt; color: #aaa; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<!-- PÁGINA 1: PORTADA Y DATOS BÁSICOS -->
-<div class="page">
     <div class="header">
-        <h1>📋 HISTORIA CLÍNICA</h1>
-        <p>N° {{ historia.numero_historia }} | N° Ingreso: {{ historia.numero_ingreso }}</p>
+        <h1>Historia Clínica Electrónica</h1>
+        <p><b>Paciente:</b> {{ historia.nombre_paciente }} | <b>HC:</b> {{ historia.numero_historia }} | <b>Ingreso:</b> {{ historia.numero_ingreso }}</p>
     </div>
 
-    <!-- PACIENTE -->
-    <div class="section-title">Datos del Paciente</div>
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Nombre</strong>
-            <p>{{ historia.nombre_paciente }}</p>
-        </div>
-        <div class="info-item">
-            <strong>Documento</strong>
-            <p>{{ historia.paciente.numero if historia.paciente else 'N/A' }}</p>
-        </div>
-    </div>
-
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Edad</strong>
-            <p>{{ historia.edad }} años</p>
-        </div>
-        <div class="info-item">
-            <strong>Sexo</strong>
-            <p>{{ historia.sexo }}</p>
+    <div class="section">
+        <div class="section-title">1. Identificación y Datos de Ingreso</div>
+        <div class="content-grid">
+            <div class="row">
+                <div class="cell"><strong>Documento</strong>{{ historia.paciente.numero if historia.paciente else 'N/A' }}</div>
+                <div class="cell"><strong>Edad / Sexo</strong>{{ historia.edad }} años / {{ historia.sexo }}</div>
+                <div class="cell"><strong>Fecha Nacimiento</strong>{{ historia.fecha_nacimiento.strftime('%d/%m/%Y') if historia.fecha_nacimiento else 'N/A' }}</div>
+            </div>
+            <div class="row">
+                <div class="cell"><strong>Servicio</strong>{{ historia.servicio_hospitalario }}</div>
+                <div class="cell"><strong>Cama</strong>{{ historia.paciente.cama if (historia.paciente and historia.paciente.cama) else 'N/A' }}</div>
+                <div class="cell"><strong>Fecha Ingreso</strong>{{ fecha_ingreso_local.strftime('%d/%m/%Y %H:%M') if fecha_ingreso_local else 'N/A' }}</div>
+            </div>
+            <div class="row">
+                <div class="cell"><strong>Responsable</strong>{{ historia.acudiente_responsable or 'N/A' }}</div>
+                <div class="cell"><strong>Teléfono</strong>{{ historia.telefono_responsable or 'N/A' }}</div>
+                <div class="cell"><strong>Procedencia</strong>{{ historia.procedencia or 'N/A' }}</div>
+            </div>
         </div>
     </div>
 
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Fecha Nacimiento</strong>
-            <p>{{ historia.fecha_nacimiento.strftime('%d/%m/%Y') if historia.fecha_nacimiento else 'N/A' }}</p>
+    <div class="section">
+        <div class="section-title">2. Diagnóstico y Evaluación (SOAPIE)</div>
+        <div class="text-area">
+            <b>Diagnóstico Principal (CIE10):</b> {{ historia.cie10_principal }} 
+            {% if diag_cie10 %} - {{ diag_cie10.nombre }}{% endif %}
         </div>
-        <div class="info-item">
-            <strong>Fecha Ingreso</strong>
-            <p>{{ fecha_ingreso_local.strftime('%d/%m/%Y %H:%M') if fecha_ingreso_local else 'N/A' }}</p>
-        </div>
+        <div class="text-area"><b>[S] Subjetivo:</b><br>{{ historia.subjetivos or 'No registra' }}</div>
+        <div class="text-area"><b>[O] Objetivo:</b><br>{{ historia.objetivos or 'No registra' }}</div>
+        <div class="text-area"><b>[A] Análisis:</b><br>{{ historia.analisis or 'No registra' }}</div>
+        <div class="text-area"><b>[P] Plan:</b><br>{{ historia.plan or 'No registra' }}</div>
     </div>
 
-    <!-- INGRESO -->
-    <div class="section-title">Información de Ingreso</div>
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Servicio</strong>
-            <p>{{ historia.servicio_hospitalario }}</p>
+    {% if historia.signos_vitales %}
+    <div class="section">
+        <div class="section-title">3. Signos Vitales de Ingreso</div>
+        <div class="vitals-box">
+            <div class="vital-item"><small>F.C (lpm)</small><span>{{ historia.signos_vitales.frecuencia_cardiaca or '--' }}</span></div>
+            <div class="vital-item"><small>F.R (rpm)</small><span>{{ historia.signos_vitales.frecuencia_respiratoria or '--' }}</span></div>
+            <div class="vital-item"><small>T.A (mmHg)</small><span>{{ historia.signos_vitales.tension_arterial or '--' }}</span></div>
+            <div class="vital-item"><small>Temp (°C)</small><span>{{ historia.signos_vitales.temperatura or '--' }}</span></div>
+            <div class="vital-item"><small>SatO2 (%)</small><span>{{ historia.signos_vitales.saturometria or '--' }}</span></div>
+            <div class="vital-item"><small>IMC</small><span>{{ (historia.signos_vitales.imc|float|round(1)) if historia.signos_vitales.imc else '--' }}</span></div>
         </div>
-        <div class="info-item">
-            <strong>Cama</strong>
-            <p>{{ historia.paciente.cama if historia.paciente and historia.paciente.cama else 'N/A' }}</p>
+        <div class="content-grid">
+            <div class="row">
+                <div class="cell"><strong>Escala Dolor</strong>{{ historia.signos_vitales.escala_dolor }}/10</div>
+                <div class="cell"><strong>Glucometría</strong>{{ historia.signos_vitales.glucometria }} mg/dl</div>
+                <div class="cell"><strong>Peso/Talla</strong>{{ historia.signos_vitales.peso }}kg / {{ historia.signos_vitales.talla }}m</div>
+            </div>
         </div>
-    </div>
-
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Régimen</strong>
-            <p>{{ historia.regimen }}</p>
-        </div>
-        <div class="info-item">
-            <strong>Plan de Beneficios</strong>
-            <p>{{ historia.plan_beneficios }}</p>
-        </div>
-    </div>
-
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Teléfono</strong>
-            <p>{{ historia.telefono }}</p>
-        </div>
-        <div class="info-item">
-            <strong>Procedencia</strong>
-            <p>{{ historia.procedencia }}</p>
-        </div>
-    </div>
-
-    <!-- RESPONSABLE -->
-    <div class="section-title">Responsable y Familia</div>
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Responsable</strong>
-            <p>{{ historia.acudiente_responsable }}</p>
-        </div>
-        <div class="info-item">
-            <strong>Tel Responsable</strong>
-            <p>{{ historia.telefono_responsable }}</p>
-        </div>
-    </div>
-
-    <div class="info-row">
-        <div class="info-item">
-            <strong>Padre</strong>
-            <p>{{ historia.nombre_padre }}</p>
-        </div>
-        <div class="info-item">
-            <strong>Madre</strong>
-            <p>{{ historia.nombre_madre }}</p>
-        </div>
-    </div>
-
-    <div class="footer">
-        Generado el {{ now.strftime('%d/%m/%Y %H:%M') }}
-    </div>
-</div>
-
-<!-- PÁGINA 2: DIAGNÓSTICO Y SOAPIE -->
-<div class="page page-break">
-    <div class="header">
-        <h1>Evaluación Clínica</h1>
-    </div>
-
-    <!-- DIAGNÓSTICO CIE-10 -->
-    <div class="section-title">Diagnóstico Principal (CIE-10)</div>
-    <div class="info-text">
-        <strong>Código:</strong> {{ historia.cie10_principal }}
-        {% if diag_cie10 %}<br><strong>Descripción:</strong> {{ diag_cie10.nombre }}{% endif %}
-    </div>
-
-    <!-- SOAPIE -->
-    <div class="section-title">SOAPIE (Evaluación Clínica)</div>
-    
-    <div class="soapie-container">
-        <div class="soapie-item">
-            <div class="soapie-header">📋 Subjetivo</div>
-            <div class="soapie-content">{{ historia.subjetivos or 'N/A' }}</div>
-        </div>
-        <div class="soapie-item">
-            <div class="soapie-header">📊 Objetivo</div>
-            <div class="soapie-content">{{ historia.objetivos or 'N/A' }}</div>
-        </div>
-    </div>
-
-    <div class="soapie-container">
-        <div class="soapie-item">
-            <div class="soapie-header">🔍 Análisis</div>
-            <div class="soapie-content">{{ historia.analisis or 'N/A' }}</div>
-        </div>
-        <div class="soapie-item">
-            <div class="soapie-header">📋 Plan</div>
-            <div class="soapie-content">{{ historia.plan or 'N/A' }}</div>
-        </div>
-    </div>
-
-    <!-- MEDICAMENTOS DE INGRESO -->
-    {% if medicamentos %}
-    <div class="section-title">Medicamentos de Ingreso</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Código</th>
-                <th>Dosis</th>
-                <th>Frecuencia</th>
-                <th>Vía de Administración</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for med in medicamentos %}
-            <tr>
-                <td><strong>{{ med.codigo }}</strong></td>
-                <td>{{ med.dosis or 'N/A' }}</td>
-                <td>{{ med.frecuencia or 'N/A' }}</td>
-                <td>{{ med.via_administracion or 'N/A' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-
-    <div class="footer">
-        Página 2
-    </div>
-</div>
-
-<!-- PÁGINA 3: SIGNOS VITALES -->
-{% if historia.signos_vitales %}
-<div class="page page-break">
-    <div class="header">
-        <h1>Signos Vitales de Ingreso</h1>
-    </div>
-
-    <div class="vitals-grid">
-        <div class="vital-card">
-            <strong>FC (lpm)</strong>
-            <div class="value">{{ historia.signos_vitales.frecuencia_cardiaca or 'N/A' }}</div>
-        </div>
-        <div class="vital-card">
-            <strong>FR (rpm)</strong>
-            <div class="value">{{ historia.signos_vitales.frecuencia_respiratoria or 'N/A' }}</div>
-        </div>
-        <div class="vital-card">
-            <strong>TA (mmHg)</strong>
-            <div class="value">{{ historia.signos_vitales.tension_arterial or 'N/A' }}</div>
-        </div>
-        <div class="vital-card">
-            <strong>T° (°C)</strong>
-            <div class="value">{{ historia.signos_vitales.temperatura or 'N/A' }}</div>
-        </div>
-        <div class="vital-card">
-            <strong>SatO2 (%)</strong>
-            <div class="value">{{ historia.signos_vitales.saturometria or 'N/A' }}</div>
-        </div>
-        <div class="vital-card">
-            <strong>FiO2 (%)</strong>
-            <div class="value">{{ historia.signos_vitales.fi02 or 'N/A' }}</div>
-        </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-        <div class="info-item">
-            <strong>Dolor (0-10)</strong>
-            <p style="font-size: 18px; font-weight: bold; color: #dc3545;">{{ historia.signos_vitales.escala_dolor or 'N/A' }}</p>
-        </div>
-        <div class="info-item">
-            <strong>Glucometría (mg/dl)</strong>
-            <p style="font-size: 16px; font-weight: bold;">{{ historia.signos_vitales.glucometria or 'N/A' }}</p>
-        </div>
-        <div class="info-item">
-            <strong>IMC</strong>
-            <p style="font-size: 16px; font-weight: bold;">{{ (historia.signos_vitales.imc|float|round(1)) if historia.signos_vitales.imc else 'N/A' }}</p>
-        </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-        <div class="info-item">
-            <strong>Peso (kg)</strong>
-            <p>{{ historia.signos_vitales.peso or 'N/A' }}</p>
-        </div>
-        <div class="info-item">
-            <strong>Talla (m)</strong>
-            <p>{{ historia.signos_vitales.talla or 'N/A' }}</p>
-        </div>
-    </div>
-
-    <div class="footer">
-        Página 3
-    </div>
-</div>
-{% endif %}
-
-<!-- PÁGINA 4: ANTECEDENTES -->
-<div class="page page-break">
-    <div class="section-title yellow">Antecedentes Médicos</div>
-
-    <div class="antecedentes-grid">
-        <div class="antecedente-item">
-            <strong>Médicos</strong>
-            <p>{{ historia.antecedentes_medicos or 'No registrado' }}</p>
-        </div>
-        <div class="antecedente-item">
-            <strong>Farmacológicos</strong>
-            <p>{{ historia.antecedentes_farmacologicos or 'No registrado' }}</p>
-        </div>
-    </div>
-
-    <div class="antecedentes-grid">
-        <div class="antecedente-item">
-            <strong>Quirúrgicos</strong>
-            <p>{{ historia.antecedentes_quirurgicos or 'No registrado' }}</p>
-        </div>
-        <div class="antecedente-item">
-            <strong>Tóxicos</strong>
-            <p>{{ historia.antecedentes_toxicos or 'No registrado' }}</p>
-        </div>
-    </div>
-
-    <div class="antecedentes-grid">
-        <div class="antecedente-item">
-            <strong>Alérgicos</strong>
-            <p>{{ historia.antecedentes_alergicos or 'No registrado' }}</p>
-        </div>
-        <div class="antecedente-item">
-            <strong>Ginecobstétricos</strong>
-            <p>{{ historia.antecedentes_ginecobstetricos or 'No registrado' }}</p>
-        </div>
-    </div>
-
-    <div class="footer">
-        Página 4
-    </div>
-</div>
-
-<!-- PÁGINA 5: RIESGOS Y ALERGIAS -->
-<div class="page page-break">
-    <div class="section-title red">Valoración de Riesgos</div>
-
-    <div class="riesgo-item">
-        <strong>Riesgos General</strong>
-        <p>{{ historia.riesgos_general or 'No registrado' }}</p>
-    </div>
-
-    <div class="riesgo-item">
-        <strong>Riesgo de Caídas (Escala Dowton)</strong>
-        <p>{{ historia.riesgo_caidas_dowton or 'No registrado' }}</p>
-    </div>
-
-    <div class="riesgo-item">
-        <strong>Riesgo de UPP (Escala Braden)</strong>
-        <p>{{ historia.riesgo_upp_braden or 'No registrado' }}</p>
-    </div>
-
-    <div class="riesgo-item">
-        <strong>Evaluación General</strong>
-        <p>{{ historia.riesgos_evaluacion or 'No registrado' }}</p>
-    </div>
-
-    <hr>
-
-    <div class="section-title blue">Alergias</div>
-
-    <div class="alergia-item">
-        <strong>¿Tiene alergias conocidas?</strong>
-        <p>
-            {% if historia.tiene_alergias == 'si' %}
-                <span class="badge badge-danger">SÍ</span>
-            {% else %}
-                <span class="badge badge-success">NO</span>
-            {% endif %}
-        </p>
-    </div>
-
-    {% if historia.tiene_alergias == 'si' and historia.descripcion_alergias %}
-    <div class="alergia-item" style="margin-top: 15px; background: #fff3cd; border-color: #ffc107;">
-        <strong>Descripción de Alergias</strong>
-        <p>{{ historia.descripcion_alergias }}</p>
     </div>
     {% endif %}
 
-    <div class="footer">
-        Página 5
+    <div class="section">
+        <div class="section-title yellow">4. Antecedentes Médicos</div>
+        <div class="content-grid">
+            <div class="row">
+                <div class="cell"><strong>Patológicos</strong>{{ historia.antecedentes_medicos or 'Negativo' }}</div>
+                <div class="cell"><strong>Quirúrgicos</strong>{{ historia.antecedentes_quirurgicos or 'Negativo' }}</div>
+            </div>
+            <div class="row">
+                <div class="cell"><strong>Farmacológicos</strong>{{ historia.antecedentes_farmacologicos or 'Negativo' }}</div>
+                <div class="cell"><strong>Tóxicos/Alérgicos</strong>{{ historia.antecedentes_toxicos or 'Negativo' }} / {{ historia.antecedentes_alergicos or 'Negativo' }}</div>
+            </div>
+        </div>
     </div>
-</div>
 
-<!-- PÁGINA 6: ÓRDENES MÉDICAS -->
-{% if ordenes_con_meds %}
-<div class="page page-break">
-    <div class="header">
-        <h1>Órdenes Médicas</h1>
+    <div class="section">
+        <div class="section-title red">5. Seguridad del Paciente (Riesgos)</div>
+        <div class="text-area"><b>Riesgo Caídas (Dowton):</b> {{ historia.riesgo_caidas_dowton or 'No evaluado' }}</div>
+        <div class="text-area"><b>Riesgo UPP (Braden):</b> {{ historia.riesgo_upp_braden or 'No evaluado' }}</div>
+        <div class="text-area">
+            <b>Alergias Conocidas:</b> 
+            {% if historia.tiene_alergias == 'si' %} [SÍ] {{ historia.descripcion_alergias }} {% else %} NO REGISTRA {% endif %}
+        </div>
     </div>
+
+    {% if ordenes_con_meds %}
+    <div style="page-break-before: always;"></div>
+    <div class="header"><h1>Órdenes Médicas y Ayudas Diagnósticas</h1></div>
 
     {% for item in ordenes_con_meds %}
-    <div style="border: 2px solid #0056b3; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
-        <h4 style="color: #0056b3; margin-bottom: 10px;">Orden #{{ item.orden.id }}</h4>
-        <p style="font-size: 11px; color: #666; margin-bottom: 10px;">
-            <strong>Fecha:</strong> {{ item.orden.fecha_orden.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_orden else 'N/A' }}
-        </p>
+    <div class="section" style="border: 1.5px solid #2980b9; margin-bottom: 25px;">
+        <div class="section-title blue">
+            Orden Médica #{{ item.orden.id }} 
+            - Fecha: {{ item.orden.fecha_orden.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_orden is defined else 'S/F' }}
+        </div>
 
         {% if item.medicamentos %}
+        <div style="padding: 5px 10px; background: #eef2f7; font-weight: bold; font-size: 9pt; color: #2980b9;">
+            💊 TRATAMIENTO FARMACOLÓGICO
+        </div>
         <table>
             <thead>
                 <tr>
-                    <th>Medicamento</th>
+                    <th style="width: 40%;">Medicamento</th>
                     <th>Dosis</th>
                     <th>Frecuencia</th>
                     <th>Vía</th>
@@ -627,23 +227,50 @@
             <tbody>
                 {% for med in item.medicamentos %}
                 <tr>
-                    <td><strong>{{ med.codigo }}</strong></td>
+                    <td><b>{{ med.nombre }}</b></td>
                     <td>{{ med.dosis or 'N/A' }}</td>
                     <td>{{ med.frecuencia or 'N/A' }}</td>
-                    <td>{{ med.via_administracion or 'N/A' }}</td>
+                    <td>{{ med.via_administracion or med.via or 'N/A' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% endif %}
+
+        {% if item.laboratorios %}
+        <div style="padding: 5px 10px; background: #fff4e5; font-weight: bold; font-size: 9pt; color: #d35400; border-top: 1px solid #ddd;">
+            🔬 LABORATORIOS Y EXÁMENES SOLICITADOS
+        </div>
+        <table style="background-color: #fdfaf6;">
+            <thead>
+                <tr>
+                    <th style="background-color: #f39c12; color: white;">Descripción del Examen</th>
+                    <th style="background-color: #f39c12; color: white;">Estado de Solicitud</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lab in item.laboratorios %}
+                <tr>
+                    <td style="width: 70%;"><b>{{ lab.nombre }}</b></td>
+                    <td style="font-style: italic; color: #555; text-transform: uppercase; font-size: 8.5pt;">{{ lab.estado }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if not item.medicamentos and not item.laboratorios %}
+        <div class="text-area" style="text-align: center; color: #999; padding: 20px;">
+            Esta orden médica no contiene medicamentos ni laboratorios registrados.
+        </div>
+        {% endif %}
     </div>
     {% endfor %}
+    {% endif %}
 
     <div class="footer">
-        Página 6
+        Documento generado automáticamente por el Sistema de Historias Clínicas - {{ now.strftime('%d/%m/%Y %H:%M') }}
     </div>
-</div>
-{% endif %}
 
 </body>
 </html>
