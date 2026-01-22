@@ -59,13 +59,14 @@
         /* Contenedor principal tipo tarjeta suave */
         .sm-main-container {
             max-width: 1200px;
-            margin-top: 2.5rem;
-            margin-bottom: 2.5rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
             background-color: var(--sm-card-bg);
             border-radius: 24px;
             border: 3px solid var(--sm-primary);
-            padding: 2.5rem 2rem;
+            padding: 2rem 2rem;
             box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            box-sizing: border-box; /* Asegura que el padding no "infle" el ancho */
         }
 
         .sm-main-title {
@@ -94,34 +95,75 @@
             color: var(--sm-text-main);
             font-size: 0.85rem;
         }
+        /* --- AJUSTES PARA CELULARES (RESPONSIVE) --- */
+@media (max-width: 768px) {
+    /* 1. Reducir márgenes y padding en el contenedor principal para ganar espacio */
+    .sm-main-container {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        padding: 1.2rem 1rem; /* Padding mucho más pequeño en móvil */
+        border-radius: 15px;    /* Bordes menos pronunciados */
+        border-width: 2px;
+    }
+
+    /* 2. Forzar que todas las TABLAS del sistema tengan scroll lateral si no caben */
+    table {
+        display: block;
+        width: 100% !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 3. Ajustar títulos para que no se vean gigantes */
+    .sm-main-title {
+        font-size: 1.5rem;
+    }
+
+    /* 4. Hacer que las tarjetas (cards) de Bootstrap ocupen todo el ancho */
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    /* 5. Asegurar que los inputs y botones no se salgan */
+    input, select, textarea {
+        font-size: 16px !important; /* Evita el zoom automático en iPhone */
+    }
+}
     </style>
 
     {% block head %}{% endblock %}
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light navbar-sm shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-light shadow-sm" style="background-color: #f0e7d8; border-bottom: 2px solid #236e7b;">
   <div class="container">
-    <a class="navbar-brand" href="{{ url_for('menu.inicio') }}">SOFTWARE SM</a>
+    <div class="d-flex flex-column">
+      <a class="navbar-brand mb-0 h1" href="{{ url_for('menu.inicio') }}" style="color: #236e7b; font-weight: bold; padding-bottom: 0;">
+        SOFTWARE SM
+      </a>
+      <div id="reloj-digital" style="color: #236e7b; font-family: monospace; font-size: 0.85rem; margin-top: -5px; font-weight: bold;">
+        00:00:00
+      </div>
+    </div>
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSM" aria-controls="navbarSM" aria-expanded="false" aria-label="Menú de navegación">
       <span class="navbar-toggler-icon"></span>
     </button>
-
+  
     <div class="collapse navbar-collapse" id="navbarSM">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="modulosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle" href="#" id="modulosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #0b6169; font-weight: 600;">
             Módulos
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="modulosDropdown">
-            <li><a class="dropdown-item" href="{{ url_for('ayudas.inicio_ayudas') }}">Médicos</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('ayudas.inicio_ayudas') }}">AyudasDx</a></li>
             <li><a class="dropdown-item" href="{{ url_for('pacientes.listar') }}">Pacientes</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('pacientes.listar') }}">Historias Clínicas</a></li>
             <li><a class="dropdown-item" href="{{ url_for('enfermeria.inicio_enfermeria') }}">Enfermería</a></li>
           </ul>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+          <a class="nav-link" href="{{ url_for('auth.logout') }}" style="color: #0b6169;">Cerrar sesión</a>
         </li>
       </ul>
     </div>
@@ -172,5 +214,22 @@
     }, 2000); // 2 segundos
   });
 </script>
+<script>
+    function actualizarReloj() {
+        const ahora = new Date();
+        // Formateamos la hora para que siempre tenga 2 dígitos (ej: 09:05:01)
+        const horas = String(ahora.getHours()).padStart(2, '0');
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const segundos = String(ahora.getSeconds()).padStart(2, '0');
+        
+        const tiempoString = `${horas}:${minutos}:${segundos}`;
+        document.getElementById('reloj-digital').textContent = tiempoString;
+    }
 
+    // Ejecutar la función cada segundo
+    setInterval(actualizarReloj, 1000);
+
+    // Llamarla una vez al cargar para que no empiece en 00:00:00
+    actualizarReloj();
+</script>
 </html>

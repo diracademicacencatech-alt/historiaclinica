@@ -1,79 +1,122 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Seleccionar historia clínica</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
+{% extends "base.html" %}
+
+{% block title %}Seleccionar Historia - Software SM{% endblock %}
+
+{% block head %}
+<style>
+    /* Estilos específicos para esta página que complementan la base */
+    .container-clinico {
+      background-color: #f0e7d8; 
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
     .titulo-principal {
-      color: #236e7b;
-      font-weight: 600;
+      color: #236e7b;           
+      font-weight: 700;
+      text-transform: uppercase;
+      border-bottom: 2px solid #236e7b;
+      display: inline-block;
+      margin-bottom: 20px;
     }
-    .card-historia {
-      border-top: 4px solid #236e7b;
+
+    .card-resumen {
+      background-color: rgba(255, 255, 255, 0.5);
+      border: 1px solid #236e7b;
+      border-left: 5px solid #236e7b;
+      border-radius: 8px;
     }
+
+    .table thead {
+      background-color: #236e7b;
+      color: #f0e7d8;
+    }
+
+    .btn-clinico {
+      background-color: #236e7b;
+      color: #f0e7d8;
+      border: none;
+      transition: background 0.3s;
+    }
+
+    .btn-clinico:hover {
+      background-color: #0b6169;
+      color: #ffffff;
+    }
+
     .link-accion {
-      color: #236e7b;
+      color: #0b6169;
+      font-weight: 600;
       text-decoration: none;
     }
-    .link-accion:hover {
-      text-decoration: underline;
+
+    .text-secundario {
+      color: #5f5f5f;
+      font-size: 0.85rem;
+      font-weight: bold;
+      text-transform: uppercase;
     }
-  </style>
-</head>
-<body class="bg-light">
-<div class="container py-4">
-  <h2 class="mb-4 titulo-principal">Ayudas diagnósticas</h2>
+</style>
+{% endblock %}
 
-  <div class="card shadow-sm card-historia mb-4">
-    <div class="card-body">
-      <h5 class="mb-3" style="color:#236e7b;">Seleccionar historia clínica</h5>
-      <p class="mb-1">
-        <strong>Paciente:</strong> {{ paciente.nombre }}
-      </p>
-      <p class="mb-1">
-        <strong>Número:</strong> {{ paciente.numero }}
-      </p>
-      <p class="mb-0">
-        <strong>Cama:</strong> {{ paciente.cama or '-' }}
-      </p>
+{% block content %}
+<div class="container-clinico shadow">
+    
+    <header class="mb-4 text-center text-md-start">
+      <h2 class="titulo-principal">Ayudas Diagnósticas</h2>
+      <p style="color: #5f5f5f;">Seleccione una historia clínica para gestionar las ayudas</p>
+    </header>
+
+    <div class="card card-resumen mb-4 shadow-sm">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-2 mb-md-0">
+            <small class="text-secundario d-block">Paciente</small>
+            <strong style="font-size: 1.1rem; color: #0b6169;">{{ paciente.nombre }}</strong>
+          </div>
+          <div class="col-md-4 mb-2 mb-md-0 border-md-start">
+            <small class="text-secundario d-block">Documento</small>
+            <strong style="color: #0b6169;">{{ paciente.numero }}</strong>
+          </div>
+          <div class="col-md-4 border-md-start">
+            <small class="text-secundario d-block">Cama</small>
+            <strong style="color: #0b6169;">{{ paciente.cama or 'No asignada' }}</strong>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-body p-0">
-      <table class="table table-sm mb-0">
-        <thead class="table-light">
+    <div class="table-responsive bg-white rounded shadow-sm">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
           <tr>
-            <th>ID</th>
+            <th class="ps-3">ID</th>
             <th>Tipo de historia</th>
-            <th>Número historia</th>
             <th>Número ingreso</th>
             <th>Fecha registro</th>
-            <th>Acciones</th>
+            <th class="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
         {% if historias %}
           {% for h in historias %}
             <tr>
-              <td>{{ h.id }}</td>
-              <td>{{ h.tipo_historia }}</td>
-              <td>{{ h.numero_historia }}</td>
+              <td class="ps-3 text-muted">#{{ h.id }}</td>
+              <td><strong>{{ h.tipo_historia }}</strong></td>
               <td>{{ h.numero_ingreso }}</td>
-              <td>{{ h.fecha_registro.strftime('%Y-%m-%d %H:%M') }}</td>
-              <td>
+              <td>{{ h.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+              <td class="text-center">
                 <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=h.id) }}"
-                   class="btn btn-sm btn-outline-primary">
-                  Ir a ayudas diagnósticas
+                   class="btn btn-sm btn-clinico px-4 shadow-sm">
+                   Ver Ayudas
                 </a>
               </td>
             </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="6" class="text-center text-muted">
+            <td colspan="5" class="text-center py-5 text-muted">
               No hay historias clínicas registradas para este paciente.
             </td>
           </tr>
@@ -81,17 +124,15 @@
         </tbody>
       </table>
     </div>
-  </div>
 
-  <div class="d-flex flex-wrap gap-2">
-    <a href="{{ url_for('ayudas.inicio_ayudas') }}" class="link-accion">
-      Buscar otro paciente
-    </a>
-    <span class="text-muted">|</span>
-    <a href="{{ url_for('menu.inicio') }}" class="link-accion">
-      Volver al menú principal
-    </a>
-  </div>
+    <div class="mt-4 pt-3 border-top d-flex justify-content-between">
+      <a href="{{ url_for('ayudas.inicio_ayudas') }}" class="link-accion">
+        ← Buscar otro paciente
+      </a>
+      <a href="{{ url_for('menu.inicio') }}" class="link-accion">
+        Volver al Menú
+      </a>
+    </div>
+
 </div>
-</body>
-</html>
+{% endblock %}

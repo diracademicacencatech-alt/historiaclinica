@@ -6,12 +6,19 @@
         /* CONFIGURACIÓN DE PÁGINA PROFESIONAL */
         @page {
             size: letter;
-            margin: 1.5cm;
+            /* Margen superior amplio (4cm) para dar espacio al header fijo */
+            margin: 4cm 1.5cm 2cm 1.5cm;
+            
             @bottom-right {
                 content: "Página " counter(page);
                 font-size: 8pt;
                 color: #999;
             }
+        }
+
+        :root {
+            --sm-primary: #236e7b; /* Tu color verde azulado base */
+            --sm-light: #eef2f7;
         }
 
         body {
@@ -22,36 +29,75 @@
             background: white;
         }
 
-        /* HEADER CONTINUO */
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #0056b3;
-            margin-bottom: 20px;
+        /* HEADER REPETITIVO (ESTÁTICO) */
+        .header-container {
+            position: fixed; /* Clave para que se repita en cada hoja */
+            top: -3.5cm;     /* Posicionado dentro del margen superior de la página */
+            left: 0;
+            right: 0;
+            display: table;
+            width: 100%;
+            border-bottom: 2px solid var(--sm-primary);
             padding-bottom: 10px;
+            height: 3cm;
         }
-        .header h1 { font-size: 18pt; color: #0056b3; margin: 0; text-transform: uppercase; }
-        .header p { font-size: 9pt; color: #666; margin: 2px 0; }
+        
+        .header-logo {
+            display: table-cell;
+            vertical-align: middle;
+            width: 30%;
+        }
+        
+        .header-info {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            width: 70%;
+        }
+        
+        .header-logo img {
+            max-height: 55px;
+            width: auto;
+        }
+        
+        .software-name {
+            font-size: 12pt;
+            font-weight: bold;
+            color: var(--sm-primary);
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .document-type {
+            font-size: 9pt;
+            font-weight: bold;
+            color: var(--sm-primary);
+            margin: 0;
+            letter-spacing: 1px;
+        }
 
-        /* SECCIONES ESTILO LIBRO */
+        /* CONTENEDOR PRINCIPAL */
+        .content {
+            margin-top: 10px;
+        }
+
+        /* SECCIONES UNIFICADAS */
         .section {
             margin-bottom: 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            page-break-inside: avoid; /* Evita que se rompan a mitad */
+            page-break-inside: avoid;
         }
         .section-title {
-            background-color: #0056b3;
+            background-color: var(--sm-primary);
             color: white;
             padding: 4px 10px;
             font-weight: bold;
             font-size: 10pt;
             text-transform: uppercase;
         }
-        .section-title.yellow { background-color: #f1c40f; color: #000; }
-        .section-title.red { background-color: #c0392b; }
-        .section-title.blue { background-color: #2980b9; }
 
-        /* CONTENIDO DE DATOS */
+        /* TABLA DE DATOS (GRID) */
         .content-grid {
             display: table;
             width: 100%;
@@ -63,15 +109,16 @@
             padding: 6px 10px;
             border: 1px solid #f0f0f0;
             vertical-align: top;
+            width: 33.3%;
         }
         .cell strong {
             display: block;
             font-size: 7.5pt;
-            color: #0056b3;
+            color: var(--sm-primary);
             text-transform: uppercase;
         }
 
-        /* TEXTOS LARGOS (SOAPIE) */
+        /* AREAS DE TEXTO */
         .text-area {
             padding: 8px 10px;
             background-color: #fafafa;
@@ -79,25 +126,19 @@
         }
         .text-area b { font-size: 8pt; color: #555; text-transform: uppercase; }
 
-        /* TABLAS DE MEDICAMENTOS */
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        /* TABLAS (MEDICAMENTOS Y LABS) */
+        table { width: 100%; border-collapse: collapse; }
+        th { 
+            background-color: var(--sm-light); 
+            color: var(--sm-primary);
+            text-align: left; 
+            padding: 6px 10px; 
+            font-size: 8.5pt; 
+            border-bottom: 2px solid var(--sm-primary); 
         }
-        th {
-            background-color: #f2f2f2;
-            text-align: left;
-            padding: 6px 10px;
-            font-size: 8.5pt;
-            border-bottom: 2px solid #0056b3;
-        }
-        td {
-            padding: 5px 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 9pt;
-        }
+        td { padding: 5px 10px; border-bottom: 1px solid #eee; font-size: 9pt; }
 
-        /* SIGNOS VITALES ESTILO REPORTE */
+        /* SIGNOS VITALES */
         .vitals-box {
             display: table;
             width: 100%;
@@ -110,166 +151,169 @@
             border-right: 1px solid #eee;
         }
         .vital-item small { display: block; font-size: 7pt; color: #666; }
-        .vital-item span { font-weight: bold; font-size: 11pt; color: #d35400; }
+        .vital-item span { font-weight: bold; font-size: 10pt; color: var(--sm-primary); }
 
         .footer { text-align: center; font-size: 8pt; color: #aaa; margin-top: 20px; }
+        .sub-header-table { background: var(--sm-light); padding: 4px 10px; font-weight: bold; font-size: 8.5pt; color: var(--sm-primary); border-top: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Historia Clínica Electrónica</h1>
-        <p><b>Paciente:</b> {{ historia.nombre_paciente }} | <b>HC:</b> {{ historia.numero_historia }} | <b>Ingreso:</b> {{ historia.numero_ingreso }}</p>
-    </div>
-
-    <div class="section">
-        <div class="section-title">1. Identificación y Datos de Ingreso</div>
-        <div class="content-grid">
-            <div class="row">
-                <div class="cell"><strong>Documento</strong>{{ historia.paciente.numero if historia.paciente else 'N/A' }}</div>
-                <div class="cell"><strong>Edad / Sexo</strong>{{ historia.edad }} años / {{ historia.sexo }}</div>
-                <div class="cell"><strong>Fecha Nacimiento</strong>{{ historia.fecha_nacimiento.strftime('%d/%m/%Y') if historia.fecha_nacimiento else 'N/A' }}</div>
-            </div>
-            <div class="row">
-                <div class="cell"><strong>Servicio</strong>{{ historia.servicio_hospitalario }}</div>
-                <div class="cell"><strong>Cama</strong>{{ historia.paciente.cama if (historia.paciente and historia.paciente.cama) else 'N/A' }}</div>
-                <div class="cell"><strong>Fecha Ingreso</strong>{{ fecha_ingreso_local.strftime('%d/%m/%Y %H:%M') if fecha_ingreso_local else 'N/A' }}</div>
-            </div>
-            <div class="row">
-                <div class="cell"><strong>Responsable</strong>{{ historia.acudiente_responsable or 'N/A' }}</div>
-                <div class="cell"><strong>Teléfono</strong>{{ historia.telefono_responsable or 'N/A' }}</div>
-                <div class="cell"><strong>Procedencia</strong>{{ historia.procedencia or 'N/A' }}</div>
-            </div>
+    <div class="header-container">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='img/logo.png', _external=True) }}" alt="Logo">
+            <div class="software-name">Software SM</div>
+        </div>
+        <div class="header-info">
+            <h1 style="margin:0; color: var(--sm-primary); font-size: 18pt;">HISTORIA CLÍNICA</h1>
+            <p class="document-type">COPIA CONTROLADA</p>
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title">2. Diagnóstico y Evaluación (SOAPIE)</div>
-        <div class="text-area">
-            <b>Diagnóstico Principal (CIE10):</b> {{ historia.cie10_principal }} 
-            {% if diag_cie10 %} - {{ diag_cie10.nombre }}{% endif %}
-        </div>
-        <div class="text-area"><b>[S] Subjetivo:</b><br>{{ historia.subjetivos or 'No registra' }}</div>
-        <div class="text-area"><b>[O] Objetivo:</b><br>{{ historia.objetivos or 'No registra' }}</div>
-        <div class="text-area"><b>[A] Análisis:</b><br>{{ historia.analisis or 'No registra' }}</div>
-        <div class="text-area"><b>[P] Plan:</b><br>{{ historia.plan or 'No registra' }}</div>
-    </div>
-
-    {% if historia.signos_vitales %}
-    <div class="section">
-        <div class="section-title">3. Signos Vitales de Ingreso</div>
-        <div class="vitals-box">
-            <div class="vital-item"><small>F.C (lpm)</small><span>{{ historia.signos_vitales.frecuencia_cardiaca or '--' }}</span></div>
-            <div class="vital-item"><small>F.R (rpm)</small><span>{{ historia.signos_vitales.frecuencia_respiratoria or '--' }}</span></div>
-            <div class="vital-item"><small>T.A (mmHg)</small><span>{{ historia.signos_vitales.tension_arterial or '--' }}</span></div>
-            <div class="vital-item"><small>Temp (°C)</small><span>{{ historia.signos_vitales.temperatura or '--' }}</span></div>
-            <div class="vital-item"><small>SatO2 (%)</small><span>{{ historia.signos_vitales.saturometria or '--' }}</span></div>
-            <div class="vital-item"><small>IMC</small><span>{{ (historia.signos_vitales.imc|float|round(1)) if historia.signos_vitales.imc else '--' }}</span></div>
-        </div>
-        <div class="content-grid">
-            <div class="row">
-                <div class="cell"><strong>Escala Dolor</strong>{{ historia.signos_vitales.escala_dolor }}/10</div>
-                <div class="cell"><strong>Glucometría</strong>{{ historia.signos_vitales.glucometria }} mg/dl</div>
-                <div class="cell"><strong>Peso/Talla</strong>{{ historia.signos_vitales.peso }}kg / {{ historia.signos_vitales.talla }}m</div>
+    <div class="content">
+        <div class="section">
+            <div class="section-title">1. Identificación y Datos de Ingreso</div>
+            <div class="content-grid">
+                <div class="row">
+                    <div class="cell"><strong>Paciente</strong>{{ historia.nombre_paciente }}</div>
+                    <div class="cell"><strong>Documento</strong>{{ historia.paciente.numero if historia.paciente else 'N/A' }}</div>
+                    <div class="cell"><strong>Ingreso</strong>{{ historia.numero_ingreso }}</div>
+                </div>
+                <div class="row">
+                    <div class="cell"><strong>Edad / Sexo</strong>{{ historia.edad }} años / {{ historia.sexo }}</div>
+                    <div class="cell"><strong>Fecha Nacimiento</strong>{{ historia.fecha_nacimiento.strftime('%d/%m/%Y') if historia.fecha_nacimiento else 'N/A' }}</div>
+                    <div class="cell"><strong>Servicio</strong>{{ historia.servicio_hospitalario or 'N/A' }}</div>
+                </div>
+                <div class="row">
+                    <div class="cell"><strong>Fecha Ingreso</strong>{{ historia.fecha_registro.strftime('%d/%m/%Y %H:%M') if historia.fecha_registro else 'N/A' }}</div>
+                    <div class="cell"><strong>Cama</strong>{{ historia.paciente.cama if (historia.paciente and historia.paciente.cama) else 'N/A' }}</div>
+                    <div class="cell"><strong>Procedencia</strong>{{ historia.procedencia or 'N/A' }}</div>
+                </div>
             </div>
         </div>
-    </div>
-    {% endif %}
 
-    <div class="section">
-        <div class="section-title yellow">4. Antecedentes Médicos</div>
-        <div class="content-grid">
-            <div class="row">
-                <div class="cell"><strong>Patológicos</strong>{{ historia.antecedentes_medicos or 'Negativo' }}</div>
-                <div class="cell"><strong>Quirúrgicos</strong>{{ historia.antecedentes_quirurgicos or 'Negativo' }}</div>
+        <div class="section">
+            <div class="section-title">2. Diagnóstico y Evaluación (SOAP)</div>
+            <div class="text-area">
+                <b>Diagnóstico Principal (CIE10):</b> {{ historia.cie10_principal }} 
+                {% if diag_cie10 %} - {{ diag_cie10.nombre }}{% endif %}
             </div>
-            <div class="row">
-                <div class="cell"><strong>Farmacológicos</strong>{{ historia.antecedentes_farmacologicos or 'Negativo' }}</div>
-                <div class="cell"><strong>Tóxicos/Alérgicos</strong>{{ historia.antecedentes_toxicos or 'Negativo' }} / {{ historia.antecedentes_alergicos or 'Negativo' }}</div>
+            <div class="text-area"><b>[S] Subjetivo:</b><br>{{ historia.subjetivos or 'No registra' }}</div>
+            <div class="text-area"><b>[O] Objetivo:</b><br>{{ historia.objetivos or 'No registra' }}</div>
+            <div class="text-area"><b>[A] Análisis:</b><br>{{ historia.analisis or 'No registra' }}</div>
+            <div class="text-area"><b>[P] Plan:</b><br>{{ historia.plan or 'No registra' }}</div>
+        </div>
+
+        {% if historia.signos_vitales %}
+        <div class="section">
+            <div class="section-title">3. Signos Vitales de Ingreso</div>
+            <div class="vitals-box">
+                <div class="vital-item"><small>F.C (LPM)</small><span>{{ historia.signos_vitales.frecuencia_cardiaca or '--' }}</span></div>
+                <div class="vital-item"><small>F.R (RPM)</small><span>{{ historia.signos_vitales.frecuencia_respiratoria or '--' }}</span></div>
+                <div class="vital-item"><small>T.A (mmHg)</small><span>{{ historia.signos_vitales.tension_arterial or '--' }}</span></div>
+                <div class="vital-item"><small>Temp (°C)</small><span>{{ historia.signos_vitales.temperatura or '--' }}</span></div>
+                <div class="vital-item"><small>SatO2 (%)</small><span>{{ historia.signos_vitales.saturometria or '--' }}</span></div>
+                <div class="vital-item"><small>IMC</small><span>{{ (historia.signos_vitales.imc|float|round(1)) if historia.signos_vitales.imc else '--' }}</span></div>
+            </div>
+            <div class="content-grid">
+                <div class="row">
+                    <div class="cell"><strong>Escala Dolor</strong>{{ historia.signos_vitales.escala_dolor or '0' }}/10</div>
+                    <div class="cell"><strong>Glucometría</strong>{{ historia.signos_vitales.glucometria or '--' }} mg/dL</div>
+                    <div class="cell"><strong>Peso / Talla</strong>{{ historia.signos_vitales.peso or '--' }}kg / {{ historia.signos_vitales.talla or '--' }}m</div>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="section">
-        <div class="section-title red">5. Seguridad del Paciente (Riesgos)</div>
-        <div class="text-area"><b>Riesgo Caídas (Dowton):</b> {{ historia.riesgo_caidas_dowton or 'No evaluado' }}</div>
-        <div class="text-area"><b>Riesgo UPP (Braden):</b> {{ historia.riesgo_upp_braden or 'No evaluado' }}</div>
-        <div class="text-area">
-            <b>Alergias Conocidas:</b> 
-            {% if historia.tiene_alergias == 'si' %} [SÍ] {{ historia.descripcion_alergias }} {% else %} NO REGISTRA {% endif %}
-        </div>
-    </div>
-
-    {% if ordenes_con_meds %}
-    <div style="page-break-before: always;"></div>
-    <div class="header"><h1>Órdenes Médicas y Ayudas Diagnósticas</h1></div>
-
-    {% for item in ordenes_con_meds %}
-    <div class="section" style="border: 1.5px solid #2980b9; margin-bottom: 25px;">
-        <div class="section-title blue">
-            Orden Médica #{{ item.orden.id }} 
-            - Fecha: {{ item.orden.fecha_orden.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_orden is defined else 'S/F' }}
-        </div>
-
-        {% if item.medicamentos %}
-        <div style="padding: 5px 10px; background: #eef2f7; font-weight: bold; font-size: 9pt; color: #2980b9;">
-            💊 TRATAMIENTO FARMACOLÓGICO
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 40%;">Medicamento</th>
-                    <th>Dosis</th>
-                    <th>Frecuencia</th>
-                    <th>Vía</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for med in item.medicamentos %}
-                <tr>
-                    <td><b>{{ med.nombre }}</b></td>
-                    <td>{{ med.dosis or 'N/A' }}</td>
-                    <td>{{ med.frecuencia or 'N/A' }}</td>
-                    <td>{{ med.via_administracion or med.via or 'N/A' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
         {% endif %}
 
-        {% if item.laboratorios %}
-        <div style="padding: 5px 10px; background: #fff4e5; font-weight: bold; font-size: 9pt; color: #d35400; border-top: 1px solid #ddd;">
-            🔬 LABORATORIOS Y EXÁMENES SOLICITADOS
+        <div class="section">
+            <div class="section-title">4. Antecedentes Médicos</div>
+            <div class="content-grid">
+                <div class="row">
+                    <div class="cell"><strong>Patológicos</strong>{{ historia.antecedentes_medicos or 'Negativo' }}</div>
+                    <div class="cell"><strong>Quirúrgicos</strong>{{ historia.antecedentes_quirurgicos or 'Negativo' }}</div>
+                </div>
+                <div class="row">
+                    <div class="cell"><strong>Farmacológicos</strong>{{ historia.antecedentes_farmacologicos or 'Negativo' }}</div>
+                    <div class="cell"><strong>Tóxicos</strong>{{ historia.antecedentes_toxicos or 'Negativo' }}</div>
+                </div>
+                <div class="row">
+                    <div class="cell"><strong>Alergias</strong>{{ historia.descripcion_alergias if historia.tiene_alergias == 'si' else 'Negativo' }}</div>
+                    <div class="cell"><strong>Ginecobstétricos</strong>{{ historia.antecedentes_ginecobstetricos or 'N/A' }}</div>
+                </div>
+            </div>
         </div>
-        <table style="background-color: #fdfaf6;">
-            <thead>
-                <tr>
-                    <th style="background-color: #f39c12; color: white;">Descripción del Examen</th>
-                    <th style="background-color: #f39c12; color: white;">Estado de Solicitud</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lab in item.laboratorios %}
-                <tr>
-                    <td style="width: 70%;"><b>{{ lab.nombre }}</b></td>
-                    <td style="font-style: italic; color: #555; text-transform: uppercase; font-size: 8.5pt;">{{ lab.estado }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+        <div class="section">
+            <div class="section-title">5. Seguridad del Paciente (Riesgos)</div>
+            <div class="text-area"><b>Riesgo Caídas (Downton):</b> {{ historia.riesgo_caidas_dowton or 'No evaluado' }}</div>
+            <div class="text-area"><b>Riesgo UPP (Braden):</b> {{ historia.riesgo_upp_braden or 'No evaluado' }}</div>
+            <div class="text-area"><b>Evaluación General:</b> {{ historia.riesgos_evaluacion or 'Sin observaciones' }}</div>
+        </div>
+
+        {% if ordenes_con_meds %}
+        <div style="page-break-before: always;"></div>
+        <div class="header"><h1>Órdenes Médicas</h1></div>
+
+        {% for item in ordenes_con_meds %}
+        <div class="section" style="border: 1.5px solid var(--sm-primary);">
+            <div class="section-title">
+                Orden #{{ item.orden.id }} - {{ item.orden.fecha_registro.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_registro else 'S/F' }}
+            </div>
+            
+            {% if item.orden.indicaciones_medicas %}
+            <div class="text-area"><b>Indicaciones:</b> {{ item.orden.indicaciones_medicas }}</div>
+            {% endif %}
+
+            {% if item.medicamentos %}
+            <div class="sub-header-table">💊 MEDICAMENTOS REGISTRADOS</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Medicamento</th>
+                        <th>Dosis</th>
+                        <th>Frecuencia</th>
+                        <th>Vía</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for med in item.medicamentos %}
+                    <tr>
+                        <td><b>{{ med.nombre }}</b></td>
+                        <td>{{ med.dosis }}</td>
+                        <td>{{ med.frecuencia }}</td>
+                        <td>{{ med.via_administracion or med.via }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
+            {% if item.laboratorios %}
+            <div class="sub-header-table">🔬 LABORATORIOS Y EXÁMENES</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Descripción del Examen</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lab in item.laboratorios %}
+                    <tr>
+                        <td style="width: 70%;"><b>{{ lab.nombre }}</b></td>
+                        <td style="font-style: italic; color: #555;">{{ lab.estado }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+        {% endfor %}
         {% endif %}
 
-        {% if not item.medicamentos and not item.laboratorios %}
-        <div class="text-area" style="text-align: center; color: #999; padding: 20px;">
-            Esta orden médica no contiene medicamentos ni laboratorios registrados.
+        <div class="footer">
+            Documento generado automáticamente - {{ now.strftime('%d/%m/%Y %H:%M') }}
         </div>
-        {% endif %}
-    </div>
-    {% endfor %}
-    {% endif %}
-
-    <div class="footer">
-        Documento generado automáticamente por el Sistema de Historias Clínicas - {{ now.strftime('%d/%m/%Y %H:%M') }}
     </div>
 
 </body>

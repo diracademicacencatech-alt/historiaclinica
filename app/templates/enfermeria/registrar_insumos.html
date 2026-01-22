@@ -1,103 +1,203 @@
 {% extends "base.html" %}
+
 {% block title %}Registrar Insumos - {{ paciente.nombre }}{% endblock %}
 
+{% block head %}
+<style>
+    :root {
+      --titles: #236e7b;
+      --text-links: #0b6169;
+      --text-secondary: #5f5f5f;
+      --bg-containers: #f0e7d8;
+    }
+
+    .titulo-principal { 
+      color: var(--titles); 
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    /* CONTENEDOR ESTILO SM */
+    .section-white-box {
+      background: #ffffff;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      border-left: 8px solid var(--titles);
+      overflow: hidden;
+    }
+
+    .header-box {
+        background-color: var(--bg-containers);
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* TABLA DE INSUMOS */
+    .table-insumos thead {
+        background-color: var(--titles);
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+
+    .table-insumos tbody td {
+        vertical-align: middle;
+        padding: 12px 8px;
+        font-size: 0.85rem;
+    }
+
+    .badge-disponible {
+        background-color: var(--bg-containers);
+        color: var(--titles);
+        font-weight: 800;
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    /* INPUTS Y TEXTAREA */
+    .form-control-sm-custom {
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        text-align: center;
+        font-weight: 700;
+        color: var(--titles);
+    }
+
+    /* BOTONES */
+    .btn-sm-verde {
+        background-color: var(--titles) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 12px 25px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .btn-sm-verde:hover {
+        background-color: var(--text-links) !important;
+        transform: translateY(-2px);
+    }
+
+    .btn-sm-secundario {
+        background-color: #5f5f5f !important;
+        color: white !important;
+        border-radius: 10px;
+        padding: 12px 25px;
+        text-transform: uppercase;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>✅ Registrar uso de insumos - {{ paciente.nombrecompleto }}</h2>
+<div class="container py-2">
+    
+    <h2 class="titulo-principal">✅ Registro de Uso de Insumos</h2>
+    
+    <div class="alert shadow-sm border-0 mb-4" style="background-color: var(--bg-containers); color: var(--titles); border-radius: 12px;">
+        <i class="fas fa-user-circle me-2"></i> Paciente: <strong>{{ paciente.nombrecompleto }}</strong>
+    </div>
 
     <form method="POST" action="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}">
-        <div class="card shadow mb-4">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0">
-                    <i class="fas fa-syringe me-2"></i>Insumos Pendientes ({{ insumos|length }})
+        
+        <div class="section-white-box">
+            <div class="header-box d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold" style="color: var(--titles);">
+                    <i class="fas fa-box-open me-2"></i> MATERIALES PENDIENTES DE REGISTRO
                 </h5>
+                <span class="badge rounded-pill bg-white text-dark border px-3 py-2">
+                    {{ insumos|length }} Ítems
+                </span>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 500px;">
-                    <table class="table table-sm mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width: 4%"></th>
-                                <th style="width: 28%">Insumo</th>
-                                <th class="text-center" style="width: 12%">Solicitado</th>
-                                <th class="text-center" style="width: 12%">Usado</th>
-                                <th class="text-center" style="width: 12%">**Disponible**</th>
-                                <th class="text-center" style="width: 12%">Cantidad</th>
-                                <th class="text-center" style="width: 12%">Estado</th>
-                                <th style="width: 28%">Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for i in insumos %}
-                            <tr>
-                                <td class="text-center">
+
+            <div class="table-responsive">
+                <table class="table table-hover table-insumos mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 5%">Sel.</th>
+                            <th style="width: 25%">Descripción del Insumo</th>
+                            <th class="text-center" style="width: 10%">Solic.</th>
+                            <th class="text-center" style="width: 10%">Usado</th>
+                            <th class="text-center" style="width: 10%">Disp.</th>
+                            <th class="text-center" style="width: 15%">Cant. a Registrar</th>
+                            <th>Observaciones de Uso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in insumos %}
+                        <tr>
+                            <td class="text-center">
+                                <div class="form-check d-inline-block">
                                     <input class="form-check-input" type="checkbox" checked
-                                           name="insumos_reg[]" value="{{ i.id }}">
-                                </td>
-                                <td><strong>{{ i.nombre }}</strong></td>
-                                <td class="text-center fw-bold">{{ i.solicitado }}</td>
-                                <td class="text-center fw-bold">{{ i.usado }}</td>
-                                <td class="text-center fw-bold text-info">
+                                           name="insumos_reg[]" value="{{ i.id }}" style="cursor: pointer;">
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-bold" style="color: var(--text-links);">{{ i.nombre }}</span>
+                            </td>
+                            <td class="text-center text-muted">{{ i.solicitado }}</td>
+                            <td class="text-center text-muted">{{ i.usado }}</td>
+                            <td class="text-center">
+                                <span class="badge-disponible">
                                     {{ i.solicitado - i.usado }}
-                                </td>
-                                <td class="text-center">
-                                    <input type="number" name="cant_{{ i.id }}" 
-                                           value="1" min="1" max="{{ i.solicitado - i.usado }}"
-                                           class="form-control form-control-sm text-center"
-                                           style="width: 80px;">
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-warning text-dark">
-                                        {{ i.solicitado - i.usado }} pendientes
-                                    </span>
-                                </td>
-                                <td>
-                                    <textarea name="obs_{{ i.id }}" 
-                                              class="form-control" rows="2"
-                                              placeholder="Uso del insumo... ej: 'Aplicación IV', 'Curación herida', etc."
-                                              maxlength="200" style="resize: vertical;"></textarea>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                            {% if not insumos %}
-                            <tr>
-                                <td colspan="8" class="text-center text-muted p-4">
-                                    ✅ No hay insumos pendientes para este paciente.
-                                </td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <input type="number" name="cant_{{ i.id }}" 
+                                       value="1" min="1" max="{{ i.solicitado - i.usado }}"
+                                       class="form-control form-control-sm form-control-sm-custom mx-auto"
+                                       style="width: 70px;">
+                            </td>
+                            <td>
+                                <textarea name="obs_{{ i.id }}" 
+                                          class="form-control form-control-sm" rows="1"
+                                          placeholder="Ej: Curación, Canalización..."
+                                          style="border-radius: 8px; font-size: 0.8rem;"></textarea>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if not insumos %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-check-circle fa-3x mb-3" style="color: #d4edda;"></i>
+                                <p class="text-muted fw-bold">No hay insumos pendientes por registrar para este paciente.</p>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                {% if insumos %}
+                <button type="submit" class="btn-sm-verde shadow me-2 mb-2">
+                    <i class="fas fa-save me-2"></i> REGISTRAR GASTO DE MATERIALES
+                </button>
+                {% endif %}
+                
+                <a href="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}"
+                   class="btn-sm-secundario shadow mb-2">
+                    <i class="fas fa-plus-circle me-2"></i> SOLICITAR NUEVOS INSUMOS
+                </a>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" 
+                       class="text-decoration-none fw-bold" style="color: var(--text-secondary); font-size: 0.85rem;">
+                       <i class="fas fa-arrow-left me-1"></i> VOLVER AL MENÚ DEL PACIENTE
+                    </a>
                 </div>
             </div>
         </div>
-
-        {% if insumos %}
-        <div class="mb-3 p-3 bg-light rounded">
-            <button type="submit" class="btn btn-success btn-lg">
-                <i class="fas fa-check-double me-2"></i> ✅ Registrar todos seleccionados
-            </button>
-            <a href="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}"
-               class="btn btn-primary btn-lg ms-2">
-                ➕ Solicitar más insumos
-            </a>
-        </div>
-        {% else %}
-        <div class="text-center p-4 bg-success bg-opacity-10 rounded p-4">
-            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-            <h5 class="text-success">¡Todos los insumos están completos!</h5>
-            <a href="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}"
-               class="btn btn-primary btn-lg">
-                ➕ Solicitar nuevos insumos
-            </a>
-        </div>
-        {% endif %}
     </form>
 </div>
-
-<style>
-.table th { font-size: 0.85rem; }
-.table td { font-size: 0.8rem; vertical-align: middle; }
-textarea { font-size: 0.8rem; }
-</style>
 {% endblock %}

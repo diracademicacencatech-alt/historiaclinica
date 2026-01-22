@@ -1,546 +1,217 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laboratorio - {{ historia.paciente.nombre if historia.paciente else '' }}</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+{% extends "base.html" %}
+
+{% block title %}Simulación de Laboratorios - {{ historia.paciente.nombre }}{% endblock %}
+
+{% block head %}
+<style>
+    /* Estilos de la paleta personalizada */
+    .sm-page-title { color: #236e7b; font-weight: 800; text-transform: uppercase; text-align: center; }
+    
+    /* Botones Verdes (Primarios) */
+    .btn-sm-green {
+        background-color: #236e7b; /* Verde estándar médico */
+        color: white !important;
+        border: none;
+        font-weight: 700;
+        transition: all 0.3s;
+    }
+    .btn-sm-green:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-      background: #f8f9fa;
-      padding: 20px;
-      color: #212529;
+    .btn-simulate {
+        background-color: #236e7b;
+        color: white; border: none; padding: 8px 15px; border-radius: 8px;
+        font-weight: 600; transition: all 0.3s;
+    }
+    .btn-simulate:hover { background-color: #236e7b; transform: scale(1.05); }
+    
+    .resultado-alterado {
+        color: #d9534f !important;
+        font-weight: 800 !important;
+        border: 2px solid #d9534f !important;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-      color: #1a1a1a;
-      font-size: 28px;
-    }
-
-    h3 {
-      color: #1a1a1a;
-      font-size: 18px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    p {
-      margin-bottom: 8px;
-      color: #555;
-      font-size: 14px;
-    }
-
-    /* Tabla */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      background: #fff;
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    th, td {
-      border: 1px solid #dee2e6;
-      padding: 12px;
-      font-size: 13px;
-      text-align: left;
-    }
-
-    th {
-      background: #e9ecef;
-      font-weight: 600;
-      color: #212529;
-    }
-
-    tr:hover {
-      background: #f9fafb;
-    }
-
-    /* Secciones */
-    .section {
-      margin-bottom: 25px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-      border: 1px solid #e9ecef;
-    }
-
-    /* Botones principales */
-    .btn {
-      padding: 12px 24px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-decoration: none;
-    }
-
-    .btn-primary {
-      background: #007AFF;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
-    }
-
-    .btn-primary:hover {
-      background: #0056b3;
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
-      transform: translateY(-2px);
-    }
-
-    .btn-primary:active {
-      background: #003d82;
-      transform: translateY(0);
-    }
-
-    .btn-secondary {
-      background: #6c757d;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
-    }
-
-    .btn-secondary:hover {
-      background: #5a6268;
-      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
-      transform: translateY(-2px);
-    }
-
-    .btn-secondary:active {
-      background: #4e555b;
-      transform: translateY(0);
-    }
-
-    .btn-full-width {
-      width: 100%;
-      justify-content: center;
-    }
-
-    /* Botón editar (lápiz) */
-    .btn-edit {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      padding: 6px 8px;
-      transition: opacity 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-edit:hover {
-      opacity: 0.7;
-      transform: scale(1.1);
-    }
-
-    /* Badges */
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .badge-solicitado {
-      background: #ffc107;
-      color: #212529;
-    }
-
-    .badge-procesado {
-      background: #28a745;
-      color: #fff;
-    }
-
-    /* Inputs */
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      font-size: 13px;
-      box-sizing: border-box;
-      transition: border-color 0.2s ease;
-    }
-
-    input[type="text"]:read-only {
-      background: #f5f5f5;
-      cursor: not-allowed;
-      color: #666;
-    }
-
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #007AFF;
-      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-    }
-
-    /* Celda de resultado con botón editar */
-    .resultado-cell {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .resultado-input {
-      flex: 1;
-    }
-
-    /* Modal */
+    .lab-header-row { cursor: pointer; background-color: #ffffff; }
+    .detalle-laboratorio { background-color: #fcfcfc; border-left: 4px solid #236e7b; }
+    
+    /* Estilo del Modal */
     .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.2s ease;
+        display: none; position: fixed; z-index: 2000;
+        left: 0; top: 0; width: 100%; height: 100%;
+        background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;
     }
+    .modal.active { display: flex; }
+    .modal-content { background: #f0e7d8; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; }
+</style>
+{% endblock %}
 
-    .modal.active {
-      display: flex;
-    }
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h2 class="sm-page-title m-0">📊 Gestión de Resultados</h2>
+        
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('ayudas.generar_pdf_laboratorio', historia_id=historia.id) }}" 
+               class="btn btn-sm-green d-flex align-items-center gap-2 px-3 shadow-sm" 
+               style="border-radius: 8px;" target="_blank">
+                <span>📄</span> PDF Informe
+            </a>
 
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    .modal-content {
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-      animation: slideUp 0.3s ease;
-    }
-
-    @keyframes slideUp {
-      from {
-        transform: translateY(20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    .modal-header {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 20px;
-      color: #1a1a1a;
-    }
-
-    .modal-body {
-      margin-bottom: 20px;
-    }
-
-    .modal-input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #dee2e6;
-      border-radius: 6px;
-      font-size: 14px;
-      box-sizing: border-box;
-      transition: border-color 0.2s ease;
-    }
-
-    .modal-input:focus {
-      outline: none;
-      border-color: #007AFF;
-      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-    }
-
-    .modal-buttons {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-
-    /* Alertas */
-    .alert {
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    .alert.success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-
-    .alert.error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    .alert.warning {
-      background: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeeba;
-    }
-
-    .alert.info {
-      background: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
-    }
-
-    /* Contenedor de botones finales */
-    .button-container {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 30px;
-    }
-
-    @media (min-width: 768px) {
-      .button-container {
-        flex-direction: row;
-        gap: 15px;
-      }
-
-      .btn-full-width {
-        width: auto;
-        flex: 1;
-      }
-    }
-
-    /* Responsive */
-    @media (max-width: 767px) {
-      body {
-        padding: 12px;
-      }
-
-      h1 {
-        font-size: 22px;
-      }
-
-      .section {
-        padding: 15px;
-      }
-
-      table {
-        font-size: 12px;
-      }
-
-      th, td {
-        padding: 8px;
-      }
-
-      .btn {
-        padding: 10px 16px;
-        font-size: 13px;
-      }
-    }
-  </style>
-</head>
-<body>
-
-<h1>Laboratorio - {{ historia.paciente.nombre if historia.paciente else '' }}</h1>
-<p><strong>N° Historia:</strong> {{ historia.numero_historia }}</p>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert {{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
-
-<form method="POST" id="formResultados">
-  {% for bloque in items_con_parametros %}
-    {% set item = bloque.item %}
-    {% set examen = bloque.examen %}
-    {% set parametros = bloque.parametros %}
-    {% set resultados = bloque.resultados %}
-
-    <div class="section">
-      <h3>
-        {{ examen.nombre }}{% if examen.grupo %} ({{ examen.grupo }}){% endif %}
-        {% if item.estado == 'procesado' %}
-          <span class="badge badge-procesado">Procesado</span>
-        {% else %}
-          <span class="badge badge-solicitado">Solicitado</span>
-        {% endif %}
-      </h3>
-      <p><strong>Orden médica ID:</strong> {{ item.orden_id }}</p>
-
-      {% if parametros and parametros|length > 0 %}
-        <table>
-          <thead>
-            <tr>
-              <th>Parámetro</th>
-              <th>Unidad</th>
-              <th>Valor ref. mínimo</th>
-              <th>Valor ref. máximo</th>
-              <th>Resultado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in parametros %}
-              {% set res = resultados.get(p.id) %}
-              <tr>
-                <td>{{ p.nombre }}</td>
-                <td>{{ p.unidad or '' }}</td>
-                <td>{{ p.valor_ref_min if p.valor_ref_min is not none else '' }}</td>
-                <td>{{ p.valor_ref_max if p.valor_ref_max is not none else '' }}</td>
-                <td>
-                  <div class="resultado-cell">
-                    <input type="text"
-                           class="resultado-input"
-                           id="resultado-{{ p.id }}"
-                           value="{{ res.valor if res else '' }}"
-                           readonly>
-                    <button type="button"
-                            class="btn-edit"
-                            data-param-id="{{ p.id }}"
-                            data-param-name="{{ p.nombre }}"
-                            data-param-valor="{{ res.valor if res else '' }}">
-                      ✏️
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p>No hay parámetros definidos para este examen.</p>
-      {% endif %}
+            <button type="button" class="btn-simulate shadow-sm" onclick="simularResultados()">
+                ⚡ Simular Resultados
+            </button>
+        </div>
     </div>
-  {% else %}
-    <p>No hay exámenes de laboratorio solicitados para esta historia clínica.</p>
-  {% endfor %}
 
-  <!-- Contenedor de botones mejorado -->
-  {% if items_con_parametros and items_con_parametros|length > 0 %}
-    <div class="button-container">
-      <button type="submit" class="btn btn-primary btn-full-width">
-        💾 Guardar todos los resultados
-      </button>
-      <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}"
-         class="btn btn-secondary btn-full-width">
-        🔙 Volver al menú de ayudas
-      </a>
-    </div>
-  {% endif %}
-</form>
+    <form method="POST" id="formResultados">
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #236e7b; color: white;">
+                        <tr>
+                            <th class="ps-4">Examen / Laboratorio</th>
+                            <th class="text-end pe-4">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for bloque in items_con_parametros %}
+                        <tr class="lab-header-row" data-bs-toggle="collapse" data-bs-target="#detalle-{{ loop.index }}">
+                            <td class="ps-4">
+                                <span class="fw-bold" style="color: #0b6169;">🧪 {{ bloque.examen.nombre }}</span>
+                            </td>
+                            <td class="text-end pe-4">Ver parámetros ▾</td>
+                        </tr>
 
-<!-- MODAL PARA EDITAR RESULTADO -->
+                        <tr class="collapse detalle-laboratorio" id="detalle-{{ loop.index }}">
+                            <td colspan="2" class="px-4 py-3">
+                                <table class="table table-sm table-bordered bg-white">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Parámetro</th>
+                                            <th>Referencia</th>
+                                            <th>Resultado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in bloque.parametros %}
+                                            {% set res = bloque.resultados.get(p.id) %}
+                                            <tr class="fila-parametro" 
+                                                data-min="{{ p.valor_ref_min if p.valor_ref_min is not none else '' }}"
+                                                data-max="{{ p.valor_ref_max if p.valor_ref_max is not none else '' }}">
+                                                <td>{{ p.nombre }}</td>
+                                                <td class="small text-muted">{{ p.valor_ref_min or '0' }} - {{ p.valor_ref_max or 'N/A' }}</td>
+                                                <td>
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="text" class="form-control resultado-input" 
+                                                               id="resultado-{{ p.id }}" 
+                                                               value="{{ res.valor if res else '' }}" readonly>
+                                                        <button type="button" class="btn btn-outline-secondary btn-edit-js"
+                                                                onclick="abrirModal('{{ p.id }}', '{{ p.nombre }}', document.getElementById('resultado-{{ p.id }}').value)">
+                                                            ✏️
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="mt-4" style="width: 100%;">
+    <button type="submit" 
+            style="width: 100%; height: 55px; background-color: #236e7b; color: white; font-size: 16px; font-weight: bold; margin-bottom: 12px; border: none; border-radius: 5px; display: block; cursor: pointer; text-transform: uppercase;">
+        💾 CONFIRMAR Y GUARDAR TODO EL REPORTE
+    </button>
+</div>
+
+</form> <div style="width: 100%;">
+    <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}" 
+       style="width: 100%; height: 55px; background-color: #236e7b; color: white; line-height: 55px; font-size: 16px; font-weight: bold; text-decoration: none; display: block; border: none; border-radius: 5px; text-align: center; text-transform: uppercase;">
+        ← VOLVER AL MENÚ DE AYUDAS
+    </a>
+</div>
+</div>
 <div id="modalEditar" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">Editar resultado</div>
-    <div class="modal-body">
-      <p id="modalParametro" style="margin-bottom: 15px;"><strong>Parámetro:</strong></p>
-      <input type="text"
-             id="modalInput"
-             class="modal-input"
-             placeholder="Ingrese el valor">
+    <div class="modal-content shadow-lg">
+        <h5 style="color: #236e7b;" id="modalParametro">Editar Parámetro</h5>
+        <hr>
+        <div class="mb-3">
+            <label class="form-label font-weight-bold">Nuevo Valor:</label>
+            <input type="text" id="modalInput" class="form-control form-control-lg">
+        </div>
+        <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button type="button" class="btn btn-sm-green px-4" onclick="aplicarCambioModal()">Aplicar</button>
+        </div>
     </div>
-    <div class="modal-buttons">
-      <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="guardarResultado()">Guardar</button>
-    </div>
-  </div>
 </div>
 
 <script>
-let parametroActual = null;
+let parametroIdActual = null;
 
-function abrirModal(parametroId, nombreParametro, valorActual) {
-  parametroActual = parametroId;
-  document.getElementById('modalParametro').textContent = 'Parámetro: ' + nombreParametro;
-  document.getElementById('modalInput').value = valorActual;
-  document.getElementById('modalEditar').classList.add('active');
-  document.getElementById('modalInput').focus();
+function abrirModal(id, nombre, valor) {
+    parametroIdActual = id;
+    document.getElementById('modalParametro').innerText = 'Editar: ' + nombre;
+    document.getElementById('modalInput').value = valor;
+    document.getElementById('modalEditar').classList.add('active');
+    setTimeout(() => document.getElementById('modalInput').focus(), 200);
 }
 
 function cerrarModal() {
-  document.getElementById('modalEditar').classList.remove('active');
-  parametroActual = null;
+    document.getElementById('modalEditar').classList.remove('active');
+    parametroIdActual = null;
 }
 
-function guardarResultado() {
-  if (parametroActual === null) return;
-
-  const nuevoValor = document.getElementById('modalInput').value;
-  document.getElementById('resultado-' + parametroActual).value = nuevoValor;
-  cerrarModal();
-  alert('Resultado actualizado. Haz clic en "Guardar todos los resultados" para guardar en la BD.');
+function aplicarCambioModal() {
+    const nuevoValor = document.getElementById('modalInput').value;
+    const inputTabla = document.getElementById('resultado-' + parametroIdActual);
+    if (inputTabla) {
+        inputTabla.value = nuevoValor;
+        inputTabla.classList.remove('resultado-alterado');
+    }
+    cerrarModal();
 }
 
-// Event listeners para botones lápiz usando event delegation
-document.addEventListener('click', function(e) {
-  if (e.target.classList.contains('btn-edit')) {
-    const parametroId = e.target.getAttribute('data-param-id');
-    const nombreParametro = e.target.getAttribute('data-param-name');
-    const valorActual = e.target.getAttribute('data-param-valor');
-    abrirModal(parametroId, nombreParametro, valorActual);
-  }
-});
+function simularResultados() {
+    const filas = document.querySelectorAll('.fila-parametro');
+    filas.forEach(fila => {
+        const min = parseFloat(fila.getAttribute('data-min'));
+        const max = parseFloat(fila.getAttribute('data-max'));
+        const input = fila.querySelector('.resultado-input');
+        
+        if (!isNaN(min) && !isNaN(max)) {
+            const esAlterado = Math.random() < 0.20;
+            let valor;
+            if (esAlterado) {
+                valor = (Math.random() > 0.5) ? (max + (Math.random() * 2)).toFixed(2) : (min - (Math.random() * 2)).toFixed(2);
+                input.classList.add('resultado-alterado');
+            } else {
+                valor = (Math.random() * (max - min) + min).toFixed(2);
+                input.classList.remove('resultado-alterado');
+            }
+            input.value = valor;
+        }
+    });
+}
 
-// Cerrar modal al presionar ESC
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    cerrarModal();
-  }
-});
-
-// Cerrar modal al hacer click fuera
-document.getElementById('modalEditar').addEventListener('click', function(e) {
-  if (e.target === this) {
-    cerrarModal();
-  }
-});
-
-// Al enviar el formulario, incluir los valores actualizados
 document.getElementById('formResultados').addEventListener('submit', function(e) {
-  const inputs = document.querySelectorAll('.resultado-input');
-
-  inputs.forEach((input) => {
-    const parametroId = input.id.replace('resultado-', '');
-    const hidden = document.createElement('input');
-    hidden.type = 'hidden';
-    hidden.name = 'resultado[' + parametroId + ']';
-    hidden.value = input.value;
-    this.appendChild(hidden);
-  });
+    document.querySelectorAll('.resultado-input').forEach((input) => {
+        const pId = input.id.replace('resultado-', '');
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'resultado[' + pId + ']';
+        hidden.value = input.value;
+        this.appendChild(hidden);
+    });
 });
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,247 +1,317 @@
 {% extends "base.html" %}
-{% block title %}Añadir registro de enfermería{% endblock %}
+{% block title %}Añadir registro de enfermería - Software SM{% endblock %}
+
+{% block head %}
+<style>
+    :root {
+      --titles: #236e7b;
+      --text-links: #0b6169;
+      --text-secondary: #5f5f5f;
+    }
+
+    .titulo-principal { 
+      color: var(--titles); 
+      text-align: center; 
+      margin-bottom: 30px; 
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .titulo-seccion {
+      color: var(--titles);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-top: 25px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* BLOQUES DE FORMULARIO (Estilo SM) */
+    .section-white-box {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      border-left: 6px solid var(--titles);
+    }
+
+    .form-label {
+        font-weight: 700;
+        color: var(--titles);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    /* TABLAS DE PREVISUALIZACIÓN */
+    .table-sm-custom {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        font-size: 0.9rem;
+    }
+
+    .table-sm-custom thead {
+        background-color: var(--titles);
+        color: white;
+        text-transform: uppercase;
+    }
+
+    /* BOTONES */
+    .btn-sm-verde {
+        background-color: var(--titles) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 15px;
+        border-radius: 10px;
+        width: 100%;
+        transition: all 0.2s;
+    }
+
+    .btn-sm-verde:hover {
+        background-color: var(--text-links) !important;
+        transform: translateY(-2px);
+    }
+
+    .balance-total-box {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 10px;
+        display: inline-block;
+        font-weight: 800;
+        color: var(--titles);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h2>Registro de enfermería</h2>
+<div class="container py-2">
+    <h2 class="titulo-principal">Registro de Enfermería</h2>
 
-<form method="post">
-  {{ csrf_token() if csrf_token is defined }}
+    <form method="post">
+        {{ csrf_token() if csrf_token is defined }}
 
-  <!-- Selección de historia clínica -->
-  <div class="mb-3">
-    <label for="historia_clinica_id" class="form-label">Historia clínica</label>
-    <select name="historia_clinica_id" id="historia_clinica_id"
-            class="form-select" required>
-      <option value="">Seleccione...</option>
-      {% for h in historias %}
-        <option value="{{ h.id }}">
-          {{ h.numero_ingreso }} - {{ h.fecha_registro.strftime('%Y-%m-%d') }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+        <div class="section-white-box">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="historia_clinica_id" class="form-label">Historia Clínica Seleccionada *</label>
+                    <select name="historia_clinica_id" id="historia_clinica_id" class="form-select shadow-sm" required>
+                        <option value="">Seleccione...</option>
+                        {% for h in historias %}
+                        <option value="{{ h.id }}">
+                            Ingreso: {{ h.numero_ingreso }} - Fecha: {{ h.fecha_registro.strftime('%d/%m/%Y') }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="turno" class="form-label">Turno de Enfermería</label>
+                    <select name="turno" id="turno" class="form-select shadow-sm">
+                        {% for t in turnos %}
+                        <option value="{{ t }}" {% if t == turno_actual %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Turno sugerido: <strong>{{ turno_actual }}</strong></small>
+                </div>
+            </div>
+        </div>
 
-  <!-- Turno -->
-  <div class="mb-3">
-    <label for="turno" class="form-label">Turno de enfermería</label>
-    <select name="turno" id="turno" class="form-select">
-      {% for t in turnos %}
-        <option value="{{ t }}"
-                {% if t == turno_actual %}selected{% endif %}>
-          {{ t }}
-        </option>
-      {% endfor %}
-    </select>
-    <small class="text-muted">
-      Turno sugerido actual: {{ turno_actual }}
-    </small>
-  </div>
+        <h5 class="titulo-seccion">💓 Signos Vitales y Glucometría</h5>
+        <div class="section-white-box" style="border-left-color: #0b6169;">
+            <div class="row">
+                <div class="col-md-2 col-6 mb-3">
+                    <label class="form-label">T.A.</label>
+                    <input type="text" name="ta" class="form-control" placeholder="120/80">
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <label class="form-label">F.C.</label>
+                    <input type="text" name="fc" class="form-control" placeholder="ppm">
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <label class="form-label">F.R.</label>
+                    <input type="text" name="fr" class="form-control" placeholder="rpm">
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <label class="form-label">Temp</label>
+                    <input type="text" name="temp" class="form-control" placeholder="°C">
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <label class="form-label">SatO2</label>
+                    <input type="text" name="so2" class="form-control" placeholder="%">
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <label class="form-label">Glicemia</label>
+                    <input type="text" name="control_glicemia" class="form-control" placeholder="mg/dL">
+                </div>
+            </div>
+        </div>
 
-  <!-- Signos vitales -->
-  <h4>Signos vitales</h4>
-  <div class="row">
-    <div class="col-md-2 mb-3">
-      <label class="form-label">TA</label>
-      <input type="text" name="ta" class="form-control">
+        <h5 class="titulo-seccion">💧 Balance de Líquidos</h5>
+        <div class="section-white-box" style="border-left-color: #5f5f5f;">
+            <div class="row">
+                <div class="col-md-6 border-end">
+                    <h6 class="fw-bold mb-3 text-primary">ADMINISTRADOS</h6>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">H. Inicial</label>
+                            <input type="time" name="hora_inicial" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">H. Final</label>
+                            <input type="time" name="hora_final" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label small">Líquido / Solución</label>
+                            <input type="text" name="liquido_admin" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">Vía</label>
+                            <input type="text" name="via_admin" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">Cant. (ml)</label>
+                            <input type="number" step="0.01" name="cantidad_admin" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 ps-md-4">
+                    <h6 class="fw-bold mb-3 text-danger">ELIMINADOS</h6>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">Hora</label>
+                            <input type="time" name="hora_eliminado" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label small">Cant. (ml)</label>
+                            <input type="number" step="0.01" name="cantidad_elim" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label small">Tipo (Diuresis, emesis...)</label>
+                            <input type="text" name="tipo_liquido" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label small">Obs. Eliminación</label>
+                            <textarea name="obs_eliminado" class="form-control form-control-sm" rows="1"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-white-box">
+            <label class="form-label">Observaciones Generales del Registro</label>
+            <textarea name="observaciones" class="form-control mb-4" rows="3"></textarea>
+            
+            <div class="row g-2">
+                <div class="col-md-8">
+                    <button type="submit" class="btn-sm-verde shadow">💾 GUARDAR REGISTRO COMPLETO</button>
+                </div>
+                <div class="col-md-4">
+                    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente_id) }}" class="btn btn-outline-secondary w-100 p-3 fw-bold" style="border-radius: 10px;">CANCELAR</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <hr class="my-5">
+
+    <h3 class="fw-bold mb-3" style="color: var(--titles);">Registros del Turno: {{ turno_actual }}</h3>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <p class="mb-0"><strong>Fecha:</strong> {{ fecha_hoy }}</p>
+        <div class="balance-total-box shadow-sm">BALANCE TOTAL: {{ balance_total }} ml</div>
     </div>
-    <div class="col-md-2 mb-3">
-      <label class="form-label">FC</label>
-      <input type="text" name="fc" class="form-control">
+
+    <h5 class="titulo-seccion">📊 Historial de Signos en el Turno</h5>
+    <div class="table-responsive table-sm-custom mb-4">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Hora</th>
+                    <th>TA</th>
+                    <th>FC</th>
+                    <th>FR</th>
+                    <th>Temp</th>
+                    <th>SatO2</th>
+                    <th>Glicemia</th>
+                    <th>Observaciones</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td class="ps-3"><strong>{{ r.fecha_registro.strftime('%H:%M') }}</strong></td>
+                    <td>{{ r.sv.ta or '---' }}</td>
+                    <td>{{ r.sv.fc or '---' }}</td>
+                    <td>{{ r.sv.fr or '---' }}</td>
+                    <td>{{ r.sv.temp or '---' }}</td>
+                    <td>{{ r.sv.so2 or '---' }}</td>
+                    <td>{{ r.control_glicemia or '---' }}</td>
+                    <td class="small">{{ r.observaciones or '' }}</td>
+                    <td class="text-center">
+                        <form method="post" action="{{ url_for('enfermeria.eliminar_registro_enfermeria', registro_id=r.id) }}" onsubmit="return confirm('¿Eliminar?');">
+                            {{ csrf_token() if csrf_token is defined }}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">✕</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="text-center py-4">Sin signos vitales registrados este turno.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <div class="col-md-2 mb-3">
-      <label class="form-label">FR</label>
-      <input type="text" name="fr" class="form-control">
+
+    <h5 class="titulo-seccion">🧪 Detalle de Líquidos</h5>
+    <div class="table-responsive table-sm-custom mb-5">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Hora</th>
+                    <th>Administrados (Ingresos)</th>
+                    <th>Eliminados (Egresos)</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set hay_balance = false %}
+                {% for r in registros %}
+                    {% if r.bl_admin.cantidad or r.bl_elim.cantidad %}
+                    {% set hay_balance = true %}
+                    <tr>
+                        <td class="ps-3"><strong>{{ r.fecha_registro.strftime('%H:%M') }}</strong></td>
+                        <td>
+                            {% if r.bl_admin.cantidad %}
+                                <span class="text-primary fw-bold">+ {{ r.bl_admin.cantidad }} ml</span><br>
+                                <small class="text-muted">{{ r.bl_admin.liquido }} ({{ r.bl_admin.via }})</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.bl_elim.cantidad %}
+                                <span class="text-danger fw-bold">- {{ r.bl_elim.cantidad }} ml</span><br>
+                                <small class="text-muted">{{ r.bl_elim.tipo_liquido }} ({{ r.bl_elim.via_eliminacion }})</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <form method="post" action="{{ url_for('enfermeria.eliminar_registro_enfermeria', registro_id=r.id) }}" onsubmit="return confirm('¿Eliminar balance?');">
+                                {{ csrf_token() if csrf_token is defined }}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                {% if not hay_balance %}
+                <tr><td colspan="4" class="text-center py-4">No hay balances registrados.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
-    <div class="col-md-2 mb-3">
-      <label class="form-label">Temp</label>
-      <input type="text" name="temp" class="form-control">
-    </div>
-    <div class="col-md-2 mb-3">
-      <label class="form-label">SatO2</label>
-      <input type="text" name="so2" class="form-control">
-    </div>
-    <div class="col-md-2 mb-3">
-      <label class="form-label">Glicemia</label>
-      <input type="text" name="control_glicemia" class="form-control">
-    </div>
-  </div>
-
-  <hr>
-
-  <!-- Balance de líquidos -->
-  <h4>Balance de líquidos</h4>
-  <div class="row">
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Hora inicial admin.</label>
-      <input type="time" name="hora_inicial" class="form-control">
-    </div>
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Hora final admin.</label>
-      <input type="time" name="hora_final" class="form-control">
-    </div>
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Líquido administrado</label>
-      <input type="text" name="liquido_admin" class="form-control">
-    </div>
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Vía administración</label>
-      <input type="text" name="via_admin" class="form-control">
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Cantidad administrada (ml)</label>
-      <input type="number" step="0.01" name="cantidad_admin" class="form-control">
-    </div>
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Hora eliminado</label>
-      <input type="time" name="hora_eliminado" class="form-control">
-    </div>
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Tipo de líquido eliminado</label>
-      <input type="text" name="tipo_liquido" class="form-control">
-    </div>
-    <div class="col-md-3 mb-3">
-      <label class="form-label">Vía eliminación</label>
-      <input type="text" name="via_eliminacion" class="form-control">
-    </div>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Cantidad eliminada (ml)</label>
-    <input type="number" step="0.01" name="cantidad_elim" class="form-control">
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Observaciones eliminación</label>
-    <textarea name="obs_eliminado" class="form-control" rows="2"></textarea>
-  </div>
-
-  <hr>
-
-  <!-- Observaciones generales -->
-  <div class="mb-3">
-    <label class="form-label">Observaciones generales</label>
-    <textarea name="observaciones" class="form-control" rows="3"></textarea>
-  </div>
-
-  <button type="submit" class="btn btn-success">Guardar registro</button>
-  <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente_id) }}"
-     class="btn btn-secondary">
-    Cancelar
-  </a>
-</form>
-
-<hr>
-
-<!-- PREVISUALIZACIÓN DEL TURNO ACTUAL -->
-<h3>Registros del turno actual ({{ turno_actual }})</h3>
-<p>Fecha: {{ fecha_hoy }}</p>
-
-<!-- Signos vitales del turno -->
-<h4>Signos vitales / Glicemia</h4>
-<table class="table table-sm table-bordered">
-  <thead>
-    <tr>
-      <th>Fecha</th>
-      <th>Hora</th>
-      <th>TA</th>
-      <th>FC</th>
-      <th>FR</th>
-      <th>Temp</th>
-      <th>SatO2</th>
-      <th>Glicemia</th>
-      <th>Obs.</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for r in registros %}
-      <tr>
-        <td>{{ r.fecha_registro.strftime('%Y-%m-%d') if r.fecha_registro else '' }}</td>
-        <td>{{ r.fecha_registro.strftime('%H:%M') if r.fecha_registro else '' }}</td>
-        <td>{{ r.sv.ta or '' }}</td>
-        <td>{{ r.sv.fc or '' }}</td>
-        <td>{{ r.sv.fr or '' }}</td>
-        <td>{{ r.sv.temp or '' }}</td>
-        <td>{{ r.sv.so2 or '' }}</td>
-        <td>{{ r.control_glicemia or '' }}</td>
-        <td>{{ r.observaciones or '' }}</td>
-        <td>
-          <form method="post"
-                action="{{ url_for('enfermeria.eliminar_registro_enfermeria',
-                                   registro_id=r.id) }}"
-                onsubmit="return confirm('¿Eliminar este registro?');">
-            {{ csrf_token() if csrf_token is defined }}
-            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
-          </form>
-        </td>
-      </tr>
-    {% else %}
-      <tr>
-        <td colspan="10" class="text-center">
-          No hay registros en este turno.
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<!-- Balance de líquidos del turno -->
-<h4>Balance de líquidos del turno</h4>
-<table class="table table-sm table-bordered">
-  <thead>
-    <tr>
-      <th>Fecha</th>
-      <th>Hora</th>
-      <th>Administrados</th>
-      <th>Eliminados</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% set hay_balance = false %}
-    {% for r in registros %}
-      {% set cant_admin = r.bl_admin.cantidad %}
-      {% set cant_elim = r.bl_elim.cantidad %}
-      {% if cant_admin or cant_elim %}
-        {% set hay_balance = true %}
-        <tr>
-          <td>{{ r.fecha_registro.strftime('%Y-%m-%d') if r.fecha_registro else '' }}</td>
-          <td>{{ r.fecha_registro.strftime('%H:%M') if r.fecha_registro else '' }}</td>
-          <td>
-            {{ r.bl_admin.cantidad or '' }} ml
-            {{ r.bl_admin.liquido or '' }}
-            {{ r.bl_admin.via or '' }}
-          </td>
-          <td>
-            {{ r.bl_elim.cantidad or '' }} ml
-            {{ r.bl_elim.tipo_liquido or '' }}
-            {{ r.bl_elim.via_eliminacion or '' }}
-          </td>
-          <td>
-            <form method="post"
-                  action="{{ url_for('enfermeria.eliminar_registro_enfermeria',
-                                     registro_id=r.id) }}"
-                  onsubmit="return confirm('¿Eliminar este registro de balance?');">
-              {{ csrf_token() if csrf_token is defined }}
-              <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
-            </form>
-          </td>
-        </tr>
-      {% endif %}
-    {% endfor %}
-    {% if not hay_balance %}
-      <tr>
-        <td colspan="5" class="text-center">
-          No hay balances registrados en este turno.
-        </td>
-      </tr>
-    {% endif %}
-  </tbody>
-</table>
-
-<p><strong>Balance total del turno:</strong> {{ balance_total }} ml</p>
-
+</div>
 {% endblock %}

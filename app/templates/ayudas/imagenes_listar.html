@@ -1,123 +1,191 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Imágenes diagnósticas - Ayudas</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container py-4">
-  <h3 class="mb-3">Imágenes diagnósticas</h3>
+{% extends "base.html" %}
 
-  <p class="mb-3">
-    Paciente: <strong>{{ paciente.nombre }}</strong><br>
-    Número: <strong>{{ paciente.numero }}</strong><br>
-    Cama: <strong>{{ paciente.cama or '-' }}</strong><br>
-    Historia: <strong>{{ historia.numero_historia }}</strong>
-  </p>
+{% block title %}Imágenes Diagnósticas - Software SM{% endblock %}
 
-  <!-- Tabla principal -->
-  <div class="card mb-4">
-    <div class="card-header">Estudios registrados</div>
-    <div class="card-body p-0">
-      <table class="table table-sm mb-0 align-middle">
-        <thead class="table-light">
-          <tr>
-            <th style="width: 25%;">Examen</th>
-            <th style="width: 15%;">Fecha último resultado</th>
-            <th style="width: 40%;">Observaciones</th>
-            <th style="width: 20%;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
+{% block head %}
+<style>
+    :root {
+      --titles: #236e7b;
+      --text-links: #0b6169;
+      --text-secondary: #5f5f5f;
+    }
+
+    .titulo-principal { 
+      color: var(--titles); 
+      text-align: center; 
+      margin-bottom: 30px; 
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .titulo-seccion {
+      color: var(--titles);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-top: 25px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* BLOQUE DE INFORMACIÓN DEL PACIENTE */
+    .section-white-box {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      border-left: 6px solid var(--titles);
+    }
+
+    /* TABLAS ESTILO SM */
+    .table-sm-custom {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    }
+
+    .table-sm-custom thead {
+        background-color: var(--titles);
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    /* BOTONES VERDES (PRINCIPALES) */
+    .btn-sm-verde {
+        background-color: var(--titles) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 12px 20px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .btn-sm-verde:hover {
+        background-color: var(--text-links) !important;
+        transform: translateY(-2px);
+    }
+
+    /* NAVEGACIÓN INFERIOR */
+    .nav-links {
+      margin-top: 40px;
+      padding-top: 25px;
+      border-top: 1px dashed rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    .btn-nav {
+      color: var(--text-links);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      text-transform: uppercase;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+  <h2 class="titulo-principal">📷 Imágenes Diagnósticas</h2>
+
+  <h5 class="titulo-seccion">📋 Datos del Paciente</h5>
+  <div class="section-white-box">
+    <div class="row">
+      <div class="col-md-6 border-end">
+        <p><strong>Paciente:</strong> {{ paciente.nombre }}</p>
+        <p><strong>Identificación:</strong> {{ paciente.numero }}</p>
+        <p><strong>Cama:</strong> {{ paciente.cama or 'No asignada' }}</p>
+      </div>
+      <div class="col-md-6 ps-md-4">
+        <p><strong>N° Historia:</strong> {{ historia.numero_historia }}</p>
+        <p><strong>Ingreso N°:</strong> {{ historia.numero_ingreso }}</p>
+        <p><strong>Fecha Registro:</strong> {{ historia.fecha_registro.strftime('%d/%m/%Y') }}</p>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="titulo-seccion">📁 Estudios Registrados</h5>
+  <div class="table-responsive table-sm-custom mb-4">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="ps-3">Examen / Estudio</th>
+          <th>Fecha</th>
+          <th style="width: 40%;">Observaciones</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
         {% if examenes %}
           {% for e in examenes %}
-            <tr>
-              <td>{{ e.nombre_examen }}</td>
-              <td>
-                {% if e.fecha_resultado %}
-                  {{ e.fecha_resultado.strftime('%Y-%m-%d %H:%M') }}
-                {% else %}
-                  -
-                {% endif %}
-              </td>
-              <td>
-  <form method="post">
-    <input type="hidden" name="ayuda_id" value="{{ e.id }}">
-    <textarea name="observaciones"
-              class="form-control form-control-sm mb-1"
-              rows="2"
-              style="resize: vertical;"
-              placeholder="Escriba observaciones">{{ e.observaciones or '' }}</textarea>
-    <button type="submit" class="btn btn-sm btn-outline-secondary">
-      Guardar
-    </button>
-  </form>
-</td>
-              <td class="text-nowrap">
-                {% if e.archivo %}
-                  <a href="{{ url_for('ayudas.ver_archivo_ayuda', ayuda_id=e.id) }}"
-                     class="btn btn-sm btn-outline-primary" target="_blank">
-                    Visualizar
-                  </a>
-                {% endif %}
-                <form action="{{ url_for('ayudas.eliminar_ayuda', ayuda_id=e.id) }}"
-                      method="post" class="d-inline"
-                      onsubmit="return confirm('¿Seguro que desea eliminar este registro?');">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">
-                    Eliminar
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
-        {% else %}
           <tr>
-            <td colspan="4" class="text-center text-muted">
-              No hay estudios de imágenes registrados para esta historia.
+            <td class="ps-3"><strong>{{ e.nombre_examen }}</strong></td>
+            <td class="text-muted">{{ e.fecha_resultado.strftime('%d/%m/%Y') if e.fecha_resultado else '-' }}</td>
+            <td>
+                <form method="post" class="d-flex gap-2">
+                    <input type="hidden" name="ayuda_id" value="{{ e.id }}">
+                    <textarea name="observaciones" class="form-control form-control-sm" rows="1">{{ e.observaciones or '' }}</textarea>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Ok</button>
+                </form>
+            </td>
+            <td class="text-center">
+              {% if e.archivo %}
+                <a href="{{ url_for('ayudas.ver_archivo_ayuda', ayuda_id=e.id) }}" class="btn btn-sm btn-outline-primary" target="_blank">Ver</a>
+              {% endif %}
+              <form action="{{ url_for('ayudas.eliminar_ayuda', ayuda_id=e.id) }}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar?');">X</button>
+              </form>
             </td>
           </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4" class="text-center py-4 text-muted">No hay imágenes registradas.</td></tr>
         {% endif %}
-        </tbody>
-      </table>
-    </div>
+      </tbody>
+    </table>
   </div>
 
-  <!-- Formulario: nuevo estudio individual -->
-  <div class="card mb-4">
-    <div class="card-header">Agregar estudio individual</div>
-    <div class="card-body">
-      <form method="post" enctype="multipart/form-data">
-        <div class="row">
-          <div class="col-md-4 mb-3">
-            <label for="nombre_examen" class="form-label">Nombre del examen</label>
-            <input type="text" id="nombre_examen" name="nombre_examen" class="form-control" required>
-          </div>
-          <div class="col-md-3 mb-3">
-            <label for="fecha_resultado" class="form-label">Fecha del resultado</label>
-            <input type="date" id="fecha_resultado" name="fecha_resultado" class="form-control">
-          </div>
-          <div class="col-md-5 mb-3">
-            <label for="observaciones" class="form-label">Observaciones</label>
-            <input type="text" id="observaciones" name="observaciones" class="form-control"
-                   placeholder="Opcional">
-          </div>
+  <h5 class="titulo-seccion">➕ Agregar Nuevo Estudio</h5>
+  <div class="section-white-box">
+    <form method="post" enctype="multipart/form-data">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold" style="color: var(--titles);">Nombre del Examen</label>
+          <input type="text" name="nombre_examen" class="form-control shadow-sm" required placeholder="Ej: TAC de Cráneo">
         </div>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="archivo" class="form-label">Archivo (imagen, PDF, etc.) opcional</label>
-            <input type="file" id="archivo" name="archivo" class="form-control">
-          </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold" style="color: var(--titles);">Fecha del Resultado</label>
+          <input type="date" name="fecha_resultado" class="form-control shadow-sm">
         </div>
-        <button type="submit" class="btn btn-primary">Guardar estudio</button>
-      </form>
-    </div>
+        <div class="col-md-12 mb-3">
+          <label class="form-label fw-bold" style="color: var(--titles);">Cargar Archivo (Opcional)</label>
+          <input type="file" name="archivo" class="form-control shadow-sm">
+        </div>
+        <div class="col-md-12 mb-4">
+          <label class="form-label fw-bold" style="color: var(--titles);">Observaciones</label>
+          <textarea name="observaciones" class="form-control shadow-sm" rows="2"></textarea>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-sm-verde w-100 shadow">
+          💾 GUARDAR ESTUDIO DE IMAGEN
+      </button>
+    </form>
   </div>
 
-  <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}" class="btn btn-link">
-    &larr; Volver al menú de ayudas
-  </a>
-</div>
-</body>
-</html>
+  <div class="nav-links">
+    <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}" class="btn-nav">
+        ← Volver al Menú de Ayudas
+    </a>
+    <span class="separator">|</span>
+    <a href="{{ url_for('menu.inicio') }}" class="btn-nav">
+        Volver al Inicio
+    </a>
+  </div>
+{% endblock %}

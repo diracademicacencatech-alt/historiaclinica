@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_file, make_response
+import os
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_file, make_response, current_app
 from datetime import datetime, date
 from app.extensions import db
 from app.models import Paciente, RegistroEnfermeria, HistoriaClinica, SignosVitales, OrdenMedica, DiagnosticoCIE10
@@ -632,7 +633,7 @@ def pdf_libro_historia(historia_id):
             'medicamentos': meds_orden,
             'laboratorios': labs_orden
         })
-
+    ruta_logo = os.path.join(current_app.root_path, 'static', 'img', 'logo.png')
     html = render_template(
         'pacientes/pdf_libro.html',
         historia=historia,

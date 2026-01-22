@@ -1,57 +1,128 @@
 {% extends "base.html" %}
+
 {% block title %}Laboratorios - {{ paciente.nombre }}{% endblock %}
+
+{% block head %}
+<style>
+    /* Estilos para unificar con la paleta Software SM */
+    .sm-main-title {
+        color: #236e7b;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-paciente-box {
+        background-color: #f0e7d8;
+        border-left: 6px solid #236e7b;
+        color: #0b6169;
+        border-radius: 12px;
+        padding: 15px 20px;
+    }
+
+    .card {
+        border: 1px solid rgba(35, 110, 123, 0.2);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background-color: #236e7b !important;
+        color: #f0e7d8 !important;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+    }
+
+    .table thead {
+        background-color: rgba(35, 110, 123, 0.05);
+    }
+
+    .table th {
+        color: #236e7b;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+
+    /* Botones personalizados */
+    .btn-primary-sm {
+        background-color: #236e7b;
+        border: none;
+        color: white;
+    }
+    .btn-primary-sm:hover {
+        background-color: #0b6169;
+        color: white;
+    }
+
+    .btn-secondary-sm {
+        background-color: #5f5f5f;
+        border: none;
+        color: white;
+    }
+
+    .form-label {
+        color: #0b6169;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="row">
   <div class="col-12">
 
-    <h2 class="sm-main-title">Laboratorios</h2>
+    <h2 class="sm-main-title">Módulo de Laboratorios</h2>
 
-    <!-- Info paciente -->
-    <div class="alert alert-info sm-alert">
-      <strong>Paciente:</strong> {{ paciente.nombre }}<br>
-      <strong>Número:</strong> {{ paciente.numero }}<br>
-      <strong>Cama:</strong> {{ paciente.cama or '-' }}<br>
-      <strong>Historia:</strong> {{ historia.numero_historia }}
+    <div class="info-paciente-box shadow-sm mb-4">
+      <div class="row">
+        <div class="col-md-6">
+            <strong>Paciente:</strong> {{ paciente.nombre }}<br>
+            <strong>Identificación:</strong> {{ paciente.numero }}
+        </div>
+        <div class="col-md-6">
+            <strong>Cama:</strong> {{ paciente.cama or '-' }} | 
+            <strong>Historia N°:</strong> {{ historia.numero_historia }}
+        </div>
+      </div>
     </div>
 
-    <!-- Tabla principal: Examen / Fecha último resultado -->
-    <div class="card mb-4">
-      <div class="card-header">Exámenes registrados</div>
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">Exámenes y Resultados Registrados</div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-sm mb-0">
-            <thead class="table-light">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
               <tr>
-                <th>Examen</th>
-                <th>Fecha último resultado</th>
-                <th>Acciones</th>
+                <th class="ps-3">Nombre del Examen</th>
+                <th>Fecha de Resultado</th>
+                <th class="text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
             {% if examenes %}
               {% for e in examenes %}
                 <tr>
-                  <td>{{ e.nombre_examen }}</td>
+                  <td class="ps-3"><strong>{{ e.nombre_examen }}</strong></td>
                   <td>
                     {% if e.fecha_resultado %}
-                      {{ e.fecha_resultado.strftime('%Y-%m-%d %H:%M') }}
+                      {{ e.fecha_resultado.strftime('%d/%m/%Y %H:%M') }}
                     {% else %}
-                      -
+                      <span class="text-muted">Pendiente</span>
                     {% endif %}
                   </td>
-                  <td class="text-nowrap">
+                  <td class="text-center text-nowrap">
                     {% if e.archivo %}
                       <a href="{{ url_for('ayudas.ver_archivo_ayuda', ayuda_id=e.id) }}"
-                         class="btn btn-sm btn-outline-primary" target="_blank">
-                        Visualizar
+                         class="btn btn-sm btn-outline-info" target="_blank">
+                         👁️ Ver Archivo
                       </a>
                     {% endif %}
                     <form action="{{ url_for('ayudas.eliminar_ayuda', ayuda_id=e.id) }}"
                           method="post" class="d-inline"
                           onsubmit="return confirm('¿Seguro que desea eliminar este registro?');">
                       <button type="submit" class="btn btn-sm btn-outline-danger">
-                        Eliminar
+                        🗑️ Eliminar
                       </button>
                     </form>
                   </td>
@@ -59,8 +130,8 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="3" class="text-center text-muted">
-                  No hay exámenes registrados para esta historia.
+                <td colspan="3" class="text-center py-4 text-muted">
+                  No se han encontrado exámenes registrados para este paciente.
                 </td>
               </tr>
             {% endif %}
@@ -71,55 +142,57 @@
     </div>
 
     <div class="row">
-      <!-- Formulario: carga individual -->
       <div class="col-md-6 mb-4">
-        <div class="card">
-          <div class="card-header">Agregar examen individual</div>
+        <div class="card shadow-sm h-100">
+          <div class="card-header" style="background-color: #0b6169 !important;">Agregar examen individual</div>
           <div class="card-body">
             <form method="post" enctype="multipart/form-data">
               <div class="mb-3">
                 <label for="nombre_examen" class="form-label">Nombre del examen</label>
-                <input type="text" id="nombre_examen" name="nombre_examen" class="form-control" required>
+                <input type="text" id="nombre_examen" name="nombre_examen" class="form-control" placeholder="Ej: Cuadro Hemático" required>
               </div>
               <div class="mb-3">
                 <label for="fecha_resultado" class="form-label">Fecha del resultado</label>
                 <input type="date" id="fecha_resultado" name="fecha_resultado" class="form-control">
               </div>
               <div class="mb-3">
-                <label for="archivo" class="form-label">Archivo (PDF, imagen, etc.) opcional</label>
+                <label for="archivo" class="form-label">Adjuntar resultado (PDF/Imagen)</label>
                 <input type="file" id="archivo" name="archivo" class="form-control">
               </div>
-              <button type="submit" class="btn btn-primary">Guardar examen</button>
+              <button type="submit" class="btn btn-primary-sm w-100 py-2">💾 Guardar Examen</button>
             </form>
           </div>
         </div>
       </div>
 
-      <!-- Formulario: carga masiva para este paciente/historia -->
       <div class="col-md-6 mb-4">
-        <div class="card">
-          <div class="card-header">Carga masiva (solo esta historia)</div>
-          <div class="card-body">
-            <p class="small text-muted mb-2">
-              Archivo CSV o Excel con columnas:
-              <code>NOMBRE_EXAMEN</code> y <code>FECHA_RESULTADO</code>
-              (la fecha puede ir en formato de Excel o texto tipo 2025-12-05).
-            </p>
+        <div class="card shadow-sm h-100">
+          <div class="card-header" style="background-color: #5f5f5f !important;">Carga masiva (CSV/Excel)</div>
+          <div class="card-body d-flex flex-column justify-content-between">
+            <div>
+                <p class="small text-muted mb-3">
+                  Suba un archivo con las columnas: <br>
+                  <span class="badge bg-light text-dark">NOMBRE_EXAMEN</span> 
+                  <span class="badge bg-light text-dark">FECHA_RESULTADO</span>
+                </p>
+            </div>
             <form method="post" enctype="multipart/form-data">
               <div class="mb-3">
-                <label for="archivo_masivo" class="form-label">Archivo</label>
+                <label for="archivo_masivo" class="form-label">Seleccionar archivo</label>
                 <input type="file" id="archivo_masivo" name="archivo_masivo" class="form-control" required>
               </div>
-              <button type="submit" class="btn btn-secondary">Cargar archivo</button>
+              <button type="submit" class="btn btn-secondary-sm w-100 py-2">📤 Cargar Masivamente</button>
             </form>
           </div>
         </div>
       </div>
     </div>
 
-    <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}" class="btn btn-link">
-      &larr; Volver al menú de ayudas
-    </a>
+    <div class="mt-2">
+        <a href="{{ url_for('ayudas.menu_ayudas_historia', historia_id=historia.id) }}" class="btn btn-link" style="color: #0b6169; font-weight: 600; text-decoration: none;">
+          &larr; Volver al menú de ayudas
+        </a>
+    </div>
   </div>
 </div>
 {% endblock %}

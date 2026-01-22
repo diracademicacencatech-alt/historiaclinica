@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: letter;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 12px; 
+            color: #0b6169;
+        }
+
+        /* 1. ENCABEZADO */
+        .header-top {
+            width: 100%;
+            border-bottom: 2px solid #236e7b;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+        }
+
+        .col-logo {
+            width: 40%;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .logo-img {
+            width: 120px;
+        }
+
+        .software-sm-label {
+            color: #236e7b;
+            font-size: 12px; /* Más grande como pediste */
+            font-weight: bold;
+            margin-top: -2px; /* Más pegado al logo */
+            letter-spacing: 1px;
+        }
+
+        .col-titulo {
+            width: 60%;
+            text-align: right;
+            vertical-align: bottom;
+        }
+
+        .title-report {
+            color: #236e7b;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* 2. DATOS DEL PACIENTE - ESTRUCTURA REFORZADA */
+        .paciente-info-container {
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .paciente-info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .paciente-info-table td {
+            padding: 5px 0;
+            vertical-align: bottom;
+        }
+
+        .lbl {
+            font-weight: bold;
+            color: #5f5f5f;
+            font-size: 11px;
+            width: 85px; /* Ancho fijo para etiquetas cortas */
+        }
+
+        /* Etiqueta específica para DOCUMENTO para que tenga más aire */
+        .lbl-doc {
+            font-weight: bold;
+            color: #5f5f5f;
+            font-size: 11px;
+            width: 110px; 
+            padding-left: 20px;
+        }
+
+        .val {
+            color: #0b6169;
+            font-size: 12px;
+            border-bottom: 0.5px solid #eee;
+        }
+
+        /* 3. CONTENIDO DE EXÁMENES */
+        .page-break {
+            page-break-before: always;
+        }
+
+        .examen-titulo {
+            background-color: #236e7b;
+            color: white;
+            padding: 8px 15px;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .tabla-resultados {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            margin-bottom: 25px;
+        }
+
+        .tabla-resultados th {
+            background-color: #f0e7d8;
+            color: #236e7b;
+            padding: 8px;
+            text-align: left;
+            border-bottom: 2px solid #236e7b;
+            font-size: 11px;
+        }
+
+        .tabla-resultados td {
+            padding: 10px 8px;
+            border-bottom: 0.5px solid #eeeeee;
+            font-size: 11px;
+        }
+
+        .valor-fuera {
+            color: #ff0000;
+            font-weight: bold;
+        }
+
+        .firma-box {
+            margin-top: 60px;
+            text-align: right;
+        }
+
+        .linea-firma {
+            border-top: 1.5px solid #236e7b;
+            width: 250px;
+            display: inline-block;
+            text-align: center;
+            padding-top: 8px;
+            font-weight: bold;
+            color: #236e7b;
+        }
+    </style>
+</head>
+<body>
+
+    {% for bloque in items_con_parametros %}
+    <div class="{% if not loop.first %}page-break{% endif %}">
+        
+        <div class="header-top">
+            <table style="width: 100%;">
+                <tr>
+                    <td class="col-logo">
+                        <img src="{{ url_for('static', filename='img/logo.png', _external=True) }}" class="logo-img">
+                        <div class="software-sm-label">SOFTWARE SM</div>
+                    </td>
+                    <td class="col-titulo">
+                        <div class="title-report">Informe de Resultados</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="paciente-info-container">
+            <table class="paciente-info-table">
+                <tr>
+                    <td class="lbl">PACIENTE:</td>
+                    <td class="val" style="width: 250px;">{{ paciente.nombre }}</td>
+                    <td class="lbl-doc">DOCUMENTO:</td>
+                    <td class="val" style="width: 120px;">{{ paciente.numero }}</td>
+                </tr>
+                <tr>
+                    <td class="lbl">FECHA:</td>
+                    <td class="val">{{ historia.fecha_registro.strftime('%d/%m/%Y') }}</td>
+                    <td class="lbl-doc">HISTORIA:</td>
+                    <td class="val">{{ historia.id }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="examen-seccion">
+            <div class="examen-titulo">EXAMEN: {{ bloque.examen.nombre }}</div>
+            
+            <table class="tabla-resultados">
+                <thead>
+                    <tr>
+                        <th width="40%">PARÁMETRO</th>
+                        <th width="20%">RESULTADO</th>
+                        <th width="15%">UNIDAD</th>
+                        <th width="25%">REFERENCIA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in bloque.parametros %}
+                        {% set res = bloque.resultados.get(p.id) %}
+                        {% if res and res.valor %}
+                        <tr>
+                            <td>{{ p.nombre }}</td>
+                            <td class="{% if res.flag_fuera_rango %}valor-fuera{% endif %}">
+                                {{ res.valor }} {% if res.flag_fuera_rango %} *{% endif %}
+                            </td>
+                            <td>{{ p.unidad or '---' }}</td>
+                            <td style="font-size: 10px; color: #5f5f5f;">
+                                {{ p.valor_ref_min or '0' }} - {{ p.valor_ref_max or 'N/A' }}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="firma-box">
+            <div style="height: 50px;"></div>
+            <div class="linea-firma">FIRMA DEL PROFESIONAL</div>
+        </div>
+
+    </div>
+    {% endfor %}
+
+</body>
+</html>

@@ -1,245 +1,276 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Crear Orden Médica</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
-    .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    h1 { color: #2c3e50; text-align: center; margin-bottom: 10px; }
-    h2 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 30px; }
-    label { display: block; margin-top: 15px; font-weight: bold; color: #2c3e50; }
-    input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-    textarea { resize: vertical; min-height: 80px; }
-    button { background: #28a745; color: white; border: none; cursor: pointer; padding: 12px 30px; border-radius: 8px; font-size: 16px; margin-top: 20px; }
-    button:hover { background: #218838; }
-    .btn-secondary { background: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 10px; }
-    .btn-secondary:hover { background: #5a6268; }
-    .row { display: flex; gap: 10px; margin-top: 10px; }
-    .col { flex: 1; }
-    @media (max-width: 768px) { .row { flex-direction: column; } }
-    .med-title { margin-top: 20px; }
-    .list-group { list-style: none; padding-left: 0; margin: 0; }
-    .list-group-item { border: 1px solid #ddd; padding: 8px 10px; border-radius: 4px; margin-bottom: 5px; background: #fff; }
-    .list-group-item-action { cursor: pointer; }
-  </style>
-</head>
-<body>
-<div class="container">
-  <h1>Orden Médica</h1>
+{% extends "base.html" %}
 
-  <p><strong>Paciente:</strong> {{ historia.paciente.nombre if historia.paciente else '' }}</p>
-  <p><strong>Número Historia:</strong> {{ historia.numero_historia }}</p>
+{% block title %}Crear Orden Médica - Software SM{% endblock %}
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="message {{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+{% block head %}
+<style>
+    :root {
+      /* Ajuste del color de fondo con el código correcto */
+      --app-bg: #f7d5ba; 
+      --container-bg: #f0e7d8;
+      --titles: #236e7b;
+      --text-links: #0b6169;
+      --text-secondary: #5f5f5f;
+      --danger: #dc3545;
+    }
+
+    /* Sobrescribimos el padding del contenedor base para que el formulario respire */
+    .sm-main-container {
+        background: var(--container-bg) !important;
+        border-radius: 25px;
+        padding: 40px !important;
+    }
+
+    .paciente-banner {
+      background: rgba(255, 255, 255, 0.5);
+      padding: 15px 25px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-around;
+      border: 1px solid var(--titles);
+    }
+    .paciente-banner p { margin: 0; font-weight: 700; color: var(--text-links); }
+
+    h2 { 
+      color: var(--titles); 
+      font-size: 1.15rem;
+      margin-top: 40px; 
+      margin-bottom: 20px;
+      display: inline-block;
+      padding-bottom: 3px;
+      text-transform: uppercase;
+      }
+
+    .section-white-box {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 25px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    label { display: block; margin-top: 12px; font-weight: 600; color: var(--text-secondary); font-size: 13px; }
+
+    input, select, textarea { 
+      width: 100%; 
+      padding: 12px; 
+      margin-top: 5px; 
+      border: 1px solid #d1d9e0; 
+      border-radius: 8px; 
+      box-sizing: border-box; 
+      font-size: 14px;
+    }
+
+    /* MEDICAMENTOS */
+    .medicamento-item {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 15px;
+      border-left: 6px solid var(--titles);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+    }
+
+    .med-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 0.8fr 1fr 0.8fr 0.4fr;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .btn-add-more {
+      background: white;
+      color: var(--titles);
+      border: 2px solid var(--titles);
+      padding: 10px 25px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-add-more:hover { background: var(--titles); color: white; }
+
+    .form-actions {
+      display: flex;
+      gap: 20px;
+      margin-top: 50px;
+      justify-content: center;
+    }
+
+    .btn-action {
+      flex: 1;
+      max-width: 320px;
+      padding: 18px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-save { background: var(--titles); color: white; }
+    .btn-cancel { background: var(--danger); color: white; }
+
+    @media (max-width: 1000px) { .med-row { grid-template-columns: 1fr 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+  <h1 class="sm-main-title">ORDEN MÉDICA</h1>
+
+  <div class="paciente-banner shadow-sm">
+    <p>👤 Paciente: {{ historia.paciente.nombre if historia.paciente else '' }}</p>
+    <p>📑 N° Historia: {{ historia.numero_historia }}</p>
+  </div>
 
   <form method="POST">
-    <h2>Indicaciones generales</h2>
-    <label for="indicaciones_medicas">Indicaciones médicas</label>
-    <textarea id="indicaciones_medicas" name="indicaciones_medicas"></textarea>
+    <h2>INDICACIONES GENERALES</h2>
+    <div class="section-white-box shadow-sm">
+        <label>Indicaciones médicas</label>
+        <textarea name="indicaciones_medicas" rows="3"></textarea>
+        
+        <label>Resumen de medicación (texto libre)</label>
+        <textarea name="medicacion_texto" rows="2"></textarea>
+    </div>
 
-    <label for="medicacion_texto">Resumen de medicación (texto libre)</label>
-    <textarea id="medicacion_texto" name="medicacion_texto"></textarea>
-
-    <h2 class="med-title">💊 Medicamentos formulados</h2>
-    <small style="color:#666;">Use esta tabla para formular medicamentos estructurados (se guardan en JSON).</small>
-
+    <h2>💊 MEDICAMENTOS FORMULADOS</h2>
     <div id="medicamentos-container">
-      <div class="row medicamento-item">
-        <div class="col">
-          <label>Medicamento</label>
-          <select name="medicamentos[0][codigo]">
-            <option value="">-- Seleccione medicamento --</option>
-            {% if medicamentos_catalogo %}
-              {% for med in medicamentos_catalogo %}
-                <option value="{{ med.codigo }}">{{ med.codigo }} - {{ med.nombre }}</option>
-              {% endfor %}
-            {% endif %}
-          </select>
-        </div>
-        <div class="col">
-          <label>Dosis / presentación</label>
-          <input type="text" name="medicamentos[0][dosis]" placeholder="Ej: 500 mg, 1 ampolla">
-        </div>
-        <div class="col">
-          <label>Frecuencia / tiempo</label>
-          <input type="text" name="medicamentos[0][frecuencia]" placeholder="Ej: cada 8 horas x 5 días">
-        </div>
-        <div class="col">
-          <label>Cantidad</label>
-          <input type="number" step="0.001" min="0"
-                 name="medicamentos[0][cantidad_solicitada]"
-                 placeholder="Cantidad (ej: 3)">
-        </div>
-        <div class="col">
-          <label>Unidad</label>
-          <input type="text"
-                 name="medicamentos[0][unidad_inventario]"
-                 placeholder="Unidad (ampolla, frasco, etc.)">
-        </div>
-        <div class="col">
-          <label>Vía</label>
-          <select name="medicamentos[0][via_administracion]">
-            <option value="">Vía</option>
-            <option value="VO">VO</option>
-            <option value="IV">IV</option>
-            <option value="IM">IM</option>
-            <option value="SC">SC</option>
-          </select>
-        </div>
-        <div class="col" style="max-width:80px; display:flex; align-items:flex-end;">
-          <button type="button" class="btn-secondary btn-remove-med">X</button>
+      <div class="medicamento-item shadow-sm">
+        <div class="med-row">
+            <div>
+                <label>Medicamento</label>
+                <select name="medicamentos[0][codigo]">
+                  <option value="">-- Seleccione --</option>
+                  {% for med in medicamentos_catalogo %}
+                    <option value="{{ med.codigo }}">{{ med.nombre }}</option>
+                  {% endfor %}
+                </select>
+            </div>
+            <div><label>Dosis</label><input type="text" name="medicamentos[0][dosis]"></div>
+            <div><label>Frecuencia</label><input type="text" name="medicamentos[0][frecuencia]"></div>
+            <div><label>Cantidad</label><input type="number" step="0.001" name="medicamentos[0][cantidad_solicitada]"></div>
+            <div><label>Unidad</label><input type="text" name="medicamentos[0][unidad_inventario]"></div>
+            <div>
+                <label>Vía</label>
+                <select name="medicamentos[0][via_administracion]">
+                    <option value="">Vía</option>
+                    <option value="VO">VO</option>
+                    <option value="IV">IV</option>
+                    <option value="IM">IM</option>
+                    <option value="SC">SC</option>
+                </select>
+            </div>
+            <div>
+                <button type="button" class="btn-remove-med" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold; font-size:24px;">&times;</button>
+            </div>
         </div>
       </div>
     </div>
+    
+    <div class="add-med-container mt-3 mb-4">
+        <button type="button" class="btn-add-more" id="add-medicamento">+ Añadir Medicamento</button>
+    </div>
 
-    <button type="button" class="btn-secondary" id="add-medicamento" style="margin-top:10px;">
-      + Añadir otro medicamento
-    </button>
-
-    <!-- ================== EXÁMENES DE LABORATORIO ================== -->
-    <h2 class="med-title">🧪 Exámenes de laboratorio</h2>
-
-    <label for="buscador_examenes">Buscar exámenes de laboratorio</label>
-    <input type="text" id="buscador_examenes" class="form-control" placeholder="Escriba para buscar por nombre o grupo">
-
-    <ul id="lista_resultados_examenes" class="list-group" style="max-height: 220px; overflow-y:auto; margin-top:10px;">
-      {% for ex in examenes_catalogo %}
-        <li class="list-group-item list-group-item-action examen-item"
-            data-id="{{ ex.id }}"
-            data-nombre="{{ ex.nombre|e }}"
-            data-grupo="{{ ex.grupo or '' }}">
-          {{ ex.nombre }}{% if ex.grupo %} ({{ ex.grupo }}){% endif %}
-          <button type="button" class="btn-secondary btn-agregar-examen" style="float:right; padding:4px 8px; margin-top:0;">
-            Añadir
-          </button>
-        </li>
-      {% endfor %}
-    </ul>
-
-    <h4 style="margin-top:20px;">Exámenes añadidos</h4>
-    <ul id="lista_examenes_seleccionados" class="list-group" style="margin-top:5px;"></ul>
-    <!-- inputs ocultos que se envían al backend -->
+    <h2>🧪 EXÁMENES DE LABORATORIO</h2>
+    <div class="section-white-box shadow-sm">
+        <input type="text" id="buscador_examenes" placeholder="🔍 Buscar exámenes por nombre...">
+        <ul id="lista_resultados_examenes" style="list-style:none; padding:0; max-height:200px; overflow-y:auto; border:1px solid #eee; margin-top:10px; border-radius:8px;">
+            {% for ex in examenes_catalogo %}
+            <li style="padding:12px; display:flex; justify-content:space-between; border-bottom:1px solid #f9f9f9; align-items:center;">
+                <span style="font-size:14px; font-weight:500;">{{ ex.nombre }}</span>
+                <button type="button" class="btn-add-lab" data-id="{{ ex.id }}" data-nombre="{{ ex.nombre|e }}" style="background:var(--titles); color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">Añadir</button>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <div style="margin-top:25px; border-top: 1px dashed var(--titles); padding-top: 15px;">
+            <label style="color:var(--titles); font-size:14px;">Laboratorios Seleccionados para esta Orden:</label>
+            <ul id="lista_examenes_seleccionados" style="list-style:none; padding:0; margin-top:10px;"></ul>
+        </div>
+    </div>
     <div id="inputs_examenes_seleccionados"></div>
-    <!-- ============================================================= -->
 
-    <br>
-    <button type="submit">💾 Guardar Orden Médica</button>
+    <div class="form-actions">
+      <a href="{{ url_for('pacientes.listar') }}" class="btn-action btn-cancel" onclick="return confirm('¿Seguro que desea cancelar?')">
+        ✖ CANCELAR ORDEN
+      </a>
+      <button type="submit" class="btn-action btn-save shadow">
+        💾 GUARDAR ORDEN MÉDICA
+      </button>
+    </div>
   </form>
-
-  <div style="margin-top:20px;">
-    <a href="{{ url_for('pacientes.listar') }}" class="btn-secondary">← Volver</a>
-  </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // ===== Medicamentos (igual que antes) =====
   const container = document.getElementById('medicamentos-container');
   const addBtn = document.getElementById('add-medicamento');
 
   function renumerar() {
-    const items = container.querySelectorAll('.medicamento-item');
-    items.forEach((item, index) => {
+    container.querySelectorAll('.medicamento-item').forEach((item, index) => {
       item.querySelectorAll('select, input').forEach(el => {
-        el.name = el.name.replace(/medicamentos\[\d+]/, 'medicamentos[' + index + ']');
+        if(el.name) el.name = el.name.replace(/medicamentos\[\d+]/, 'medicamentos[' + index + ']');
       });
     });
   }
 
   addBtn.addEventListener('click', function () {
     const items = container.querySelectorAll('.medicamento-item');
-    const ultimo = items[items.length - 1];
-    const clon = ultimo.cloneNode(true);
-    clon.querySelectorAll('select, input').forEach(el => { el.value = ''; });
+    const clon = items[0].cloneNode(true);
+    clon.querySelectorAll('input').forEach(el => el.value = '');
+    clon.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
     container.appendChild(clon);
     renumerar();
   });
 
-  container.addEventListener('click', function (e) {
-    if (e.target.classList.contains('btn-remove-med')) {
-      const items = container.querySelectorAll('.medicamento-item');
-      if (items.length > 1) {
-        e.target.closest('.medicamento-item').remove();
-        renumerar();
-      }
+  container.addEventListener('click', function(e) {
+    if(e.target.classList.contains('btn-remove-med') && container.querySelectorAll('.medicamento-item').length > 1) {
+      e.target.closest('.medicamento-item').remove();
+      renumerar();
     }
   });
 
-  // ===== Exámenes de laboratorio: buscador + lista seleccionados =====
   const buscador = document.getElementById('buscador_examenes');
-  const listaResultados = document.getElementById('lista_resultados_examenes');
-  const listaSeleccionados = document.getElementById('lista_examenes_seleccionados');
-  const inputsSeleccionados = document.getElementById('inputs_examenes_seleccionados');
+  const listaRes = document.getElementById('lista_resultados_examenes');
+  const listaSel = document.getElementById('lista_examenes_seleccionados');
+  const inputsHidden = document.getElementById('inputs_examenes_seleccionados');
 
-  const seleccionadosSet = new Set();
-
-  // Filtro simple en el listado de resultados
-  buscador.addEventListener('input', function () {
+  buscador.addEventListener('input', function() {
     const term = this.value.toLowerCase();
-    listaResultados.querySelectorAll('.examen-item').forEach(function (li) {
-      const nombre = li.getAttribute('data-nombre').toLowerCase();
-      const grupo = li.getAttribute('data-grupo').toLowerCase();
-      if (!term || nombre.includes(term) || grupo.includes(term)) {
-        li.style.display = '';
-      } else {
-        li.style.display = 'none';
-      }
+    listaRes.querySelectorAll('li').forEach(li => {
+      li.style.display = li.textContent.toLowerCase().includes(term) ? 'flex' : 'none';
     });
   });
 
-  // Añadir examen desde la lista de resultados
-  listaResultados.addEventListener('click', function (e) {
-    if (!e.target.classList.contains('btn-agregar-examen')) return;
+  listaRes.addEventListener('click', function(e) {
+    if(!e.target.classList.contains('btn-add-lab')) return;
+    const btn = e.target;
+    const id = btn.dataset.id;
+    if(document.querySelector(`input[value="${id}"]`)) return;
 
-    const li = e.target.closest('.examen-item');
-    const id = li.getAttribute('data-id');
-    const nombre = li.getAttribute('data-nombre');
-    const grupo = li.getAttribute('data-grupo');
+    const li = document.createElement('li');
+    li.style = "background:#f4f4f4; padding:10px; margin-bottom:8px; border-radius:8px; display:flex; justify-content:space-between; border-left: 4px solid #236e7b;";
+    li.innerHTML = `<span><strong style="color:#236e7b;">&check;</strong> ${btn.dataset.nombre}</span> <button type="button" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">Quitar</button>`;
+    listaSel.appendChild(li);
 
-    if (seleccionadosSet.has(id)) {
-      return; // ya fue añadido
-    }
-    seleccionadosSet.add(id);
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'examenes_lab_ids[]';
+    hidden.value = id;
+    inputsHidden.appendChild(hidden);
 
-    // Mostrar en lista de seleccionados
-    const liSel = document.createElement('li');
-    liSel.className = 'list-group-item d-flex justify-content-between align-items-center';
-    liSel.setAttribute('data-id', id);
-    liSel.innerHTML = `
-      <span>${nombre}${grupo ? ' (' + grupo + ')' : ''}</span>
-      <button type="button" class="btn-secondary btn-quitar-examen" style="padding:4px 8px;">Quitar</button>
-    `;
-    listaSeleccionados.appendChild(liSel);
-
-    // Input oculto para enviar al backend
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'examenes_lab_ids[]';
-    input.value = id;
-    input.setAttribute('data-id', id);
-    inputsSeleccionados.appendChild(input);
-  });
-
-  // Quitar examen de la lista seleccionada
-  listaSeleccionados.addEventListener('click', function (e) {
-    if (!e.target.classList.contains('btn-quitar-examen')) return;
-
-    const liSel = e.target.closest('li');
-    const id = liSel.getAttribute('data-id');
-    seleccionadosSet.delete(id);
-    liSel.remove();
-
-    const input = inputsSeleccionados.querySelector('input[data-id="' + id + '"]');
-    if (input) input.remove();
+    li.querySelector('button').onclick = () => { li.remove(); hidden.remove(); };
   });
 });
 </script>
-</body>
-</html>
+{% endblock %}

@@ -1,6 +1,6 @@
 from flask import (
     render_template, request, redirect, url_for,
-    flash, jsonify, current_app, send_from_directory, send_file
+    flash, jsonify, current_app, send_from_directory, send_file, make_response
 )
 from flask_login import current_user, login_required
 from app.ayudas import ayudas_bp
@@ -11,17 +11,17 @@ from app.models import (
 )
 from app.extensions import db
 from datetime import datetime
-from werkzeug.utils import secure_filename
 import os
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from io import BytesIO
 from app.utils.fechas import ahora_bogota
-
+from werkzeug.utils import secure_filename
+from xhtml2pdf import pisa  # Cambiamos pdfkit por pisa
+from io import BytesIO
 
 UPLOAD_SUBFOLDER = os.path.join('uploads', 'ayudas')
-
 
 def guardar_archivo_ayuda(historia_id: int, tipo: str, file_storage):
     """Guarda un archivo para una ayuda diagnóstica y devuelve la ruta RELATIVA."""
@@ -748,3 +748,47 @@ def laboratorio_paciente(historia_id):
         items_con_parametros=items_con_parametros,
         solicitud=solicitud,
     )
+
+# CORRECCIÓN DE LA RUTA PDF: Se usa ayudas_bp y los modelos correctos definidos arriba
+@ayudas_bp.route('/historia/<int:historia_id>/generar_pdf_laboratorio')
+@login_required
+def generar_pdf_laboratorio(historia_id):
+    # 1. Obtención de datos (Misma lógica que ya tienes)
+    historia = HistoriaClinica.query.get_or_404(historia_id)
+    paciente = historia.paciente
+    
+    ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
+    orden_ids = [o.id for o in ordenes]
+    
+    items = db.session.query(OrdenLaboratorioItem).filter(OrdenLaboratorioItem.orden_id.in_(orden_ids)).all() if orden_ids else []
+    solicitud = LabSolicitud.query.filter_by(historia_id=historia_id).first()
+    resultados_existentes = {r.parametro_id: r for r in LabResultado.query.filter_by(solicitud_id=solicitud.id).all()} if solicitud else {}
+    
+    items_con_parametros = []
+    for it in items:
+        examen = it.examen
+        parametros = CatLaboratorioParametro.query.filter_by(examen_id=it.examen_id).order_by(CatLaboratorioParametro.id).all()
+        items_con_parametros.append({'examen': examen, 'parametros': parametros, 'resultados': resultados_existentes})
+
+    # 2. Renderizar HTML
+    html = render_template('ayudas/informe.html', 
+                           historia=historia, 
+                           paciente=paciente, 
+                           items_con_parametros=items_con_parametros)
+
+    # 3. Generar PDF con xhtml2pdf
+    buffer = BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=buffer)
+
+    # 4. Verificar errores y retornar
+    if pisa_status.err:
+        flash("Error al crear el PDF", "danger")
+        return redirect(url_for('ayudas.laboratorio_paciente', historia_id=historia_id))
+
+    buffer.seek(0)
+    response = make_response(buffer.read())
+    response.headers['Content-Type'] = 'application/pdf'
+    nombre_archivo = f"Lab_{paciente.nombre.replace(' ', '_')}.pdf"
+    response.headers['Content-Disposition'] = f'inline; filename={nombre_archivo}'
+    
+    return response

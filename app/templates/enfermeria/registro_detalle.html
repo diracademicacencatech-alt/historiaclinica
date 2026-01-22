@@ -2,128 +2,224 @@
 
 {% block title %}Registros Enfermería - {{ paciente.nombre }}{% endblock %}
 
+{% block head %}
+<style>
+    :root {
+      --titles: #236e7b;
+      --text-links: #0b6169;
+      --text-secondary: #5f5f5f;
+      --bg-containers: #f0e7d8;
+    }
+
+    .titulo-principal { 
+      color: var(--titles); 
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    /* ALERTA DE TURNO */
+    .alert-turno {
+      background-color: var(--titles);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 25px;
+    }
+
+    /* CARD PERSONALIZADA */
+    .card-sm {
+        background: #ffffff;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .card-sm .card-header {
+        background-color: var(--bg-containers);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: 20px;
+    }
+
+    /* TABLA DE REGISTROS */
+    .table-sm-custom thead {
+        background-color: var(--titles);
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+
+    .table-sm-custom td {
+        vertical-align: middle;
+        font-size: 0.85rem;
+        padding: 12px 8px;
+    }
+
+    /* BOTONES */
+    .btn-sm-verde {
+        background-color: var(--titles) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 15px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .btn-sm-verde:hover {
+        background-color: var(--text-links) !important;
+        transform: translateY(-2px);
+    }
+
+    .badge-turno {
+        background-color: rgba(255,255,255,0.2);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Registros Enfermería</h2>
-        <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}"
-           class="btn btn-secondary">
-          <i class="fas fa-arrow-left"></i> Volver al menú
+<div class="container py-2">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="titulo-principal mb-0"><i class="fas fa-clipboard-list me-2"></i>Registros de Enfermería</h2>
+        <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn btn-outline-secondary fw-bold" style="border-radius: 10px; text-transform: uppercase; font-size: 0.8rem;">
+            <i class="fas fa-arrow-left me-1"></i> Volver al Menú
         </a>
-      </div>
-
-      <div class="alert alert-info">
-        <strong>Turno actual:</strong>
-        <span class="badge bg-primary fs-6">{{ turno_actual|upper }}</span>
-        <small class="ms-2">(Solo registros de HOY {{ turno_actual|upper }})</small>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h5>{{ paciente.nombre }} - {{ paciente.numero }}</h5>
-        </div>
-        <div class="card-body">
-          {% if registros %}
-          <h6 class="mb-3">Registros del turno ({{ registros|length }})</h6>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover">
-              <thead class="table-dark">
-                <tr>
-                  <th>Fecha/Hora</th>
-                  <th>Signos Vitales</th>
-                  <th>Balance Líquidos</th>
-                  <th>Glicemia</th>
-                  <th>Observaciones</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for r in registros %}
-                <tr>
-                  <td>
-                    <strong>{{ r.fecha_registro.strftime('%d/%m %H:%M') }}</strong><br>
-                    <small>{{ turno_actual|upper }}</small>
-                  </td>
-                  <td>
-                    {% if r.signos_vitales_dict %}
-                      TA: {{ r.signos_vitales_dict.ta or 'N/A' }}<br>
-                      FC: {{ r.signos_vitales_dict.fc or 'N/A' }}<br>
-                      FR: {{ r.signos_vitales_dict.fr or 'N/A' }}<br>
-                      T°: {{ r.signos_vitales_dict.temp or 'N/A' }}<br>
-                      SatO2: {{ r.signos_vitales_dict.so2 or 'N/A' }}
-                    {% else %}
-                      <span class="text-muted">Sin datos</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if r.balance_liquidos_dict.administrados %}
-                      <small>Admin: {{ r.balance_liquidos_dict.administrados.cantidad or 0 }}ml</small>
-                    {% endif %}
-                    {% if r.balance_liquidos_dict.eliminados %}
-                      <br><small>Elim: {{ r.balance_liquidos_dict.eliminados.cantidad or 0 }}ml</small>
-                    {% endif %}
-                  </td>
-                  <td>{{ r.control_glicemia or 'N/A' }}</td>
-                  <td>
-                    {% if r.observaciones %}
-                      {{ r.observaciones[:50] }}{% if r.observaciones|length > 50 %}...{% endif %}
-                    {% else %}
-                      -
-                    {% endif %}
-                  </td>
-                  <td>
-                    <a href="{{ url_for('enfermeria.administrar_medicamentos', registro_id=r.id) }}"
-                       class="btn btn-sm btn-outline-primary">
-                      <i class="fas fa-pills"></i>
-                    </a>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% else %}
-          <div class="alert alert-warning">
-            <i class="fas fa-info-circle"></i>
-            No hay registros para {{ turno_actual|upper }} de hoy.
-          </div>
-          {% endif %}
-
-          {% if notas %}
-          <hr>
-          <h6>Notas recientes (todas)</h6>
-          <ul class="list-group list-group-flush">
-            {% for nota in notas %}
-            <li class="list-group-item d-flex justify-content-between">
-              <span>
-                <strong>{{ nota.tipo_nota|title }}</strong>:
-                {{ nota.texto_nota[:60] }}{% if nota.texto_nota|length > 60 %}...{% endif %}
-              </span>
-              <small class="text-muted">{{ nota.fecha_registro.strftime('%H:%M') }}</small>
-            </li>
-            {% endfor %}
-          </ul>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="row mt-4">
-        <div class="col-md-6">
-          <a href="{{ url_for('enfermeria.crear', paciente_id=paciente.id) }}"
-             class="btn btn-primary btn-lg w-100">
-            <i class="fas fa-plus"></i> Nuevo Registro
-          </a>
-        </div>
-        <div class="col-md-6">
-          <a href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}"
-             class="btn btn-success btn-lg w-100">
-            <i class="fas fa-file-pdf"></i> Exportar PDF
-          </a>
-        </div>
-      </div>
     </div>
-  </div>
+
+    <div class="alert-turno shadow-sm mb-4">
+        <div>
+            <i class="fas fa-clock me-2"></i>
+            <strong>TURNO ACTUAL:</strong> 
+            <span class="badge-turno ms-1">{{ turno_actual|upper }}</span>
+        </div>
+        <small class="d-none d-md-block">Registros exclusivos de hoy: {{ turno_actual|upper }}</small>
+    </div>
+
+    <div class="card card-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0 fw-bold" style="color: var(--titles);">
+                <i class="fas fa-user-circle me-2"></i>{{ paciente.nombre }} 
+                <small class="text-muted ms-2">| ID: {{ paciente.numero }}</small>
+            </h5>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if registros %}
+            <div class="p-3 bg-light border-bottom">
+                <h6 class="mb-0 fw-bold text-uppercase" style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Actividad Reciente ({{ registros|length }} registros)
+                </h6>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover table-sm-custom mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Fecha / Hora</th>
+                            <th>Signos Vitales</th>
+                            <th>Balance Líquidos</th>
+                            <th>Glicemia</th>
+                            <th>Observaciones</th>
+                            <th class="text-center">Kárdex</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in registros %}
+                        <tr>
+                            <td class="ps-3">
+                                <strong style="color: var(--titles);">{{ r.fecha_registro.strftime('%d/%m %H:%M') }}</strong><br>
+                                <span class="badge bg-light text-dark border" style="font-size: 0.65rem;">{{ turno_actual|upper }}</span>
+                            </td>
+                            <td>
+                                {% if r.signos_vitales_dict %}
+                                    <div style="font-size: 0.8rem; line-height: 1.4;">
+                                        <span class="text-muted">TA:</span> {{ r.signos_vitales_dict.ta or '-' }} | 
+                                        <span class="text-muted">FC:</span> {{ r.signos_vitales_dict.fc or '-' }}<br>
+                                        <span class="text-muted">FR:</span> {{ r.signos_vitales_dict.fr or '-' }} | 
+                                        <span class="text-muted">T°:</span> {{ r.signos_vitales_dict.temp or '-' }} | 
+                                        <span class="text-muted">SatO2:</span> {{ r.signos_vitales_dict.so2 or '-' }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">Sin datos</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.balance_liquidos_dict.administrados %}
+                                    <span class="text-primary fw-bold">↑ {{ r.balance_liquidos_dict.administrados.cantidad or 0 }}ml</span>
+                                {% endif %}
+                                {% if r.balance_liquidos_dict.eliminados %}
+                                    <br><span class="text-danger fw-bold">↓ {{ r.balance_liquidos_dict.eliminados.cantidad or 0 }}ml</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">{{ r.control_glicemia or '-' }}</td>
+                            <td>
+                                <small class="text-secondary">
+                                    {% if r.observaciones %}
+                                        {{ r.observaciones[:50] }}{% if r.observaciones|length > 50 %}...{% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('enfermeria.administrar_medicamentos', registro_id=r.id) }}"
+                                   class="btn btn-sm btn-outline-primary" style="border-radius: 8px;">
+                                    <i class="fas fa-pills"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-3x mb-3 text-muted" style="opacity: 0.3;"></i>
+                <p class="text-muted">No se han encontrado registros para el turno de hoy.</p>
+            </div>
+            {% endif %}
+
+            {% if notas %}
+            <div class="p-3 bg-light border-top border-bottom">
+                <h6 class="mb-0 fw-bold text-uppercase" style="font-size: 0.75rem; color: var(--text-secondary);">Notas de Evolución Recientes</h6>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for nota in notas %}
+                <div class="list-group-item p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge mb-2" style="background-color: var(--bg-containers); color: var(--titles);">{{ nota.tipo_nota|upper }}</span>
+                            <p class="mb-0 small text-dark">{{ nota.texto_nota }}</p>
+                        </div>
+                        <span class="text-muted fw-bold" style="font-size: 0.7rem;">{{ nota.fecha_registro.strftime('%H:%M') }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <a href="{{ url_for('enfermeria.crear', paciente_id=paciente.id) }}" class="btn-sm-verde w-100 d-block text-center text-decoration-none shadow">
+                <i class="fas fa-plus me-2"></i> NUEVO REGISTRO CLÍNICO
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}" class="btn w-100 shadow-sm fw-bold p-3" style="background-color: #5f5f5f; color: white; border-radius: 10px; text-transform: uppercase;">
+                <i class="fas fa-file-pdf me-2"></i> GENERAR REPORTE PDF
+            </a>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

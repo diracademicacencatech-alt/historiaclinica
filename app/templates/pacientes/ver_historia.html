@@ -1,7 +1,75 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container py-4 d-flex justify-content-center">
+<style>
+    /* VARIABLES DE IDENTIDAD */
+    :root {
+        --sm-primary: #236e7b;    /* verde azulado */
+        --sm-text-main: #0b6169;   /* verde oscuro */
+    }
+
+    /* Reset General */
+    .documento-clinico {
+        width: 100%;
+        max-width: 850px;
+        background: #fff;
+        padding: 40px;
+        margin: 0 auto;
+        box-sizing: border-box;
+        font-family: "Times New Roman", serif;
+        color: #000;
+        border: 1px solid #ccc;
+        line-height: 1.3;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .hc-header-informe { margin-bottom: 15px; }
+    .titulo-entidad { font-size: 22px; font-weight: bold; margin-bottom: 0; color: var(--sm-primary); }
+    /* Línea separadora con tu color primario */
+    .linea-separadora { border-top: 2px solid var(--sm-primary); border-bottom: 1px solid var(--sm-primary); height: 4px; margin: 10px 0; }
+
+    .seccion-informe { margin-bottom: 20px; width: 100%; clear: both; }
+    /* Títulos de sección con tu verde de fondo */
+    .titulo-seccion { background: var(--sm-primary); color: white; padding: 5px; font-weight: bold; border: 1px solid #000; margin-bottom: 8px; text-transform: uppercase; font-size: 13px; }
+
+    /* Tablas */
+    .tabla-datos-paciente { width: 100%; font-size: 13px; margin-bottom: 10px; }
+    .tabla-datos-paciente td { padding: 4px 0; border-bottom: 1px solid #eee; }
+
+    .tabla-informe { width: 100% !important; border-collapse: collapse; table-layout: fixed; margin-bottom: 10px; }
+    .tabla-informe th, .tabla-informe td { border: 1px solid #000; padding: 4px; font-size: 11px; text-align: center; word-wrap: break-word; }
+
+    /* Órdenes */
+    .contenedor-orden { border: 1px solid var(--sm-primary); padding: 10px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
+    .orden-header { background: #f8f9fa; border-bottom: 1px solid var(--sm-primary); margin-bottom: 8px; padding: 4px; font-size: 13px; }
+    .indicaciones-box { padding: 8px; border: 1px dashed #ccc; background: #fdfdfd; font-size: 12px; white-space: pre-line; }
+
+    .cuadro-texto { border: 1px solid #eee; padding: 10px; font-size: 12px; background: #fcfcfc; }
+
+    /* BOTÓN VERDE SOLICITADO */
+    .btn-modulo-pacientes {
+        background: var(--sm-primary);
+        color: white !important;
+        padding: 15px 30px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: none;
+    }
+
+    .btn-modulo-pacientes:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        filter: brightness(1.1);
+    }
+</style>
+
+<div class="container py-4">
     <div class="documento-clinico">
 
         <div class="hc-header-informe">
@@ -11,16 +79,17 @@
                     <p class="mb-0 text-uppercase"><strong>Servicio:</strong> {{ historia.servicio_hospitalario or 'No asignado' }}</p>
                 </div>
                 <div class="col-5 text-end small">
-                    <p class="mb-0"><strong>N° Ingreso:</strong> {{ historia.numero_ingreso }}</p>
-                    <p class="mb-0">
-    <strong>Fecha de Consulta:</strong> 
-    {{ ahora_bogota().strftime('%d/%m/%Y %H:%M') if ahora_bogota else '17/01/2026 08:09' }}
-</p>
+    <p class="mb-0"><strong>N° Ingreso:</strong> {{ historia.numero_ingreso }}</p>
+    
+    <p class="mb-0">
+        <strong>Fecha de Consulta:</strong> 
+        <span id="fecha-actual"></span>
+    </p>
 
-<p class="mb-0 text-muted">
-    F. Registro Orig: {{ historia.fecha_registro.strftime('%d/%m/%Y %H:%M') if historia.fecha_registro else 'N/A' }}
-</p>
-                </div>
+    <p class="mb-0 text-muted">
+        F. Registro Orig: {{ historia.fecha_registro.strftime('%d/%m/%Y %H:%M') if historia.fecha_registro else 'N/A' }}
+    </p>
+</div>
             </div>
             <div class="linea-separadora"></div>
         </div>
@@ -56,7 +125,7 @@
             <table class="tabla-informe text-center">
                 <thead>
                     <tr>
-                        <th>T.A</th><th>F.C</th><th>F.R</th><th>Temp</th><th>SatO2</th><th>Gluco</th><th>IMC</th>
+                        <th>T.A (mmHg)</th><th>F.C (lpm)</th><th>F.R (rpm)</th><th>Temp (°C)</th><th>SatO2 (%)</th><th>Gluco (mg/dL)</th><th>IMC</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -107,120 +176,98 @@
                 <p class="mb-0"><strong>P:</strong> {{ historia.plan }}</p>
             </div>
         </section>
+
         {% if ordenes_con_meds %}
-<section class="seccion-informe" style="page-break-before: always;">
-    <h6 class="titulo-seccion">6. ÓRDENES MÉDICAS Y PLAN DE TRATAMIENTO</h6>
-    
-    {% for item in ordenes_con_meds %}
-    <div class="contenedor-orden" style="border: 1px solid #0056b3; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
-        <div class="orden-header" style="background: #e9ecef; padding: 5px 10px; border-bottom: 1px solid #0056b3; margin-bottom: 10px;">
-            <strong>ORDEN MÉDICA N°: {{ item.orden.id }}</strong> 
-            <span style="float: right;" class="small">
-                Fecha: {{ item.orden.fecha_orden.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_orden else 'S/F' }}
-            </span>
-        </div>
+        <section class="seccion-informe" style="page-break-before: always;">
+            <h6 class="titulo-seccion">6. ÓRDENES MÉDICAS Y PLAN DE TRATAMIENTO</h6>
+            {% for item in ordenes_con_meds %}
+            <div class="contenedor-orden">
+                <div class="orden-header">
+                    <strong>ORDEN MÉDICA N°: {{ item.orden.id }}</strong> 
+                    <span style="float: right;" class="small">
+    <strong>Fecha:</strong> 
+    {{ item.orden.fecha_registro.strftime('%d/%m/%Y %H:%M') if item.orden.fecha_registro else 'Sin fecha grabada' }}
+</span>
+                </div>
 
-        {% if item.orden.indicaciones_medicas %}
-        <div class="mb-2">
-            <p class="mb-1"><strong>Indicaciones Generales:</strong></p>
-            <div class="indicaciones-box" style="font-size: 11px; background: #fdfdfd; padding: 8px; border: 1px solid #eee;">
-                {{ item.orden.indicaciones_medicas }}
+                {% if item.orden.indicaciones_medicas %}
+                <div class="mb-2">
+                    <p class="mb-1"><strong>Indicaciones Generales:</strong></p>
+                    <div class="indicaciones-box">{{ item.orden.indicaciones_medicas }}</div>
+                </div>
+                {% endif %}
+
+                {% if item.medicamentos %}
+                <div class="mb-2">
+                    <p class="mb-1" style="color: var(--sm-primary);"><strong>💊 Medicamentos Prescritos:</strong></p>
+                    <table class="tabla-informe">
+                        <thead>
+                            <tr style="background: #f2f2f2;">
+                                <th style="width: 40%;">Medicamento</th>
+                                <th style="width: 20%;">Dosis</th>
+                                <th style="width: 20%;">Frecuencia</th>
+                                <th style="width: 20%;">Vía</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med in item.medicamentos %}
+                            <tr>
+                                <td><strong>{{ med.nombre }}</strong></td>
+                                <td>{{ med.dosis }}</td>
+                                <td>{{ med.frecuencia }}</td>
+                                <td>{{ med.via_administracion or med.via }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if item.laboratorios %}
+                <div class="mb-2" style="margin-top: 10px;">
+                    <p class="mb-1" style="color: #d35400;"><strong>🔬 Laboratorios y Ayudas Diagnósticas:</strong></p>
+                    <table class="tabla-informe">
+                        <thead>
+                            <tr style="background: #fff4e5;">
+                                <th style="width: 70%;">Examen Solicitado</th>
+                                <th style="width: 30%;">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lab in item.laboratorios %}
+                            <tr>
+                                <td style="text-align: left;"><strong>{{ lab.nombre }}</strong></td>
+                                <td style="text-transform: uppercase;">{{ lab.estado }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
             </div>
-        </div>
+            {% endfor %}
+        </section>
         {% endif %}
 
-        {% if item.medicamentos %}
-        <div class="mb-2">
-            <p class="mb-1" style="color: #0056b3;"><strong>💊 Medicamentos Prescritos:</strong></p>
-            <table class="tabla-informe" style="width: 100%; border-collapse: collapse; font-size: 10px;">
-                <thead>
-                    <tr style="background: #f2f2f2;">
-                        <th style="width: 40%;">Medicamento</th>
-                        <th style="width: 20%;">Dosis</th>
-                        <th style="width: 20%;">Frecuencia</th>
-                        <th style="width: 20%;">Vía</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for med in item.medicamentos %}
-                    <tr>
-                        <td><strong>{{ med.nombre }}</strong></td>
-                        <td>{{ med.dosis }}</td>
-                        <td>{{ med.frecuencia }}</td>
-                        <td>{{ med.via_administracion or med.via }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-
-        {% if item.laboratorios %}
-        <div class="mb-2" style="margin-top: 10px;">
-            <p class="mb-1" style="color: #d35400;"><strong>🔬 Laboratorios y Ayudas Diagnósticas:</strong></p>
-            <table class="tabla-informe" style="width: 100%; border-collapse: collapse; font-size: 10px;">
-                <thead>
-                    <tr style="background: #fff4e5;">
-                        <th style="width: 70%; border: 1px solid #f39c12; padding: 5px;">Examen Solicitado</th>
-                        <th style="width: 30%; border: 1px solid #f39c12; padding: 5px;">Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for lab in item.laboratorios %}
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 5px; text-align: left;">
-                            <strong>{{ lab.nombre }}</strong>
-                        </td>
-                        <td style="border: 1px solid #ddd; padding: 5px; text-transform: uppercase;">
-                            {{ lab.estado }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
+    </div> <div class="text-center mt-5 mb-5">
+        <a href="{{ url_for('pacientes.listar') }}" class="btn-modulo-pacientes">
+            <span>👥</span> Volver al Listado de Pacientes
+        </a>
     </div>
-    {% endfor %}
-</section>
-{% endif %}
-
-<style>
-/* Reset General */
-.documento-clinico {
-    width: 100%;
-    max-width: 850px;
-    background: #fff;
-    padding: 40px;
-    margin: 0 auto;
-    box-sizing: border-box;
-    font-family: "Times New Roman", serif;
-    color: #000;
-    border: 1px solid #ccc;
-    line-height: 1.3;
-}
-
-.hc-header-informe { margin-bottom: 15px; }
-.titulo-entidad { font-size: 22px; font-weight: bold; margin-bottom: 0; }
-.linea-separadora { border-top: 2px solid #000; border-bottom: 1px solid #000; height: 4px; margin: 10px 0; }
-
-.seccion-informe { margin-bottom: 20px; width: 100%; clear: both; }
-.titulo-seccion { background: #eee; padding: 5px; font-weight: bold; border: 1px solid #000; margin-bottom: 8px; text-transform: uppercase; font-size: 13px; }
-
-/* Tablas */
-.tabla-datos-paciente { width: 100%; font-size: 13px; margin-bottom: 10px; }
-.tabla-datos-paciente td { padding: 4px 0; border-bottom: 1px solid #eee; }
-
-.tabla-informe { width: 100% !important; border-collapse: collapse; table-layout: fixed; margin-bottom: 10px; }
-.tabla-informe th, .tabla-informe td { border: 1px solid #000; padding: 4px; font-size: 11px; text-align: center; word-wrap: break-word; }
-
-/* Órdenes */
-.contenedor-orden { border: 1px solid #000; padding: 10px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
-.orden-header { border-bottom: 1px solid #000; margin-bottom: 8px; padding-bottom: 4px; font-size: 13px; }
-.indicaciones-box { padding: 8px; border: 1px dashed #ccc; background: #fdfdfd; font-size: 12px; white-space: pre-line; }
-.nota-orden { margin-top: 5px; font-size: 11px; font-style: italic; }
-
-.cuadro-texto { border: 1px solid #eee; padding: 10px; font-size: 12px; background: #fcfcfc; }
-</style>
-
+</div>
+<script>
+    function actualizarFecha() {
+        const ahora = new Date();
+        const opciones = { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        };
+        document.getElementById('fecha-actual').innerText = ahora.toLocaleString('es-CO', opciones);
+    }
+    actualizarFecha();
+</script>
 {% endblock %}

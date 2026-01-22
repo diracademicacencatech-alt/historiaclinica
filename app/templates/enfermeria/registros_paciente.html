@@ -1,310 +1,315 @@
 {% extends "base.html" %}
-{% block title %}Registros de Enfermería{% endblock %}
+
+{% block title %}Historial Clínico - {{ paciente.nombre_completo }}{% endblock %}
+
+{% block head %}
+<style>
+    :root {
+      --titles: #236e7b;
+      --text-links: #0b6169;
+      --text-secondary: #5f5f5f;
+      --bg-containers: #f0e7d8;
+    }
+
+    .titulo-seccion { 
+      color: var(--titles); 
+      font-weight: 800;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--bg-containers);
+      padding-bottom: 8px;
+      margin-top: 35px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* TABLAS ESTILIZADAS */
+    .table-custom {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: none;
+    }
+
+    .table-custom thead {
+        background-color: var(--titles);
+        color: white;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    .table-custom td {
+        font-size: 0.82rem;
+        vertical-align: middle;
+    }
+
+    /* CARDS DE MEDICAMENTOS E INSUMOS */
+    .card-clinica {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+
+    .card-clinica .card-header {
+        background-color: var(--titles);
+        color: white;
+        font-weight: 700;
+        border: none;
+        padding: 12px 20px;
+    }
+
+    /* BOTONES */
+    .btn-sm-delete {
+        background-color: #ffeded;
+        color: #dc3545;
+        border: 1px solid #ffc1c1;
+        border-radius: 6px;
+        padding: 4px 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-sm-delete:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-nav-verde {
+        background-color: var(--titles) !important;
+        color: white !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 10px;
+        padding: 12px 25px;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>📋 Registros de enfermería - {{ paciente.nombre_completo }}</h2>
-
-  <!-- Signos vitales / glicemia -->
-  <h4 class="mt-4">🔥 Signos vitales y glicemia</h4>
-  <table class="table table-sm table-striped">
-    <thead>
-      <tr>
-        <th>Fecha</th><th>Hora</th><th>Turno</th><th>TA</th><th>FC</th>
-        <th>FR</th><th>Temp</th><th>SatO2</th><th>Glicemia</th><th>Obs.</th><th>Acción</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in registros %}
-        {% set sv = r.signos_vitales_dict or {} %}
-        {% if sv.ta or sv.fc or sv.fr or sv.temp or sv.so2 or r.control_glicemia %}
-        <tr>
-          <td>{{ r.fecha_registro.strftime('%Y-%m-%d') }}</td>
-          <td>{{ r.fecha_registro.strftime('%H:%M') }}</td>
-          <td>{{ r.turno }}</td>
-          <td>{{ sv.ta or '' }}</td><td>{{ sv.fc or '' }}</td><td>{{ sv.fr or '' }}</td>
-          <td>{{ sv.temp or '' }}</td><td>{{ sv.so2 or '' }}</td><td>{{ r.control_glicemia or '' }}</td>
-          <td>{{ r.observaciones or '' }}</td>
-          <td>
-            <div class="btn-group btn-group-sm" role="group">
-              <form method="post"
-                    action="{{ url_for('enfermeria.eliminar_signos_enfermeria', registro_id=r.id) }}"
-                    style="display: inline;"
-                    onsubmit="return confirm('¿Eliminar signos vitales?');">
-                <button type="submit" class="btn btn-danger" title="🗑️ Eliminar">
-                  <i class="fas fa-trash"></i><br><small>Eliminar</small>
-                </button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        {% endif %}
-      {% endfor %}
-      {% if not registros %}
-        <tr>
-          <td colspan="11" class="text-center text-muted p-4">
-            No hay signos vitales registrados.
-          </td>
-        </tr>
-      {% endif %}
-    </tbody>
-  </table>
-
-  <!-- Balance de líquidos -->
-  <h4 class="mt-4">💧 Balance de líquidos</h4>
-  <table class="table table-sm table-striped">
-    <thead>
-      <tr>
-        <th>Fecha</th><th>Hora</th><th>Turno</th>
-        <th>Administrados</th><th>Eliminados</th><th>Obs.</th><th>Acción</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in registros %}
-        {% set liq = r.balance_liquidos_dict or {} %}
-        {% set admin = liq.administrados or {} %}
-        {% set elim = liq.eliminados or {} %}
-        {% if admin or elim %}
-        <tr>
-          <td>{{ r.fecha_registro.strftime('%Y-%m-%d') }}</td>
-          <td>{{ r.fecha_registro.strftime('%H:%M') }}</td>
-          <td>{{ r.turno }}</td>
-          <td>
-            {% if admin %}
-              <br>
-              <small>{{ admin.liquido or '' }} / {{ admin.via or '' }} / {{ admin.cantidad or '' }}</small>
-            {% else %}
-              <span class="text-muted">-</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if elim %}
-              {{ elim.hora_eliminado or '' }}<br>
-              <small>{{ elim.tipo_liquido or '' }} / {{ elim.via_eliminacion or '' }} / {{ elim.cantidad or '' }}</small>
-            {% else %}
-              <span class="text-muted">-</span>
-            {% endif %}
-          </td>
-          <td>{{ elim.obs or '' }}</td>
-          <td>
-            <div class="btn-group btn-group-sm" role="group">
-              <form method="post"
-                    action="{{ url_for('enfermeria.eliminar_balance_enfermeria', registro_id=r.id) }}"
-                    style="display: inline;"
-                    onsubmit="return confirm('¿Eliminar balance?');">
-                <button type="submit" class="btn btn-warning" title="🗑️ Eliminar">
-                  <i class="fas fa-trash"></i><br><small>Eliminar</small>
-                </button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        {% endif %}
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- Notas de enfermería -->
-  <h4 class="mt-4">📝 Notas de enfermería</h4>
-  <table class="table table-sm table-striped">
-    <thead>
-      <tr>
-        <th>Fecha</th><th>Hora</th><th>Turno</th><th>Tipo</th><th>Nota</th><th>Acción</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in registros %}
-        {% if r.tipo_nota and r.texto_nota %}
-        <tr>
-          <td>{{ r.fecha_registro.strftime('%Y-%m-%d') }}</td>
-          <td>{{ r.fecha_registro.strftime('%H:%M') }}</td>
-          <td>{{ r.turno }}</td>
-          <td><span class="badge bg-primary">{{ r.tipo_nota }}</span></td>
-          <td style="max-width: 400px; white-space: pre-wrap; word-break: break-word;">
-            {{ r.texto_nota }}
-          </td>
-          <td>
-            <div class="btn-group btn-group-sm" role="group">
-              <form method="post"
-                    action="{{ url_for('enfermeria.eliminar_nota_enfermeria', registro_id=r.id) }}"
-                    style="display: inline;"
-                    onsubmit="return confirm('¿Eliminar nota?');">
-                <button type="submit" class="btn btn-info" title="🗑️ Eliminar">
-                  <i class="fas fa-trash"></i><br><small>Eliminar</small>
-                </button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        {% endif %}
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- 💊 MEDICAMENTOS ADMINISTRADOS -->
-  <h4 class="mt-4">💊 Medicamentos Administrados</h4>
-  <div class="card shadow mb-4">
-    <div class="card-header bg-primary text-white">
-      <h6 class="mb-0">
-        <i class="fas fa-pills me-2"></i>Historial Completo de Medicamentos
-      </h6>
+<div class="container py-3">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 style="color: var(--titles); font-weight: 800; margin-bottom: 0;">
+            <i class="fas fa-history me-2"></i> REGISTROS DE ENFERMERÍA
+        </h2>
+        <span class="badge" style="background-color: var(--bg-containers); color: var(--titles); font-size: 1rem; padding: 10px 15px; border-radius: 10px;">
+            {{ paciente.nombre_completo }}
+        </span>
     </div>
-    <div class="card-body p-0">
-      {% if medicamentos %}
-      <div class="table-responsive" style="max-height: 300px;">
-        <table class="table table-sm mb-0">
-          <thead class="table-dark">
-            <tr>
-              <th style="width:12%">Fecha</th>
-              <th style="width:10%">Hora</th>
-              <th style="width:12%">Código</th>
-              <th style="width:8%" class="text-center">Cant</th>
-              <th style="width:8%">Unid</th>
-              <th style="width:8%">Vía</th>
-              <th style="width:20%">Observaciones</th>
-              <th style="width:12%">Eliminar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for admin in medicamentos %}
-            <tr>
-              <td>{{ admin.hora_administracion.strftime('%Y-%m-%d') }}</td>
-              <td>{{ admin.hora_administracion.strftime('%H:%M') }}</td>
-              <td><strong>{{ admin.medicamento.codigo if admin.medicamento else 'N/A' }}</strong></td>
-              <td class="text-center fw-bold">{{ admin.cantidad }}</td>
-              <td>{{ admin.unidad }}</td>
-              <td><span class="badge bg-primary">{{ admin.via }}</span></td>
-              <td>{{ admin.observaciones or '-' }}</td>
-              <td>
-                <form method="POST"
-                      action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}"
-                      class="d-inline">
-                  <button type="submit"
-                          class="btn btn-danger btn-sm px-2 py-1"
-                          onclick="return confirm('¿Eliminar medicamento?');"
-                          title="🗑️ Eliminar">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
+
+    <h4 class="titulo-seccion"><i class="fas fa-heartbeat"></i> Signos Vitales y Glicemia</h4>
+    <div class="table-responsive table-custom">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Turno</th>
+                    <th>TA (mmHg)</th>
+                    <th>FC (lpm)</th>
+                    <th>FR (rpm)</th>
+                    <th>T° (°C)</th>
+                    <th>SatO2 (%)</th>
+                    <th>Glicemia (mg/dL)</th>
+                    <th>Observaciones</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                    {% set sv = r.signos_vitales_dict or {} %}
+                    {% if sv.ta or sv.fc or sv.fr or sv.temp or sv.so2 or r.control_glicemia %}
+                    <tr>
+                        <td class="fw-bold" style="color: var(--text-links);">
+                            {{ r.fecha_registro.strftime('%Y-%m-%d %H:%M') }}
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ r.turno }}</span></td>
+                        <td>{{ sv.ta or '-' }}</td>
+                        <td>{{ sv.fc or '-' }}</td>
+                        <td>{{ sv.fr or '-' }}</td>
+                        <td>{{ sv.temp or '-' }}°C</td>
+                        <td>{{ sv.so2 or '-' }}%</td>
+                        <td class="fw-bold">{{ r.control_glicemia or '-' }}</td>
+                        <td><small class="text-muted">{{ r.observaciones or '-' }}</small></td>
+                        <td class="text-center">
+                            <form method="post" action="{{ url_for('enfermeria.eliminar_signos_enfermeria', registro_id=r.id) }}" 
+                                  onsubmit="return confirm('¿Eliminar signos vitales?');">
+                                <button type="submit" class="btn-sm-delete" title="Eliminar registro">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
         </table>
-      </div>
-      {% else %}
-      <div class="card-body text-center text-muted p-4">
-        <i class="fas fa-pills fa-3x mb-3 opacity-50"></i>
-        <p><strong>No hay medicamentos administrados en esta historia</strong></p>
-        <a href="{{ url_for('enfermeria.administrar_medicamentos',
-                            registro_id=registros[0].id if registros else '') }}"
-           class="btn btn-warning">
-          <i class="fas fa-plus me-2"></i>Agregar Primer Medicamento
+    </div>
+
+    <h4 class="titulo-seccion"><i class="fas fa-tint"></i> Balance de Líquidos</h4>
+    <div class="table-responsive table-custom">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Turno</th>
+                    <th>Administrados (Líquido/Vía/Cant)</th>
+                    <th>Eliminados (Tipo/Vía/Cant)</th>
+                    <th>Observaciones</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                    {% set liq = r.balance_liquidos_dict or {} %}
+                    {% set admin = liq.administrados or {} %}
+                    {% set elim = liq.eliminados or {} %}
+                    {% if admin or elim %}
+                    <tr>
+                        <td>{{ r.fecha_registro.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ r.turno }}</td>
+                        <td class="text-primary">
+                            {% if admin %}
+                                <strong>{{ admin.liquido }}</strong><br>
+                                <small>{{ admin.via }} / {{ admin.cantidad }}ml</small>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-danger">
+                            {% if elim %}
+                                <strong>{{ elim.tipo_liquido }}</strong><br>
+                                <small>{{ elim.via_eliminacion }} / {{ elim.cantidad }}ml</small>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td><small>{{ elim.obs or '-' }}</small></td>
+                        <td class="text-center">
+                            <form method="post" action="{{ url_for('enfermeria.eliminar_balance_enfermeria', registro_id=r.id) }}" 
+                                  onsubmit="return confirm('¿Eliminar balance?');">
+                                <button type="submit" class="btn-sm-delete"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h4 class="titulo-seccion"><i class="fas fa-file-medical"></i> Notas de Enfermería</h4>
+    <div class="table-responsive table-custom">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Fecha/Hora</th>
+                    <th style="width: 15%;">Tipo de Nota</th>
+                    <th style="width: 60%;">Contenido de la Evolución</th>
+                    <th style="width: 10%;" class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                    {% if r.tipo_nota and r.texto_nota %}
+                    <tr>
+                        <td>{{ r.fecha_registro.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><span class="badge" style="background-color: var(--bg-containers); color: var(--titles);">{{ r.tipo_nota }}</span></td>
+                        <td style="white-space: pre-wrap;">{{ r.texto_nota }}</td>
+                        <td class="text-center">
+                            <form method="post" action="{{ url_for('enfermeria.eliminar_nota_enfermeria', registro_id=r.id) }}" 
+                                  onsubmit="return confirm('¿Eliminar nota?');">
+                                <button type="submit" class="btn-sm-delete"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h4 class="titulo-seccion"><i class="fas fa-pills"></i>Medicamentos Administrados</h4>
+    <div class="card card-clinica mb-4">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead style="background-color: #0b6169; color: white;">
+                    <tr>
+                        <th class="ps-3">Administración</th>
+                        <th>Medicamento / Código</th>
+                        <th class="text-center">Dosis</th>
+                        <th>Vía</th>
+                        <th>Observaciones</th>
+                        <th class="text-center">Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for admin in medicamentos %}
+                    <tr>
+                        <td class="ps-3">
+                            <strong>{{ admin.hora_administracion.strftime('%d/%m/%y') }}</strong><br>
+                            <small class="text-muted">{{ admin.hora_administracion.strftime('%H:%M') }}</small>
+                        </td>
+                        <td><strong>{{ admin.medicamento.nombre if admin.medicamento else 'N/A' }}</strong></td>
+                        <td class="text-center fw-bold text-success">{{ admin.cantidad }} {{ admin.unidad }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ admin.via }}</span></td>
+                        <td><small>{{ admin.observaciones or '-' }}</small></td>
+                        <td class="text-center">
+                            <form method="POST" action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}">
+                                <button type="submit" class="btn-sm-delete" onclick="return confirm('¿Eliminar administración?');">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h4 class="titulo-seccion"><i class="fas fa-box-open"></i> Insumos y Materiales</h4>
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card card-clinica">
+                <div class="card-header" style="background-color: #5f5f5f;">Utilizados</div>
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-sm mb-0">
+                        <tbody id="insumos_body">
+                            {% for ins in insumos_registrados %}
+                            <tr>
+                                <td class="ps-3"><strong>{{ ins.nombre }}</strong><br><small class="text-muted">{{ ins.fecha_uso }}</small></td>
+                                <td class="text-center"><span class="badge bg-success">Usado: {{ ins.usado }}</span></td>
+                                <td><small>{{ ins.observaciones }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            {% if insumos_pendientes %}
+            <div class="card card-clinica border-warning">
+                <div class="card-header bg-warning text-dark">Pendientes de Legalizar</div>
+                <div class="list-group list-group-flush">
+                    {% for ins in insumos_pendientes %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <small><strong>{{ ins.nombre }}</strong></small>
+                        <span class="badge bg-danger rounded-pill">{{ ins.pendiente }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mt-5 mb-5">
+        <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn btn-outline-secondary px-4 py-2 fw-bold">
+            <i class="fas fa-chevron-left me-2"></i> VOLVER AL MENÚ
         </a>
-      </div>
-      {% endif %}
+        <a href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}" class="btn-nav-verde shadow px-4 py-2">
+            <i class="fas fa-file-pdf me-2"></i> DESCARGAR PDF
+        </a>
     </div>
-  </div>
-
-  <!-- 🧴 INSUMOS UTILIZADOS -->
-  <h4 class="mt-4">🧴 Insumos Utilizados</h4>
-  <div class="card shadow mb-4">
-    <div class="card-header bg-success text-white">
-      <h6 class="mb-0">
-        <i class="fas fa-syringe me-2"></i>Historial de Insumos Administrados
-      </h6>
-    </div>
-    <div class="card-body p-0">
-      {% if insumos_registrados %}
-      <div class="table-responsive" style="max-height: 300px;">
-        <table class="table table-sm mb-0">
-          <thead class="table-dark">
-            <tr>
-              <th style="width:15%">Fecha uso</th>
-              <th style="width:30%">Insumo</th>
-              <th style="width:10%" class="text-center">Solic.</th>
-              <th style="width:10%" class="text-center">Usado</th>
-              <th style="width:10%" class="text-center">Pend.</th>
-              <th style="width:25%">Observaciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for ins in insumos_registrados %}
-            <tr>
-              <td>{{ ins.fecha_uso }}</td>
-              <td><strong>{{ ins.nombre }}</strong></td>
-              <td class="text-center">{{ ins.solicitado }}</td>
-              <td class="text-center text-success fw-bold">{{ ins.usado }}</td>
-              <td class="text-center {% if ins.pendiente > 0 %}text-danger{% endif %}">
-                {{ ins.pendiente }}
-              </td>
-              <td>{{ ins.observaciones }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <div class="card-body text-center text-muted p-3">
-        <i class="fas fa-syringe fa-2x mb-2 opacity-50"></i>
-        <p class="mb-0">No hay insumos administrados registrados.</p>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- (Opcional) INSUMOS PENDIENTES -->
-  {% if insumos_pendientes %}
-  <h5 class="mt-3">⏳ Insumos pendientes de uso</h5>
-  <table class="table table-sm table-striped">
-    <thead>
-      <tr>
-        <th>Insumo</th>
-        <th class="text-center">Solicitado</th>
-        <th class="text-center">Pendiente</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ins in insumos_pendientes %}
-      <tr class="table-warning">
-        <td>{{ ins.nombre }}</td>
-        <td class="text-center">{{ ins.solicitado }}</td>
-        <td class="text-center">{{ ins.pendiente }}</td>
-        <td>{{ ins.fecha_solicitud }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
-
-  <!-- Botones de navegación -->
-  <div class="mt-4">
-    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}"
-       class="btn btn-secondary me-2">
-      ← Volver al menú
-    </a>
-    <a href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}"
-       class="btn btn-success">
-      📄 Descargar PDF Completo
-    </a>
-  </div>
 </div>
-
-<style>
-  .table th { font-size: 0.85rem; }
-  .table td { font-size: 0.8rem; vertical-align: middle; }
-  .btn-group-sm .btn {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.35rem;
-    line-height: 1.1;
-    height: 38px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .btn-group-sm .btn i { font-size: 0.9rem; margin-bottom: 1px; }
-  .btn-group-sm .btn small { font-size: 0.65rem; line-height: 0.9; margin: 0; }
-  .table-responsive { border-radius: 0.375rem; }
-</style>
 {% endblock %}

@@ -1,152 +1,203 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Pacientes</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .btn { display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin: 3px; text-align: center; }
-        .btn-success { background-color: #28a745; color: white; }
-        .btn-primary { background-color: #007bff; color: white; }
-        .btn-outline { background-color: white; border: 1px solid #007bff; color: #007bff; }
-        .message { padding: 15px; margin: 10px 0; border-radius: 4px; font-weight: bold; }
-        .success { background-color: #d4edda; color: #155724; }
-        .danger { background-color: #f8d7da; color: #721c24; }
+{% extends 'base.html' %}
+{% block title %}Historias Clínicas{% endblock %}
 
-        .card { max-width: 900px; margin: 0 auto 25px auto; padding: 15px 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .card-title { font-size: 18px; margin-bottom: 10px; font-weight: bold; }
-        .btn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+{% block content %}
+<style>
+    /* Aplicando colores de la base */
+    :root {
+        --sm-primary: #236e7b;    /* verde azulado */
+        --sm-text-main: #0b6169;   /* verde oscuro */
+        --sm-bg-card: #f0e7d8;     /* crema interior */
+    }
 
-        .search-box { max-width: 700px; margin: 0 auto 10px auto; }
-        .search-box label { display: block; margin-bottom: 4px; }
-        .search-box input { width: 100%; padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
+    h1, h2 { 
+        color: var(--sm-primary); 
+        font-weight: 800; 
+        text-align: center;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
 
-        .center-footer { text-align: center; margin-top: 30px; }
-    </style>
-</head>
-<body>
-    <h1>📋 Pacientes</h1>
+    /* Estilo de la Tarjeta (Contenedor Interior) */
+    .card-custom { 
+        background-color: var(--sm-bg-card);
+        max-width: 900px; 
+        margin: 0 auto 25px auto; 
+        padding: 20px; 
+        border: 2px solid var(--sm-primary); 
+        border-radius: 15px; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+    }
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="message {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    .card-title-custom { 
+        font-size: 1.2rem; 
+        color: var(--sm-text-main);
+        margin-bottom: 15px; 
+        font-weight: bold; 
+        text-align: center;
+    }
 
-    <!-- TARJETA DE ACCIONES SUPERIORES -->
-    <div class="card">
-        <div class="card-title">NUEVOS INGRESOS</div>
+    /* Botones con colores de la base */
+    .btn-sm-primary { 
+        background-color: var(--sm-primary); 
+        color: white !important; 
+        border: none;
+        transition: 0.3s;
+    }
+    .btn-sm-primary:hover { background-color: #0b6169; }
+
+    .btn-sm-outline { 
+        border: 2px solid var(--sm-primary); 
+        color: var(--sm-primary) !important; 
+        background: transparent;
+        font-weight: bold;
+    }
+    .btn-sm-outline:hover { background: var(--sm-primary); color: white !important; }
+
+    /* Buscador */
+    .search-box { max-width: 700px; margin: 0 auto 20px auto; }
+    .search-box label { color: var(--sm-text-main); font-weight: bold; }
+    .search-box input { 
+        border: 2px solid var(--sm-primary); 
+        border-radius: 10px; 
+        padding: 12px;
+    }
+
+    /* Tablas Responsivas */
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        padding: 10px;
+        overflow-x: auto; /* Evita que se salga en móvil */
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { 
+        background-color: var(--sm-primary) !important; 
+        color: white !important; 
+        padding: 12px; 
+    }
+    td { padding: 12px; border-bottom: 1px solid #eee; color: var(--sm-text-main); }
+
+    .btn-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+        gap: 15px; 
+    }
+</style>
+
+<div class="container">
+    <h1>📋 Historias Clínicas</h1>
+
+    <div class="card-custom">
+        <div class="card-title-custom"></div>
         <div class="btn-grid">
-            <a href="{{ url_for('pacientes.nuevo_ingreso') }}" class="btn btn-primary">
+            <a href="{{ url_for('pacientes.nuevo_ingreso') }}" class="btn btn-sm-primary py-2">
                 🆕 Nuevo Ingreso
             </a>
-            <a href="{{ url_for('pacientes.carga_masiva') }}" class="btn btn-outline">
+            <a href="{{ url_for('pacientes.carga_masiva') }}" class="btn btn-sm-outline py-2">
                 📥 Carga Masiva
             </a>
         </div>
     </div>
 
-    <!-- BUSCADOR -->
-    <h2>Buscar</h2>
     <div class="search-box">
-      <label for="pacienteBusqueda">Paciente</label>
-      <input type="text" id="pacienteBusqueda"
-             placeholder="ID - Nombre (Número)" list="listaPacientes">
-      <datalist id="listaPacientes">
-        {% for p in pacientes %}
-        <option value="{{ p.id }} - {{ p.nombre }} ({{ p.numero }})">
-        {% endfor %}
-      </datalist>
+        <label for="pacienteBusqueda">🔍 Buscar por Nombre o ID:</label>
+        <input type="text" id="pacienteBusqueda" class="form-control" 
+               placeholder="Escriba aquí para buscar..." list="listaPacientes">
+        <datalist id="listaPacientes">
+            {% for p in pacientes %}
+            <option value="{{ p.id }} - {{ p.nombre }} ({{ p.numero }})">
+            {% endfor %}
+        </datalist>
     </div>
 
-    <!-- TABLA DE HISTORIAS (VACÍA HASTA BUSCAR) -->
-    <h2 class="mt-5">Historias Clínicas</h2>
-    <table class="table table-striped" id="tablaHistorias">
-      <thead>
-        <tr>
-          <th>ID Historia</th>
-          <th>Nombre Paciente</th>
-          <th>Número Paciente</th>
-          <th>Fecha Registro</th>
-          <th>Régimen</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- filas por JS -->
-      </tbody>
-    </table>
+    <div class="table-container shadow-sm mt-4">
+        <table class="table table-hover" id="tablaHistorias">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Paciente</th>
+                    <th>Documento</th>
+                    <th>Fecha</th>
+                    <th>Régimen</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="6" class="text-center text-muted">Use el buscador para ver las historias</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-    <div class="center-footer">
-        <a href="{{ url_for('menu.inicio') }}" class="btn btn-success" style="padding: 12px 24px;">
+    <div class="text-center mt-5">
+        <a href="{{ url_for('menu.inicio') }}" class="btn btn-sm-outline px-4">
             ← Volver al Menú Principal
         </a>
     </div>
+</div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const input = document.getElementById('pacienteBusqueda');
-      const tbody = document.querySelector('#tablaHistorias tbody');
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('pacienteBusqueda');
+    const tbody = document.querySelector('#tablaHistorias tbody');
 
-      const urlPdfBase = "/pacientes/historias/libro/__ID__/pdf";
-      const urlOrdenBase = "/pacientes/historias/__ID__/orden_medica";
+    const urlPdfBase = "/pacientes/historias/libro/__ID__/pdf";
+    const urlOrdenBase = "/pacientes/historias/__ID__/orden_medica";
 
-
-      function getPacienteId(valor) {
+    function getPacienteId(valor) {
         const partes = (valor || '').split('-');
         const id = parseInt(partes[0]);
         return isNaN(id) ? null : id;
-      }
+    }
 
-      tbody.innerHTML = '';
-
-      input.addEventListener('change', function () {
+    input.addEventListener('change', function () {
         const pacienteId = getPacienteId(input.value);
         if (!pacienteId) {
-          tbody.innerHTML = '';
-          return;
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Seleccione un paciente válido.</td></tr>';
+            return;
         }
 
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando...</td></tr>';
+
         fetch("{{ url_for('pacientes.historias_por_paciente') }}?paciente_id=" + pacienteId)
-          .then(resp => resp.json())
-          .then(data => {
-            tbody.innerHTML = '';
-            if (!data.length) {
-              tbody.innerHTML = '<tr><td colspan="6">Este paciente no tiene historias clínicas.</td></tr>';
-              return;
-            }
+            .then(resp => resp.json())
+            .then(data => {
+                tbody.innerHTML = '';
+                if (!data.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Este paciente no tiene historias clínicas.</td></tr>';
+                    return;
+                }
 
-            data.forEach(h => {
-              const tr = document.createElement('tr');
-              const urlVerHistoria = `/pacientes/historias/libro/${h.id}/ver`;
-              const urlPdf = urlPdfBase.replace('__ID__', h.id);
-              const urlOrden = urlOrdenBase.replace('__ID__', h.id);
+                data.forEach(h => {
+                    const tr = document.createElement('tr');
+                    const urlVerHistoria = `/pacientes/historias/libro/${h.id}/ver`;
+                    const urlPdf = urlPdfBase.replace('__ID__', h.id);
+                    const urlOrden = urlOrdenBase.replace('__ID__', h.id);
 
-              tr.innerHTML = `
-                <td>${h.id}</td>
-                <td>${h.nombre}</td>
-                <td>${h.numero}</td>
-                <td>${h.fecha_registro}</td>
-                <td>${h.regimen}</td>
-                <td>
-                  <a class="btn btn-sm btn-info" href="${urlVerHistoria}">👁️ Ver Historia</a>
-                  <a class="btn btn-sm btn-primary" href="${urlPdf}" target="_blank">📄 Ver PDF</a>
-                  <a class="btn btn-sm btn-success" href="${urlOrden}">➕ Añadir Orden Médica</a>
-                </td>`;
-              tbody.appendChild(tr);
+                    tr.innerHTML = `
+                        <td><strong>${h.id}</strong></td>
+                        <td>${h.nombre}</td>
+                        <td>${h.numero}</td>
+                        <td>${h.fecha_registro}</td>
+                        <td><span class="badge bg-light text-dark border">${h.regimen}</span></td>
+                        <td>
+                            <div class="btn-group">
+                                <a class="btn btn-sm btn-outline-info" href="${urlVerHistoria}">👁️Ver HC</a>
+                                <a class="btn btn-sm btn-primary" href="${urlPdf}" target="_blank">📄Generar PDF</a>
+                                <a class="btn btn-sm btn-success" href="${urlOrden}">➕ Añadir Orden</a>
+                            </div>
+                        </td>`;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar datos.</td></tr>';
             });
-          })
-          .catch(err => {
-            console.error(err);
-            tbody.innerHTML = '<tr><td colspan="6">Error al cargar historias.</td></tr>';
-          });
-      });
     });
-    </script>
-</body>
-</html>
+});
+</script>
+{% endblock %}

@@ -150,7 +150,7 @@ class OrdenMedica(db.Model):
     indicaciones_medicas = db.Column(db.Text, nullable=True)
     medicacion_texto = db.Column(db.Text, nullable=True)
     medicamentos_json = db.Column(db.Text, nullable=True)  # lista de {codigo, dosis, frecuencia, via, horario}
-
+    fecha_registro = db.Column(db.DateTime, default=datetime.now)
     historia = db.relationship('HistoriaClinica', back_populates='ordenes_medicas')
     examenes_lab = db.relationship(
         'OrdenLaboratorioItem',

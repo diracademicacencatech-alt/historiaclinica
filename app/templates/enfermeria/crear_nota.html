@@ -1,55 +1,183 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Crear Nota de Enfermería</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-</head>
-<body>
-<div class="container mt-4">
-  <h2>Crear Nota de Enfermería</h2>
+{% extends "base.html" %}
 
-  <div class="mb-3">
-    <strong>Paciente:</strong> {{ paciente.nombre }} (ID: {{ paciente.id }})
-  </div>
+{% block title %}Crear Nota de Enfermería - Software SM{% endblock %}
 
-  <form method="POST" action="{{ url_for('enfermeria.crear_nota', paciente_id=paciente.id) }}">
-    <div class="mb-3">
-      <label for="historia_clinica_id" class="form-label">Historia Clínica (opcional)</label>
-      <select id="historia_clinica_id" name="historia_clinica_id" class="form-select">
-        <option value="">-- Seleccione una historia clínica --</option>
-        {% for historia in historias %}
-        <option value="{{ historia.id }}">
-          {{ historia.tipo_historia }} - {{ historia.numero_ingreso }}
-          ({{ historia.fecha_registro.strftime('%Y-%m-%d') if historia.fecha_registro else '' }})
-        </option>
-        {% endfor %}
-      </select>
+{% block head %}
+<style>
+    :root {
+      --titles: #236e7b;
+      --text-links: #0b6169;
+      --text-secondary: #5f5f5f;
+    }
+
+    .titulo-principal { 
+      color: var(--titles); 
+      text-align: center; 
+      margin-bottom: 30px; 
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .titulo-seccion {
+      color: var(--titles);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* BLOQUE DE INFORMACIÓN DEL PACIENTE */
+    .section-white-box {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      border-left: 6px solid var(--titles);
+    }
+
+    /* ESTILO PARA EL FORMULARIO */
+    .form-label {
+        font-weight: 700;
+        color: var(--titles);
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 1px solid #ced4da;
+        padding: 12px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--titles);
+        box-shadow: 0 0 0 0.25rem rgba(35, 110, 123, 0.15);
+    }
+
+    /* BOTÓN VERDE PRINCIPAL */
+    .btn-sm-verde {
+        background-color: var(--titles) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 15px 30px;
+        border-radius: 10px;
+        transition: all 0.2s;
+        width: 100%;
+        letter-spacing: 1px;
+    }
+
+    .btn-sm-verde:hover {
+        background-color: var(--text-links) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    /* NAVEGACIÓN INFERIOR */
+    .nav-links {
+      margin-top: 40px;
+      padding-top: 25px;
+      border-top: 1px dashed rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    .btn-nav {
+      color: var(--text-links);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px 15px;
+      text-transform: uppercase;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    
+    <h2 class="titulo-principal">📝 Nota de Enfermería</h2>
+
+    <h5 class="titulo-seccion">📋 Datos del Paciente</h5>
+    <div class="section-white-box">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <p class="mb-1"><strong>Paciente:</strong> {{ paciente.nombre }}</p>
+                <p class="mb-0"><strong>Identificación:</strong> {{ paciente.id }}</p>
+            </div>
+            <div class="col-md-4 text-md-end text-start mt-3 mt-md-0">
+                <span class="badge bg-light text-dark border p-2">REGISTRO NUEVO</span>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-      <label for="tipo_nota" class="form-label">Tipo de nota</label>
-      <select id="tipo_nota" name="tipo_nota" class="form-select" required>
-        <option value="">-- Seleccione tipo de nota --</option>
-        <option value="ingreso">Ingreso</option>
-        <option value="egreso">Egreso</option>
-        <option value="intermedia">Intermedia</option>
-        <option value="recibo">Recibo</option>
-        <option value="entrega">Entrega</option>
-      </select>
+    <h5 class="titulo-seccion">🖋️ Redactar Evolución</h5>
+    <div class="section-white-box" style="border-left-color: #0b6169;">
+        <form method="POST" action="{{ url_for('enfermeria.crear_nota', paciente_id=paciente.id) }}">
+            
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label for="historia_clinica_id" class="form-label">Relacionar con Historia Clínica (Opcional)</label>
+                    <select id="historia_clinica_id" name="historia_clinica_id" class="form-select shadow-sm">
+                        <option value="">-- Seleccione una historia clínica --</option>
+                        {% for historia in historias %}
+                        <option value="{{ historia.id }}">
+                            {{ historia.tipo_historia }} - Ingreso: {{ historia.numero_ingreso }} 
+                            ({{ historia.fecha_registro.strftime('%d/%m/%Y') if historia.fecha_registro else '' }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="tipo_nota" class="form-label">Tipo de nota *</label>
+                    <select id="tipo_nota" name="tipo_nota" class="form-select shadow-sm" required>
+                        <option value="">-- Seleccione tipo de nota --</option>
+                        <option value="ingreso">Nota de Ingreso</option>
+                        <option value="egreso">Nota de Egreso</option>
+                        <option value="intermedia">Nota Intermedia / Evolución</option>
+                        <option value="recibo">Recibo de Turno</option>
+                        <option value="entrega">Entrega de Turno</option>
+                    </select>
+                </div>
+
+                <div class="col-12 mb-4">
+                    <label for="nota" class="form-label">Contenido de la nota / Descripción Clínica *</label>
+                    <textarea id="nota" name="nota" class="form-control shadow-sm" rows="10" 
+                              placeholder="Escriba aquí de forma detallada la nota de enfermería..." required></textarea>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8 mb-2">
+                    <button type="submit" class="btn-sm-verde shadow">
+                        💾 GUARDAR NOTA DE ENFERMERÍA
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" 
+                       class="btn btn-outline-secondary w-100 p-3 fw-bold" style="border-radius: 10px; text-transform: uppercase;">
+                        Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
 
-    <div class="mb-3">
-      <label for="nota" class="form-label">Contenido de la nota</label>
-      <textarea id="nota" name="nota" class="form-control" rows="6"
-                placeholder="Escriba aquí la nota de enfermería..."></textarea>
+    <div class="nav-links">
+        <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" class="btn-nav">
+            Buscar otro paciente
+        </a>
+        <span class="separator">|</span>
+        <a href="{{ url_for('menu.inicio') }}" class="btn-nav">
+            Volver al Menú Principal
+        </a>
     </div>
 
-    <button type="submit" class="btn btn-primary">Guardar nota</button>
-    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}"
-       class="btn btn-secondary">Volver</a>
-  </form>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}
