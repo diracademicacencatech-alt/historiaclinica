@@ -1451,3 +1451,174 @@ def reset_insumos_paciente(paciente_id):
     db.session.commit()
     flash(f'🧹 {eliminados} solicitudes de insumos eliminadas (HARD RESET)', 'warning')
     return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
+
+# ---------- RUTAS DE EDICIÓN COMPLETAS ----------
+@enfermeria_bp.route('/registro/<int:registro_id>/editar_signos', methods=['GET', 'POST'])
+@login_required
+def editar_signos(registro_id):
+    registro = RegistroEnfermeria.query.get_or_404(registro_id)
+    
+    # 1. Unificar fechas para evitar el error de "offset-naive vs offset-aware"
+    ahora = ahora_bogota()
+    # Si la fecha de la base de datos no tiene zona horaria, le asignamos la de Bogotá para comparar
+    fecha_reg = registro.fecha_registro
+    if fecha_reg.tzinfo is None:
+        fecha_reg = fecha_reg.replace(tzinfo=ahora.tzinfo)
+    
+    # 2. Definir la variable ANTES de usarla
+    diff_horas = (ahora - fecha_reg).total_seconds() / 3600
+    
+    # 3. Validación de las 2 horas
+    if abs(diff_horas) > 2:
+        flash(f'El tiempo límite de edición ha expirado ({round(abs(diff_horas), 1)}h transcurridas).', 'danger')
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+
+    if request.method == 'POST':
+        signos_data = {
+            "ta": request.form.get('ta'),
+            "fc": request.form.get('fc'),
+            "fr": request.form.get('fr'),
+            "temp": request.form.get('temp'),
+            "so2": request.form.get('so2')
+        }
+        registro.signos_vitales = json.dumps(signos_data)
+        registro.control_glicemia = request.form.get('control_glicemia')
+        registro.observaciones = request.form.get('observaciones')
+        
+        db.session.commit()
+        flash('✅ Signos vitales actualizados.', 'success')
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+    
+    sv = json.loads(registro.signos_vitales or '{}')
+    return render_template('enfermeria/editar_signos.html', registro=registro, sv=sv)
+@enfermeria_bp.route('/registro/<int:registro_id>/editar_balance', methods=['GET', 'POST'])
+@login_required
+def editar_balance(registro_id):
+    registro = RegistroEnfermeria.query.get_or_404(registro_id)
+    
+    # Manejo de zonas horarias para evitar el TypeError
+    ahora = ahora_bogota()
+    fecha_reg = registro.fecha_registro
+    if fecha_reg.tzinfo is None:
+        fecha_reg = fecha_reg.replace(tzinfo=ahora.tzinfo)
+    
+    # Cálculo de diferencia
+    diff_horas = (ahora - fecha_reg).total_seconds() / 3600
+    
+    if abs(diff_horas) > 2:
+        flash('El tiempo límite de 2 horas para editar el balance ha expirado.', 'danger')
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+
+    if request.method == 'POST':
+        # Recolectamos los datos del formulario (deben coincidir con los "name" del HTML)
+        balance_data = {
+            "administrados": {
+                "liquido": request.form.get('liquido_admin'),
+                "cantidad": request.form.get('cantidad_admin'),
+                "via": request.form.get('via_admin')
+            },
+            "eliminados": {
+                "tipo_liquido": request.form.get('tipo_liquido'),
+                "cantidad": request.form.get('cantidad_elim'),
+                "via_eliminacion": request.form.get('via_eliminacion')
+            }
+        }
+        registro.balance_liquidos = json.dumps(balance_data)
+        db.session.commit()
+        flash('✅ Balance de líquidos actualizado con éxito.', 'success')
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+    
+    # Preparar datos para el formulario
+    bl = json.loads(registro.balance_liquidos or '{"administrados":{}, "eliminados":{}}')
+    return render_template('enfermeria/editar_balance.html', registro=registro, bl=bl)
+
+@enfermeria_bp.route('/registro/<int:registro_id>/editar_nota', methods=['GET', 'POST'])
+@login_required
+def editar_nota(registro_id):
+    registro = RegistroEnfermeria.query.get_or_404(registro_id)
+    
+    # 1. Manejo de zonas horarias para evitar el TypeError
+    ahora = ahora_bogota()
+    fecha_reg = registro.fecha_registro
+    if fecha_reg.tzinfo is None:
+        fecha_reg = fecha_reg.replace(tzinfo=ahora.tzinfo)
+    
+    # 2. Cálculo de diferencia de tiempo
+    diff_horas = (ahora - fecha_reg).total_seconds() / 3600
+    
+    # 3. Validación de las 2 horas
+    if abs(diff_horas) > 2:
+        flash(f'No es posible editar la nota. Han pasado {round(abs(diff_horas), 1)} horas.', 'danger')
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+
+    if request.method == 'POST':
+        # Actualizamos los campos de la nota
+        registro.tipo_nota = request.form.get('tipo_nota')
+        registro.texto_nota = request.form.get('texto_nota')
+        
+        db.session.commit()
+        flash('✅ Nota de enfermería actualizada con éxito.', 'success')
+        # Redirigir al detalle del paciente
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+    
+    return render_template('enfermeria/editar_nota.html', registro=registro)
+
+@enfermeria_bp.route('/medicamento/<int:admin_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_administracion_med(admin_id):
+    # Buscamos el registro de administración específico
+    admin = AdministracionMedicamento.query.get_or_404(admin_id)
+    registro = RegistroEnfermeria.query.get(admin.registro_enfermeria_id)
+    
+    # Validación de tiempo (2 horas)
+    ahora = ahora_bogota()
+    fecha_admin = admin.hora_administracion
+    if fecha_admin.tzinfo is None:
+        fecha_admin = fecha_admin.replace(tzinfo=ahora.tzinfo)
+    
+    diff_horas = (ahora - fecha_admin).total_seconds() / 3600
+    if abs(diff_horas) > 2:
+        flash('No se puede editar la administración de medicamento después de 2 horas.', 'danger')
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+
+    if request.method == 'POST':
+        try:
+            admin.cantidad = Decimal(request.form.get('cantidad'))
+            admin.unidad = request.form.get('unidad')
+            admin.via = request.form.get('via')
+            admin.observaciones = request.form.get('observaciones')
+            
+            # Actualizar hora si se proporcionó una nueva
+            nueva_hora = request.form.get('hora_administracion')
+            if nueva_hora:
+                admin.hora_administracion = datetime.strptime(nueva_hora, '%Y-%m-%dT%H:%M')
+            
+            db.session.commit()
+            flash('✅ Administración de medicamento actualizada.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al actualizar: {str(e)}', 'danger')
+            
+        return redirect(url_for('enfermeria.detalle', paciente_id=registro.paciente_id))
+
+    return render_template('enfermeria/editar_medicamento.html', admin=admin, registro=registro)
+
+@enfermeria_bp.route('/insumo/<int:insumo_paciente_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_insumo_paciente(insumo_paciente_id):
+    insumo_p = InsumoPaciente.query.get_or_404(insumo_paciente_id)
+    
+    if request.method == 'POST':
+        try:
+            insumo_p.cantidad = float(request.form.get('cantidad'))
+            insumo_p.observaciones = request.form.get('observaciones')
+            
+            db.session.commit()
+            flash('✅ Registro de insumo actualizado.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error: {str(e)}', 'danger')
+            
+        return redirect(url_for('enfermeria.detalle', paciente_id=insumo_p.paciente_id))
+
+    return render_template('enfermeria/editar_insumo.html', insumo_p=insumo_p)

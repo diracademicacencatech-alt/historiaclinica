@@ -12,6 +12,7 @@ from app.menu import menu_bp
 from app.utils.fechas import ahora_bogota
 from app.inventario.routes import inventario_bp
 from app.param.routes import param_bp
+from datetime import datetime
 
 migrate = Migrate()
 
@@ -43,7 +44,10 @@ def create_app():
     @app.route('/')
     def index():
         return redirect(url_for('menu.inicio'))
-
+    @app.context_processor
+    def inject_now():
+        from datetime import datetime
+        return {'now': datetime.now()}
     return app
 
 

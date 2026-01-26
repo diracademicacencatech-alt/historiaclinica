@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="card border-0 shadow-sm" style="background-color: #f0e7d8;">
+        <div class="card-header bg-transparent border-0 pt-4">
+            <h4 style="color: #236e7b; font-weight: 800;" class="text-center">EDITAR BALANCE DE LÍQUIDOS</h4>
+        </div>
+        <form method="POST" class="card-body">
+            <div class="row">
+                <div class="col-md-6 border-end">
+                    <h6 class="fw-bold text-primary mb-3">LÍQUIDOS ADMINISTRADOS</h6>
+                    <label class="small fw-bold">Líquido/Solución</label>
+                    <input type="text" name="liquido_admin" class="form-control mb-2" value="{{ bl.administrados.liquido or '' }}">
+                    <label class="small fw-bold">Cantidad (ml)</label>
+                    <input type="number" name="cantidad_admin" class="form-control mb-2" value="{{ bl.administrados.cantidad or '' }}">
+                    <label class="small fw-bold">Vía</label>
+                    <input type="text" name="via_admin" class="form-control" value="{{ bl.administrados.via or '' }}">
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-danger mb-3">LÍQUIDOS ELIMINADOS</h6>
+                    <label class="small fw-bold">Tipo de Eliminación</label>
+                    <input type="text" name="tipo_liquido" class="form-control mb-2" value="{{ bl.eliminados.tipo_liquido or '' }}">
+                    <label class="small fw-bold">Cantidad (ml)</label>
+                    <input type="number" name="cantidad_elim" class="form-control mb-2" value="{{ bl.eliminados.cantidad or '' }}">
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-success fw-bold px-5">ACTUALIZAR BALANCE</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

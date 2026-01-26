@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4" style="max-width: 700px;">
+    <div class="card border-0 shadow-sm" style="background-color: #f0e7d8;">
+        <div class="card-header bg-transparent border-0 pt-4">
+            <h4 style="color: #236e7b; font-weight: 800;">EDITAR NOTA DE ENFERMERÍA</h4>
+        </div>
+        <form method="POST" class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Tipo de Nota</label>
+                <select name="tipo_nota" class="form-select">
+                    <option value="EVOLUCION" {% if registro.tipo_nota == 'EVOLUCION' %}selected{% endif %}>EVOLUCIÓN</option>
+                    <option value="INGRESO" {% if registro.tipo_nota == 'INGRESO' %}selected{% endif %}>INGRESO</option>
+                    <option value="EGRESO" {% if registro.tipo_nota == 'EGRESO' %}selected{% endif %}>EGRESO</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Contenido de la Nota</label>
+                <textarea name="texto_nota" class="form-control" rows="8">{{ registro.texto_nota }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-success w-100 fw-bold">GUARDAR CAMBIOS EN LA NOTA</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
