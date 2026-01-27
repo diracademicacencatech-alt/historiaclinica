@@ -160,13 +160,13 @@
             <div><label>Unidad</label><input type="text" name="medicamentos[0][unidad_inventario]"></div>
             <div>
                 <label>Vía</label>
-                <select name="medicamentos[0][via_administracion]">
-                    <option value="">Vía</option>
-                    <option value="VO">VO</option>
-                    <option value="IV">IV</option>
-                    <option value="IM">IM</option>
-                    <option value="SC">SC</option>
-                </select>
+                <select name="medicamentos[0][via_administracion]" required>
+    <option value="" disabled selected>Seleccione Vía</option>
+    <option value="VO">VO</option>
+    <option value="IV">IV</option>
+    <option value="IM">IM</option>
+    <option value="SC">SC</option>
+</select>
             </div>
             <div>
                 <button type="button" class="btn-remove-med" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold; font-size:24px;">&times;</button>

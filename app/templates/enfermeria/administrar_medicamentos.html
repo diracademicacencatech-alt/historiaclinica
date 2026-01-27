@@ -31,7 +31,6 @@
       gap: 10px;
     }
 
-    /* BLOQUE DE INFORMACIÓN (Cuadros Blancos Estilo SM) */
     .section-white-box {
       background: #ffffff;
       padding: 25px;
@@ -41,7 +40,6 @@
       border-left: 6px solid var(--titles);
     }
 
-    /* TABLAS CLÍNICAS */
     .table-sm-custom {
         background: white;
         border-radius: 15px;
@@ -57,7 +55,6 @@
         font-size: 0.8rem;
     }
 
-    /* BOTONES VERDES PRINCIPALES */
     .btn-sm-verde {
         background-color: var(--titles) !important;
         color: white !important;
@@ -77,7 +74,6 @@
         transform: translateY(-2px);
     }
 
-    /* NAVEGACIÓN INFERIOR */
     .nav-links {
       margin-top: 40px;
       padding-top: 25px;
@@ -94,7 +90,6 @@
       text-transform: uppercase;
     }
 
-    /* MODALES */
     .modal-content { border-radius: 15px; border: none; }
     .modal-header { background-color: var(--titles); color: white; }
 </style>
@@ -114,7 +109,7 @@
             </div>
             <div class="col-md-4 ps-md-4 text-end">
                 <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" 
-                   class="btn-nav" style="border: 1px solid var(--titles); border-radius: 8px;">
+                    class="btn-nav" style="border: 1px solid var(--titles); border-radius: 8px;">
                     ← Volver a registros
                 </a>
             </div>
@@ -140,7 +135,7 @@
                     <th class="ps-3">Medicamento</th>
                     <th>Dosis</th>
                     <th>Frecuencia</th>
-                    <th>Vía</th>
+                    <th>Vía Orden</th>
                     <th class="text-center">Formulada</th>
                     <th class="text-center">Admin.</th>
                     <th class="text-center">Pendiente</th>
@@ -153,7 +148,7 @@
                         <td class="ps-3"><strong>{{ med.nombre }}</strong><br><small class="text-muted">{{ med.codigo }}</small></td>
                         <td>{{ med.dosis }} {{ med.unidad }}</td>
                         <td>{{ med.frecuencia }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ med.via }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ med.via_administracion or med.via }}</span></td>
                         <td class="text-center">{{ med.cantidad_formulada }}</td>
                         <td class="text-center text-success fw-bold">{{ med.cantidad_administrada }}</td>
                         <td class="text-center fw-bold {{ 'text-danger' if med.pendiente > 0 else 'text-muted' }}">
@@ -168,7 +163,7 @@
         </table>
     </div>
 
-    <h5 class="titulo-seccion">➕ Registrar Administración</h5>
+    <h5 class="titulo-seccion">➕ Registrar Aplicación</h5>
     <div class="section-white-box" style="border-left-color: #28a745;">
         {% if medicamentos_formulados %}
         <form method="POST" class="row g-3" id="formAdministracion">
@@ -177,8 +172,10 @@
                 <select name="codigo_medicamento" id="selectMedicamento" class="form-select shadow-sm" required onchange="autoLlenarMedicamento()">
                     <option value="">-- Seleccione del listado --</option>
                     {% for med in medicamentos_formulados %}
-                    <option value="{{ med.codigo }}" data-via="{{ med.via }}" data-unidad="{{ med.unidad }}">
-                        {{ med.nombre }} ({{ med.codigo }})
+                    <option value="{{ med.codigo }}" 
+                            data-via="{{ med.via_administracion or med.via }}" 
+                            data-unidad="{{ med.unidad }}">
+                        {{ med.nombre }} ({{ med.via_administracion or med.via }})
                     </option>
                     {% endfor %}
                 </select>
@@ -188,13 +185,15 @@
                 <input type="number" name="cantidad" step="0.1" min="0.1" class="form-control shadow-sm" required>
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-bold">Vía *</label>
+                <label class="form-label fw-bold">Vía de Aplicación *</label>
                 <select name="via" id="selectVia" class="form-select shadow-sm" required>
                     <option value="VO">VO - Vía Oral</option>
                     <option value="IV">IV - Intravenosa</option>
                     <option value="IM">IM - Intramuscular</option>
                     <option value="SC">SC - Subcutánea</option>
                     <option value="SL">SL - Sublingual</option>
+                    <option value="ID">ID - Intradérmica</option>
+                    <option value="OTRA">OTRA</option>
                 </select>
             </div>
             <div class="col-md-6">
@@ -216,28 +215,31 @@
         {% endif %}
     </div>
 
-    <h5 class="titulo-seccion">🕒 Historial de Aplicaciones</h5>
+    <h5 class="titulo-seccion">🕒 Historial de Aplicaciones (Turno)</h5>
     <div class="table-responsive table-sm-custom mb-5">
         <table class="table table-hover align-middle mb-0">
             <thead>
                 <tr>
-                    <th class="ps-3" style="width:25%">Medicamento</th>
-                    <th style="width:10%">Cant.</th>
-                    <th style="width:10%">Vía</th>
-                    <th style="width:20%">Fecha/Hora</th>
-                    <th style="width:20%">Observaciones</th>
-                    <th class="text-center" style="width:15%">Acciones</th>
+                    <th class="ps-3">Medicamento</th>
+                    <th>Cant.</th>
+                    <th>Vía</th>
+                    <th>Fecha/Hora</th>
+                    <th>Observaciones</th>
+                    <th class="text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
+                {# Ordenamos el historial por hora de administración #}
                 {% if administraciones %}
-                    {% for admin in administraciones %}
+                    {% for admin in administraciones|sort(attribute='hora_administracion', reverse=True) %}
                     <tr>
-                        <td class="ps-3"><strong>{{ admin.medicamento.nombre if admin.medicamento else 'N/A' }}</strong></td>
-                        <td>{{ admin.cantidad }} {{ admin.unidad }}</td>
-                        <td>{{ admin.via }}</td>
-                        <td class="secondary-text">{{ admin.hora_administracion.strftime('%d/%m/%Y %H:%M') if admin.hora_administracion else 'N/A' }}</td>
-                        <td class="small">{{ admin.observaciones or '---' }}</td>
+                        <td class="ps-3">
+                            <strong>{{ admin.medicamento.nombre if admin.medicamento else 'N/A' }}</strong>
+                        </td>
+                        <td>{{ admin.cantidad }} {{ admin.unidad or '' }}</td>
+                        <td><span class="badge bg-info text-dark">{{ admin.via }}</span></td>
+                        <td>{{ admin.hora_administracion.strftime('%H:%M') }} <small class="text-muted">{{ admin.hora_administracion.strftime('%d/%m') }}</small></td>
+                        <td class="small text-muted">{{ admin.observaciones or '---' }}</td>
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-1">
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ admin.id }}">✏️</button>
@@ -249,7 +251,7 @@
                     </tr>
                     {% endfor %}
                 {% else %}
-                    <tr><td colspan="6" class="text-center py-4">Sin aplicaciones registradas aún.</td></tr>
+                    <tr><td colspan="6" class="text-center py-4">Sin aplicaciones registradas aún en este turno.</td></tr>
                 {% endif %}
             </tbody>
         </table>
@@ -262,6 +264,7 @@
     </div>
 </div>
 
+{# MODALES DE EDICIÓN #}
 {% for admin in administraciones %}
 <div class="modal fade" id="modalEditar{{ admin.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -282,7 +285,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
-                <button type="submit" class="btn btn-verde-custom" style="background-color: var(--titles); color: white; border: none; padding: 8px 20px; border-radius: 8px;">Guardar Cambios</button>
+                <button type="submit" class="btn-sm-verde" style="width: auto;">Guardar Cambios</button>
             </div>
         </form>
     </div>
@@ -293,8 +296,30 @@
 function autoLlenarMedicamento() {
     const sel = document.getElementById('selectMedicamento');
     const opt = sel.options[sel.selectedIndex];
+    const selectVia = document.getElementById('selectVia');
+    
     if (opt && opt.value !== "") {
-        document.getElementById('selectVia').value = opt.dataset.via || 'VO';
+        // Obtenemos la vía que viene de la orden (ej: "INTRAVENOSA" o "ORAL")
+        const viaOrden = opt.dataset.via ? opt.dataset.via.trim().toUpperCase() : "";
+        
+        if (viaOrden) {
+            // Mapeo inteligente para reconocer términos comunes
+            for (let i = 0; i < selectVia.options.length; i++) {
+                const valorOpcion = selectVia.options[i].value.toUpperCase(); // Ej: "IV", "VO"
+                const textoOpcion = selectVia.options[i].text.toUpperCase();  // Ej: "INTRAVENOSA", "VÍA ORAL"
+
+                // Si la vía de la orden coincide con el código (IV) o con el texto (INTRAVENOSA)
+                if (viaOrden === valorOpcion || 
+                    textoOpcion.includes(viaOrden) || 
+                    viaOrden.includes(valorOpcion) ||
+                    (viaOrden === "INTRAVENOSA" && valorOpcion === "IV") ||
+                    (viaOrden === "ORAL" && valorOpcion === "VO")) {
+                    
+                    selectVia.selectedIndex = i;
+                    return;
+                }
+            }
+        }
     }
 }
 </script>

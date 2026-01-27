@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Registro de Enfermería - Software SM{% endblock %}
+{% block title %}Registro Enfermería - Software SM{% endblock %}
 
 {% block head %}
 <style>
     :root {
       --sm-bg-principal: #ffffff;
-      --sm-card-bg: #f0e7d8;
+      --sm-card-bg: #f0e7d8; 
       --sm-titles-btns: #236e7b; 
       --sm-text-links: #0b6169;
       --sm-secondary-text: #5f5f5f;
@@ -14,91 +14,122 @@
     body { 
         background-color: var(--sm-bg-principal) !important; 
         color: var(--sm-text-links); 
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        font-size: 0.82rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .container-custom { max-width: 1000px; margin: auto; }
-
-    .banner-turno {
-        background-color: var(--sm-titles-btns);
-        color: white;
-        padding: 10px 15px;
-        border-radius: 4px;
+    .header-container-sm {
+        background: #ffffff;
+        border-top: 5px solid var(--sm-titles-btns);
+        border-bottom: 1px solid #e0e0e0;
+        padding: 15px 0;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .header-flex {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
-        border-bottom: 3px solid #0b6169;
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+    .brand-section { border-left: 3px solid var(--sm-titles-btns); padding-left: 15px; }
+    .brand-title { font-size: 1.4rem; font-weight: 900; color: var(--sm-titles-btns); margin: 0; line-height: 1; }
+    
+    .info-section-sm { text-align: right; }
+    .info-pill { 
+        background: var(--sm-card-bg); 
+        color: var(--sm-titles-btns); 
+        padding: 4px 12px; 
+        border-radius: 20px; 
+        font-weight: 800; 
+        font-size: 0.8rem; 
+        display: inline-block;
     }
 
-    .panel-sm { background: white; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 15px; }
-    .panel-header { 
-        background: #f1f3f5; padding: 6px 12px; font-weight: 700; color: var(--sm-titles-btns); 
-        border-bottom: 1px solid #dee2e6; text-transform: uppercase; font-size: 0.7rem;
-        display: flex; justify-content: space-between; align-items: center;
-    }
-    .panel-body { padding: 10px; }
-    .bg-paciente { background-color: var(--sm-card-bg) !important; }
-
-    .form-label { font-weight: 700; color: var(--sm-secondary-text); font-size: 0.65rem; margin-bottom: 2px; display: block; }
-    .form-control-sm { border: 1px solid #ced4da; border-radius: 3px; padding: 4px 8px; font-size: 0.8rem; width: 100%; }
-
-    .btn-institucional {
-        background-color: var(--sm-titles-btns); color: white; font-weight: 700; border: none;
-        padding: 5px 12px; border-radius: 3px; font-size: 0.7rem; cursor: pointer; text-transform: uppercase;
+    .btn-back-sm {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        color: var(--sm-text-links);
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin: 10px 0 20px 0;
+        text-transform: uppercase;
     }
 
-    .table-sm { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: white; margin-bottom: 20px; }
-    .table-sm th { 
-        background: #ffffff; color: var(--sm-titles-btns); padding: 8px; 
-        border-bottom: 2px solid var(--sm-titles-btns); text-align: center;
-    }
-    .table-sm td { padding: 7px; border-bottom: 1px solid #f0f0f0; text-align: center; color: #333; }
-
-    .historial-titulo { 
-        color: var(--sm-titles-btns); font-weight: 800; font-size: 0.9rem;
-        margin: 20px 0 10px 0; border-left: 4px solid var(--sm-titles-btns); padding-left: 10px;
-    }
+    .ficha-paciente { background-color: var(--sm-card-bg); padding: 18px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .label-ficha { font-size: 0.7rem; color: var(--sm-secondary-text); font-weight: bold; text-transform: uppercase; }
+    .dato-ficha { font-size: 1rem; color: #333; font-weight: bold; }
+    .panel-sm { background-color: white; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+    .panel-header { background-color: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #ddd; color: var(--sm-titles-btns); font-weight: bold; text-transform: uppercase; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+    .panel-body { padding: 15px; }
+    
+    .table-registro-pro { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; border: 1px solid #eee; }
+    .table-registro-pro th { background-color: white; color: var(--sm-titles-btns); font-size: 0.75rem; padding: 12px; border-bottom: 2px solid var(--sm-titles-btns); text-transform: uppercase; text-align: center; }
+    .table-registro-pro td { padding: 10px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; font-size: 0.85rem; }
+    
+    .btn-save-sm { background-color: var(--sm-titles-btns); color: white; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; font-size: 0.7rem; cursor: pointer; }
+    .form-control-sm { border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px; width: 100%; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container container-custom py-2">
-
-    <div class="banner-turno">
-        <h6 class="m-0 fw-bold">SOFTWARE SM - TURNO {{ turno_actual }}</h6>
-        <span class="small fw-bold">{{ fecha_hoy }}</span>
+<div class="header-container-sm">
+    <div class="header-flex">
+        <div class="brand-section">
+            <h1 class="brand-title">REGISTROS ENFERMERÍA</h1>
+        </div>
+        <div class="info-section-sm">
+            <div class="mb-1"><span class="info-pill">TURNO: {{ turno_actual }}</span></div>
+        </div>
     </div>
+</div>
 
-    <form method="post">
-        <div class="panel-sm bg-paciente">
-            <div class="panel-body py-2">
-                <label class="form-label">Paciente en Atención</label>
-                <select name="historia_clinica_id" class="form-control-sm fw-bold border-0" style="background: transparent;">
-                    {% for h in historias %}
-                    <option value="{{ h.id }}">HC: {{ h.numero_ingreso }} - {{ h.paciente.nombre }}</option>
-                    {% endfor %}
-                </select>
-                <input type="hidden" name="turno" value="{{ turno_actual }}">
+<div class="container">
+    <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" class="btn-back-sm">← Volver al Menú Principal</a>
+
+    {% set h = historias[0] if historias else None %}
+    <div class="ficha-paciente">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <div class="label-ficha">Paciente</div>
+                <div class="dato-ficha" style="color: var(--sm-titles-btns);">{{ h.paciente.nombre if h else 'S.N.' }}</div>
+            </div>
+            <div class="col-md-2">
+                <div class="label-ficha">ID</div>
+                <div class="dato-ficha">{{ h.paciente.numero if h else '-' }}</div>
+            </div>
+            <div class="col-md-2">
+                <div class="label-ficha">Ingreso</div>
+                <div class="dato-ficha"># {{ h.numero_ingreso if h else '-' }}</div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="label-ficha">Ubicación</div>
+                <div class="dato-ficha">CAMA: {{ h.paciente.cama if h else '-' }}</div>
             </div>
         </div>
+    </div>
 
-        <div class="row gx-2">
+    <form method="POST">
+        <input type="hidden" name="historia_clinica_id" value="{{ h.id if h else '' }}">
+        <input type="hidden" name="turno" value="{{ turno_actual }}">
+
+        <div class="row">
             <div class="col-12">
                 <div class="panel-sm">
                     <div class="panel-header">
-                        <span>Signos Vitales</span>
-                        <button type="submit" name="action" value="save_sv" class="btn-institucional">Guardar Signos</button>
+                        Registro de Signos Vitales
+                        <button type="submit" class="btn-save-sm">GUARDAR SIGNOS</button>
                     </div>
                     <div class="panel-body">
-                        <div class="row gx-2">
-                            <div class="col-md-2 col-4"><label class="form-label">T.A.</label><input type="text" name="ta" class="form-control-sm"></div>
-                            <div class="col-md-2 col-4"><label class="form-label">F.C.</label><input type="text" name="fc" class="form-control-sm"></div>
-                            <div class="col-md-2 col-4"><label class="form-label">F.R.</label><input type="text" name="fr" class="form-control-sm"></div>
-                            <div class="col-md-2 col-4"><label class="form-label">TEMP.</label><input type="text" name="temp" class="form-control-sm"></div>
-                            <div class="col-md-2 col-4"><label class="form-label">SO2</label><input type="text" name="so2" class="form-control-sm"></div>
-                            <div class="col-md-2 col-4"><label class="form-label">GLICEMIA</label><input type="number" step="0.1" name="control_glicemia" class="form-control-sm"></div>
+                        <div class="row g-2">
+                            <div class="col-md-2"><label class="label-ficha">T.A.</label><input type="text" name="ta" class="form-control-sm"></div>
+                            <div class="col-md-2"><label class="label-ficha">F.C.</label><input type="text" name="fc" class="form-control-sm"></div>
+                            <div class="col-md-2"><label class="label-ficha">F.R.</label><input type="text" name="fr" class="form-control-sm"></div>
+                            <div class="col-md-2"><label class="label-ficha">T°</label><input type="text" name="temp" class="form-control-sm"></div>
+                            <div class="col-md-2"><label class="label-ficha">SO2</label><input type="text" name="so2" class="form-control-sm"></div>
+                            <div class="col-md-2"><label class="label-ficha">Glicemia</label><input type="text" name="control_glicemia" class="form-control-sm"></div>
                         </div>
                     </div>
                 </div>
@@ -107,18 +138,16 @@
             <div class="col-md-6">
                 <div class="panel-sm">
                     <div class="panel-header">
-                        <span>Líquidos Administrados</span>
-                        <button type="submit" name="action" value="save_admin" class="btn-institucional">Guardar Ingreso</button>
+                        Administrados
+                        <button type="submit" class="btn-save-sm">GUARDAR INGRESO</button>
                     </div>
                     <div class="panel-body">
-                        <div class="row gx-2 mb-2">
-                            <div class="col-6"><label class="form-label">Hora Inicio</label><input type="time" name="hora_inicial" class="form-control-sm"></div>
-                            <div class="col-6"><label class="form-label">Cant (ml)</label><input type="number" name="cantidad_admin" class="form-control-sm"></div>
+                        <div class="row g-2">
+                            <div class="col-6"><label class="label-ficha">Hora</label><input type="time" name="hora_inicial" class="form-control-sm"></div>
+                            <div class="col-6"><label class="label-ficha">Cant (ml)</label><input type="number" name="cantidad_admin" class="form-control-sm"></div>
+                            <div class="col-12 mt-2"><label class="label-ficha">Líquido</label><input type="text" name="liquido_admin" class="form-control-sm" list="list_ingresos"></div>
+                            <div class="col-12 mt-2"><label class="label-ficha">Vía</label><input type="text" name="via_admin" class="form-control-sm" list="list_vias_admin"></div>
                         </div>
-                        <label class="form-label">Líquido / Solución</label>
-                        <input type="text" name="liquido_admin" class="form-control-sm mb-2" list="opts_sol">
-                        <label class="form-label">Vía de Administración</label>
-                        <input type="text" name="via_admin" class="form-control-sm" list="opts_v_ad">
                     </div>
                 </div>
             </div>
@@ -126,35 +155,33 @@
             <div class="col-md-6">
                 <div class="panel-sm">
                     <div class="panel-header">
-                        <span>Líquidos Eliminados</span>
-                        <button type="submit" name="action" value="save_elim" class="btn-institucional">Guardar Egreso</button>
+                        Eliminados
+                        <button type="submit" class="btn-save-sm">GUARDAR EGRESO</button>
                     </div>
                     <div class="panel-body">
-                        <div class="row gx-2 mb-2">
-                            <div class="col-6"><label class="form-label">Hora</label><input type="time" name="hora_eliminado" class="form-control-sm"></div>
-                            <div class="col-6"><label class="form-label">Cant (ml)</label><input type="number" name="cantidad_elim" class="form-control-sm"></div>
+                        <div class="row g-2">
+                            <div class="col-6"><label class="label-ficha">Hora</label><input type="time" name="hora_eliminado" class="form-control-sm"></div>
+                            <div class="col-6"><label class="label-ficha">Cant (ml)</label><input type="number" name="cantidad_elim" class="form-control-sm"></div>
+                            <div class="col-12 mt-2"><label class="label-ficha">Tipo</label><input type="text" name="tipo_liquido" class="form-control-sm" list="list_egresos"></div>
+                            <div class="col-12 mt-2"><label class="label-ficha">Vía Elim</label><input type="text" name="via_eliminacion" class="form-control-sm" list="list_vias_elim"></div>
                         </div>
-                        <label class="form-label">Tipo de Líquido</label>
-                        <input type="text" name="tipo_liquido" class="form-control-sm mb-2" list="opts_elim_tipo">
-                        <label class="form-label">Vía de Eliminación</label>
-                        <input type="text" name="via_eliminado" class="form-control-sm" list="opts_elim_via">
                     </div>
                 </div>
             </div>
         </div>
     </form>
 
-    <div class="historial-titulo">REGISTROS DEL TURNO {{ turno_actual }}</div>
-
-    <table class="table-sm">
+    <h5 class="mt-4 fw-bold" style="color: var(--sm-titles-btns);">HISTORIAL DEL TURNO</h5>
+    
+    <table class="table-registro-pro">
         <thead>
-            <tr><th>HORA</th><th>T.A.</th><th>F.C.</th><th>F.R.</th><th>T°</th><th>SO2</th><th>GLIC.</th></tr>
+            <tr><th>Hora</th><th>T.A.</th><th>F.C.</th><th>F.R.</th><th>T°</th><th>SO2</th><th>Glicemia</th></tr>
         </thead>
-        <tbody>
-            {% for r in registros %}
-                {% if r.sv.ta or r.sv.fc or r.sv.temp %}
+        <tbody class="text-center">
+            {% for r in registros|sort(attribute='fecha_registro') %}
+                {% if r.sv.ta or r.sv.fc or r.control_glicemia %}
                 <tr>
-                    <td class="fw-bold" style="color: var(--sm-titles-btns);">{{ r.fecha_registro.strftime('%H:%M') }}</td>
+                    <td class="fw-bold">{{ r.fecha_registro.strftime('%H:%M') }}</td>
                     <td>{{ r.sv.ta or '-' }}</td><td>{{ r.sv.fc or '-' }}</td><td>{{ r.sv.fr or '-' }}</td>
                     <td>{{ r.sv.temp or '-' }}</td><td>{{ r.sv.so2 or '-' }}</td><td>{{ r.control_glicemia or '-' }}</td>
                 </tr>
@@ -163,63 +190,75 @@
         </tbody>
     </table>
 
-    <table class="table-sm">
-        <thead>
-            <tr><th>HORA</th><th>ADMINISTRADOS</th><th>ELIMINADOS</th><th>SUBTOTAL</th></tr>
-        </thead>
-        <tbody>
-            {% for r in registros %}
-                {% if r.bl_admin.cantidad or r.bl_elim.cantidad %}
-                <tr>
-                    <td>{{ r.fecha_registro.strftime('%H:%M') }}</td>
-                    <td>{% if r.bl_admin.cantidad %}<b>{{ r.bl_admin.liquido }}</b> | +{{ r.bl_admin.cantidad }} ml{% else %}-{% endif %}</td>
-                    <td>{% if r.bl_elim.cantidad %}<b>{{ r.bl_elim.tipo_liquido }}</b> | -{{ r.bl_elim.cantidad }} ml{% else %}-{% endif %}</td>
-                    {% set adm = r.bl_admin.cantidad|float if r.bl_admin.cantidad else 0 %}
-                    {% set eli = r.bl_elim.cantidad|float if r.bl_elim.cantidad else 0 %}
-                    <td class="fw-bold">{{ (adm-eli)|round(1) }} ml</td>
-                </tr>
-                {% endif %}
-            {% endfor %}
-        </tbody>
-        <tfoot style="background: #f8f9fa; border-top: 2px solid var(--sm-titles-btns);">
-            <tr class="fw-bold">
-                <td class="text-end">TOTALES TURNO:</td>
-                <td class="text-primary">+{{ total_admin }} ml</td>
-                <td class="text-danger">-{{ total_elim }} ml</td>
-                <td style="background: var(--sm-card-bg); color: var(--sm-titles-btns);">{{ balance_total }} ml</td>
-            </tr>
-        </tfoot>
-    </table>
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <h6 class="fw-bold text-primary small">💧 INGRESOS (Administrados)</h6>
+            <table class="table-registro-pro">
+                <thead>
+                    <tr><th width="30%">Hora</th><th>Líquido</th><th width="30%">ml</th></tr>
+                </thead>
+                <tbody>
+                    {% set ns_adm = namespace(found=false) %}
+                    {% for r in registros|sort(attribute='fecha_registro') %}
+                        {% if r.bl_admin.cantidad and r.bl_admin.cantidad|float > 0 %}
+                            {% set ns_adm.found = true %}
+                            <tr>
+                                <td class="text-center fw-bold">{{ r.fecha_registro.strftime('%H:%M') }}</td>
+                                <td>{{ r.bl_admin.liquido }} <br><small class="text-muted">{{ r.bl_admin.via }}</small></td>
+                                <td class="text-end fw-bold text-primary">+{{ r.bl_admin.cantidad }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not ns_adm.found %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">No hay ingresos</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-6">
+            <h6 class="fw-bold text-danger small">🚽 EGRESOS (Eliminados)</h6>
+            <table class="table-registro-pro">
+                <thead>
+                    <tr><th width="30%">Hora</th><th>Tipo</th><th width="30%">ml</th></tr>
+                </thead>
+                <tbody>
+                    {% set ns_eli = namespace(found=false) %}
+                    {% for r in registros|sort(attribute='fecha_registro') %}
+                        {% if r.bl_elim.cantidad and r.bl_elim.cantidad|float > 0 %}
+                            {% set ns_eli.found = true %}
+                            <tr>
+                                <td class="text-center fw-bold">{{ r.fecha_registro.strftime('%H:%M') }}</td>
+                                <td>{{ r.bl_elim.tipo_liquido }} <br><small class="text-muted">{{ r.bl_elim.via_eliminacion }}</small></td>
+                                <td class="text-end fw-bold text-danger">-{{ r.bl_elim.cantidad }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not ns_eli.found %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">No hay egresos</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-3 p-3 text-end" style="background: var(--sm-card-bg); border-radius: 8px;">
+        <span class="me-4">Total Ingresos: <strong class="text-primary">+{{ total_admin }} ml</strong></span>
+        <span class="me-4">Total Egresos: <strong class="text-danger">-{{ total_elim }} ml</strong></span>
+        <span>Balance Turno: <strong style="color: var(--sm-titles-btns); font-size: 1.1rem;">{{ balance_total }} ml</strong></span>
+    </div>
 </div>
 
-<datalist id="opts_sol">
-    <option value="AGUA MAS MTO"><option value="ALMUERZO"><option value="AROIMATICA CON GALLRTICAS">
-    <option value="CENA"><option value="COLADA"><option value="COMIDA"><option value="DESAYUNO">
-    <option value="DIETA"><option value="MEDICAMENTO"><option value="MEDICAMENTO + AGUA">
-    <option value="MEDICAMENTO + SSN0.9%"><option value="SSN"><option value="SSN MAS MTO">
+<datalist id="list_ingresos">
+    <option value="AGUA MAS MTO"><option value="ALMUERZO"><option value="AROIMATICA CON GALLRTICAS"><option value="CENA"><option value="COLADA"><option value="COMIDA"><option value="DESAYUNO"><option value="DIETA"><option value="MEDICAMENTO"><option value="MEDICAMENTO + AGUA"><option value="MEDICAMENTO + SSN0.9%"><option value="SSN"><option value="SSN MAS MTO">
 </datalist>
-
-<datalist id="opts_v_ad">
-    <option value="Oral"><option value="Oral Sonda"><option value="Oral Succion">
-    <option value="Endovenosa"><option value="Intramuscular"><option value="Subcutaneo">
-    <option value="Tópico"><option value="Infusión"><option value="Nutricion Enteral">
-    <option value="Nutricion Parenteral"><option value="Inhalatoria"><option value="Intrarrectal">
-    <option value="Transdérmica"><option value="Sublingual"><option value="Vaginal"><option value="Oftálmica">
-    <option value="Ótica"><option value="Intradérmica"><option value="Bucal"><option value="Por sonda nasogástrica">
-    <option value="Rectal"><option value="Por Sonda rectal"><option value="Cutánea"><option value="Nasal">
+<datalist id="list_vias_admin">
+    <option value="Oral"><option value="Oral Sonda"><option value="Oral Succion"><option value="Endovenosa"><option value="Intramuscular"><option value="Subcutaneo"><option value="Tópico"><option value="Infusión"><option value="Nutricion Enteral"><option value="Nutricion Parenteral"><option value="Inhalatoria">
 </datalist>
-
-<datalist id="opts_elim_tipo">
-    <option value="EMESIS"><option value="MATERIA FECAL"><option value="ORINA">
-    <option value="SANGRE"><option value="BILIAR"><option value="LIQUIDO PLEURAL"><option value="OTRO">
+<datalist id="list_egresos">
+    <option value="ORINA"><option value="EMESIS"><option value="MATERIA FECAL"><option value="SANGRE"><option value="BILIAR"><option value="LIQUIDO PLEURAL"><option value="OTRO">
 </datalist>
-
-<datalist id="opts_elim_via">
-    <option value="Sonda Vesical"><option value="Diarrea"><option value="Emesis"><option value="Sonda Gastrica">
-    <option value="Dren Penrose"><option value="Hemovac"><option value="Otros Drenes"><option value="Tubo en T">
-    <option value="Tubo a Torax"><option value="Ventriculostomia"><option value="Bolsa Recolectora">
-    <option value="Irrigacion Vesical"><option value="Espontaneo"><option value="Cateter Percutaneo">
-    <option value="Ultra Filtrado"><option value="Oral"><option value="Otras"><option value="Todas las Vias">
+<datalist id="list_vias_elim">
+    <option value="Sonda Vesical"><option value="Diarrea"><option value="Emesis"><option value="Sonda Gastrica"><option value="Dren Penrose"><option value="Hemovac"><option value="Otros Drenes"><option value="Tubo en T"><option value="Tubo a Torax"><option value="Ventriculostomia"><option value="Bolsa Recolectora"><option value="Irrigacion Vesical"><option value="Espontaneo">
 </datalist>
-
 {% endblock %}

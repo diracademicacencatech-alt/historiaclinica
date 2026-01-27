@@ -792,3 +792,4 @@ def generar_pdf_laboratorio(historia_id):
     response.headers['Content-Disposition'] = f'inline; filename={nombre_archivo}'
     
     return response
+

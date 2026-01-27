@@ -1,250 +1,247 @@
 {% extends "base.html" %}
 
-{% block title %}Historial Clínico - {{ paciente.nombre_completo }}{% endblock %}
+{% block title %}Folio Clínico Completo - {{ paciente.nombre }}{% endblock %}
 
 {% block head %}
 <style>
     :root {
-      --bg-app: #f75ba0;          /* Fondo: hf75ba */
-      --bg-containers: #f0e7d8;   /* Interior de contenedores */
-      --titles: #236e7b;          /* Títulos */
-      --text-links: #0b6169;      /* Textos y links */
-      --verde-btn: #28a745;       /* Botones principales verdes */
-      --secondary: #5f5f5f;
+      --bg-containers: #f0e7d8;
+      --titles: #236e7b;
+      --primary-text: #0b6169;
+      --btn-green: #28a745; 
+      --btn-red: #dc3545; /* Nuevo color para eliminar */
+      --secondary-text: #5f5f5f;
     }
 
     body { 
-        background-color: var(--bg-app) !important; 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: white !important; 
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 13px;
+        color: var(--primary-text);
     }
 
-    .container-clinica {
-        background-color: var(--bg-containers);
-        border-radius: 25px;
-        padding: 40px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        margin-bottom: 50px;
+    .hoja-folio {
+        background-color: white;
+        width: 215mm;
+        min-height: 279mm;
+        margin: 20px auto;
+        padding: 15mm;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
     }
 
-    /* Tarjetas Mejoradas */
-    .card-registro {
-        background: white;
-        border: none;
-        border-radius: 15px;
-        margin-bottom: 25px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-
-    .card-registro-header {
-        background-color: #ffffff;
-        padding: 15px 20px;
-        border-bottom: 1px solid #f1f1f1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .card-registro-body { padding: 20px; }
-
-    /* Indicadores de Categoría */
-    .border-sv { border-left: 6px solid #007bff; }
-    .border-liq { border-left: 6px solid #17a2b8; }
-    .border-nota { border-left: 6px solid #6f42c1; }
-    .border-med { border-left: 6px solid #fd7e14; }
-    .border-ins { border-left: 6px solid var(--verde-btn); }
-
-    /* Grid de Signos Vitales */
-    .sv-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    .sv-box {
-        flex: 1;
-        min-width: 100px;
-        background: #f8f9fa;
-        padding: 10px;
-        border-radius: 10px;
+    .seccion-negra {
+        background-color: #000;
+        color: #fff;
+        font-weight: bold;
         text-align: center;
+        padding: 5px;
+        text-transform: uppercase;
+        margin-top: 15px;
+        margin-bottom: 5px;
     }
-    .sv-box label { font-size: 0.7rem; color: var(--secondary); display: block; margin-bottom: 2px; }
-    .sv-box span { font-size: 1rem; font-weight: 700; color: var(--titles); }
 
-    /* Estilo Balance de Líquidos */
-    .liq-section {
-        display: flex;
-        gap: 20px;
-        margin-top: 10px;
-    }
-    .liq-item {
-        flex: 1;
-        padding: 10px;
-        border-radius: 8px;
-    }
-    .liq-adm { background-color: #e3f2fd; border: 1px solid #bbdefb; }
-    .liq-elim { background-color: #ffebee; border: 1px solid #ffcdd2; }
-
-    /* Botón Verde solicitado */
-    .btn-edit-circular {
-        width: 42px; height: 42px;
-        border-radius: 50%;
-        background-color: var(--verde-btn);
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
+    th, td { border: 1px solid #000; padding: 4px; text-align: left; word-wrap: break-word; }
+    th { background-color: var(--bg-containers); color: var(--titles); font-size: 9px; }
+    
+    .btn-verde-folio {
+        background-color: var(--btn-green);
         color: white !important;
-        display: flex; align-items: center; justify-content: center;
-        transition: 0.3s; border: none;
-        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        padding: 2px 6px;
+        border-radius: 3px;
+        text-decoration: none;
+        font-size: 13px;
+        border: none;
+        display: inline-block;
     }
-    .btn-edit-circular:hover { transform: scale(1.1); background-color: #218838; }
 
-    .titulo-seccion { 
-        color: var(--titles); font-weight: 850; 
-        margin: 45px 0 20px 0; border-left: 4px solid var(--titles); padding-left: 15px;
+    /* Estilo para el botón X */
+    .btn-rojo-folio {
+        background-color: var(--btn-red);
+        color: white !important;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 13px;
+        border: none;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .text-bloqueado { color: var(--secondary-text); font-size: 13px; font-style: italic; }
+
+    @media print {
+        .no-print { display: none !important; }
+        .hoja-folio { box-shadow: none; margin: 0; width: 100%; padding: 10mm; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="container-clinica">
-        
-        <div class="row align-items-center mb-5">
-            <div class="col-md-7">
-                <h1 style="color: var(--titles); font-weight: 900; margin: 0;">HISTORIAL CLÍNICO</h1>
-                <p class="text-muted mb-0"><i class="fas fa-calendar-alt me-2"></i> Reporte generado el {{ now.strftime('%d/%m/%Y') if now else '' }}</p>
-            </div>
-            <div class="col-md-5 text-md-end">
-                <div style="background: white; padding: 15px 25px; border-radius: 15px; border: 2px solid var(--titles); display: inline-block;">
-                    <small class="d-block text-uppercase fw-bold text-muted">Paciente:</small>
-                    <span class="h5 mb-0 fw-bold" style="color: var(--titles);">{{ paciente.nombre_completo }}</span>
-                </div>
-            </div>
-        </div>
+<div class="no-print" style="text-align:center; margin-bottom: 20px;">
+    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn btn-secondary btn-sm">VOLVER AL MENÚ</a>
+    <button onclick="window.print()" class="btn btn-dark btn-sm">IMPRIMIR FOLIO PDF</button>
+</div>
 
-        <h4 class="titulo-seccion">MONITOREO DE SIGNOS VITALES</h4>
-        {% for r in registros %}
-            {% set sv = r.signos_vitales_dict or {} %}
-            {% if sv.ta or sv.fc or sv.temp or r.control_glicemia %}
-            <div class="card card-registro border-sv">
-                <div class="card-registro-header">
-                    <span class="fw-bold"><i class="far fa-clock me-2"></i>{{ r.fecha_registro.strftime('%d/%m/%y - %H:%M') }}</span>
-                    <a href="{{ url_for('enfermeria.editar_signos', registro_id=r.id) }}" class="btn-edit-circular" title="Editar Signos">
-                        <i class="fas fa-pen-nib"></i>
-                    </a>
-                </div>
-                <div class="card-registro-body">
-                    <div class="sv-container">
-                        <div class="sv-box"><label>T. Arterial</label><span>{{ sv.ta or '--' }}</span></div>
-                        <div class="sv-box"><label>F. Cardíaca</label><span>{{ sv.fc or '--' }} <small>bpm</small></span></div>
-                        <div class="sv-box"><label>F. Resp.</label><span>{{ sv.fr or '--' }} <small>rpm</small></span></div>
-                        <div class="sv-box"><label>Temp.</label><span>{{ sv.temp or '--' }}°C</span></div>
-                        <div class="sv-box"><label>SatO2</label><span>{{ sv.so2 or '--' }}%</span></div>
-                        <div class="sv-box" style="background: #fff3cd;"><label>Glicemia</label><span>{{ r.control_glicemia or '--' }}</span></div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        {% endfor %}
+<div class="hoja-folio">
+    <div style="text-align:center; border: 2px solid #000; padding: 10px;">
+        <h2 style="margin:0; color: var(--titles);">REGISTRO CLÍNICO DE ENFERMERÍA</h2>
+        <p style="margin:5px 0;"><strong>{{ paciente.nombre }}</strong> | Doc: {{ paciente.numero }} | Cama: {{ paciente.cama or 'S/A' }}</p>
+    </div>
 
-        <h4 class="titulo-seccion">CONTROL DE LÍQUIDOS (INGESTA/ELIMINACIÓN)</h4>
-        {% for r in registros %}
-            {% set liq = r.balance_liquidos_dict or {} %}
-            {% if liq.administrados or liq.eliminados %}
-            <div class="card card-registro border-liq">
-                <div class="card-registro-header">
-                    <span class="fw-bold text-info"><i class="fas fa-tint me-2"></i>Balance del {{ r.fecha_registro.strftime('%H:%M') }}</span>
-                    <a href="{{ url_for('enfermeria.editar_balance', registro_id=r.id) }}" class="btn-edit-circular">
-                        <i class="fas fa-fill-drip"></i>
-                    </a>
-                </div>
-                <div class="card-registro-body">
-                    <div class="liq-section">
-                        <div class="liq-item liq-adm">
-                            <small class="fw-bold text-primary text-uppercase">Administrado</small>
-                            <div class="d-flex justify-content-between align-items-center mt-1">
-                                <span>{{ liq.administrados.liquido or 'N/A' }} ({{ liq.administrados.via or '-' }})</span>
-                                <span class="h5 mb-0 fw-bold">{{ liq.administrados.cantidad or '0' }}cc</span>
-                            </div>
-                        </div>
-                        <div class="liq-item liq-elim">
-                            <small class="fw-bold text-danger text-uppercase">Eliminado</small>
-                            <div class="d-flex justify-content-between align-items-center mt-1">
-                                <span>{{ liq.eliminados.tipo_liquido or 'N/A' }} ({{ liq.eliminados.via_eliminacion or '-' }})</span>
-                                <span class="h5 mb-0 fw-bold">{{ liq.eliminados.cantidad or '0' }}cc</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        {% endfor %}
-
-        <h4 class="titulo-seccion">NOTAS DE ENFERMERÍA</h4>
-        <div class="row">
+    <div class="seccion-negra">Control de Signos Vitales</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 15%;">FECHA/HORA</th>
+                <th>T.A</th><th>F.C</th><th>F.R</th><th>TEMP</th><th>SatO2</th><th>GLIC.</th>
+                <th class="no-print" style="width: 15%;">ACCIÓN</th>
+            </tr>
+        </thead>
+        <tbody>
             {% for r in registros %}
-                {% if r.tipo_nota and r.texto_nota %}
-                <div class="col-md-12">
-                    <div class="card card-registro border-nota">
-                        <div class="card-registro-header">
-                            <span class="badge" style="background: var(--titles);">{{ r.tipo_nota }}</span>
-                            <small class="text-muted">{{ r.fecha_registro.strftime('%d/%m/%y %H:%M') }}</small>
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-0" style="color: var(--text-links); font-size: 0.95rem; line-height: 1.6;">{{ r.texto_nota }}</p>
-                        </div>
-                        <div class="p-2 text-end">
-                            <a href="{{ url_for('enfermeria.editar_nota', registro_id=r.id) }}" class="btn btn-sm text-primary"><i class="fas fa-edit me-1"></i>Editar Nota</a>
-                        </div>
-                    </div>
-                </div>
+                {% if r.signos_vitales_dict.ta or r.signos_vitales_dict.fc or r.control_glicemia %}
+                <tr>
+                    <td>{{ r.fecha_registro.strftime('%d/%m %H:%M') }}</td>
+                    <td>{{ r.signos_vitales_dict.ta or '-' }}</td>
+                    <td>{{ r.signos_vitales_dict.fc or '-' }}</td>
+                    <td>{{ r.signos_vitales_dict.fr or '-' }}</td>
+                    <td>{{ r.signos_vitales_dict.temp or '-' }}</td>
+                    <td>{{ r.signos_vitales_dict.so2 or '-' }}</td>
+                    <td>{{ r.control_glicemia or '-' }}</td>
+                    <td class="no-print">
+                        {% if puede_editar_turno_template(r) %}
+                            <a href="{{ url_for('enfermeria.editar_signos', registro_id=r.id) }}" class="btn-verde-folio">Editar</a>
+                            <form action="{{ url_for('enfermeria.eliminar_signos_enfermeria', registro_id=r.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar signos?')">
+                                <button type="submit" class="btn-rojo-folio">X</button>
+                            </form>
+                        {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
+                    </td>
+                </tr>
                 {% endif %}
             {% endfor %}
-        </div>
+        </tbody>
+    </table>
 
-        <div class="row">
-            <div class="col-md-6">
-                <h4 class="titulo-seccion">MEDICACIÓN</h4>
-                {% for admin in medicamentos %}
-                <div class="card card-registro border-med">
-                    <div class="p-3 d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fw-bold" style="color: #fd7e14;">{{ admin.medicamento.nombre }}</div>
-                            <small class="text-muted">{{ admin.cantidad }} {{ admin.unidad }} - {{ admin.hora_administracion.strftime('%H:%M') }}</small>
-                        </div>
-                        <a href="{{ url_for('enfermeria.editar_administracion_med', admin_id=admin.id) }}" class="btn-edit-circular" style="width: 32px; height: 32px;">
-                            <i class="fas fa-pills fa-sm"></i>
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
+    <div class="seccion-negra">Balance de Líquidos</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 15%;">FECHA/HORA</th>
+                <th>ADMINISTRADOS</th>
+                <th>ELIMINADOS</th>
+                <th class="no-print" style="width: 15%;">ACCIÓN</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+                {% set adm = r.balance_liquidos_dict.get('administrados', {}) %}
+                {% set eli = r.balance_liquidos_dict.get('eliminados', {}) %}
+                {% if adm.get('cantidad') or eli.get('cantidad') %}
+                <tr>
+                    <td>{{ r.fecha_registro.strftime('%d/%m %H:%M') }}</td>
+                    <td>{{ adm.get('liquido') or 'S/N' }}: {{ adm.get('cantidad', 0) }}cc</td>
+                    <td>{{ eli.get('tipo_liquido') or 'S/N' }}: {{ eli.get('cantidad', 0) }}cc</td>
+                    <td class="no-print">
+                        {% if puede_editar_turno_template(r) %}
+                            <a href="{{ url_for('enfermeria.editar_balance', registro_id=r.id) }}" class="btn-verde-folio">Editar</a>
+                            <form action="{{ url_for('enfermeria.eliminar_balance_enfermeria', registro_id=r.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar balance?')">
+                                <button type="submit" class="btn-rojo-folio">X</button>
+                            </form>
+                        {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="seccion-negra">Administración de Medicamentos</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 15%;">FECHA/HORA</th>
+                <th>MEDICAMENTO</th>
+                <th>CANTIDAD</th>
+                <th class="no-print" style="width: 15%;">ACCIÓN</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in medicamentos %}
+            <tr>
+                <td>{{ m.hora_administracion.strftime('%d/%m %H:%M') }}</td>
+                <td>{{ m.medicamento.nombre }}</td>
+                <td>{{ m.cantidad }} {{ m.unidad }}</td>
+                <td class="no-print">
+                    {% if puede_editar_turno_template(m) %}
+                        <a href="{{ url_for('enfermeria.editar_administracion_med', admin_id=m.id) }}" class="btn-verde-folio">Editar</a>
+                        <form action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=m.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar dosis?')">
+                            <button type="submit" class="btn-rojo-folio">X</button>
+                        </form>
+                    {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="seccion-negra">Insumos y Materiales</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 10%;">ESTADO</th>
+                <th>INSUMO</th>
+                <th style="width: 8%;">CANT.</th>
+                <th>FECHA/OBSERVACIÓN</th>
+                <th class="no-print" style="width: 15%;">ACCIÓN</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ins in insumos_registrados %}
+            <tr style="background-color: #f9f9f9;">
+                <td><strong>USADO</strong></td>
+                <td>{{ ins.nombre }}</td>
+                <td>{{ ins.usado }}</td>
+                <td>{{ ins.fecha_uso }} - {{ ins.observaciones }}</td>
+                <td class="no-print">
+                    {% if ins.registro_obj and puede_editar_turno_template(ins.registro_obj) %}
+                        <a href="{{ url_for('enfermeria.gestionar_insumos', paciente_id=paciente.id) }}" class="btn-verde-folio">Editar</a>
+                        {# Para insumos, asumo una ruta genérica de eliminación o gestión ya que no estaba definida explícitamente #}
+                    {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% for pen in insumos_pendientes %}
+            <tr>
+                <td style="color: #5f5f5f;">PENDIENTE</td>
+                <td>{{ pen.nombre }}</td>
+                <td>{{ pen.solicitado }}</td>
+                <td>Solicitado: {{ pen.fecha_solicitud }}</td>
+                <td class="no-print">
+                    <a href="{{ url_for('enfermeria.gestionar_insumos', paciente_id=paciente.id) }}" class="btn-verde-folio">Gestionar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="seccion-negra">Notas de Evolución</div>
+    {% for r in registros %}
+        {% if r.texto_nota %}
+        <div style="border: 1px solid #000; margin-top: 5px; page-break-inside: avoid;">
+            <div style="background-color: var(--bg-containers); padding: 5px; border-bottom: 1px solid #000; display: flex; justify-content: space-between;">
+                <strong>{{ r.fecha_registro.strftime('%d/%m/%Y %H:%M') }} - {{ r.tipo_nota }}</strong>
+                <span class="no-print">
+                    {% if puede_editar_turno_template(r) %}
+                        <a href="{{ url_for('enfermeria.editar_nota', registro_id=r.id) }}" class="btn-verde-folio">Editar</a>
+                        <form action="{{ url_for('enfermeria.eliminar_nota_enfermeria', registro_id=r.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar nota?')">
+                            <button type="submit" class="btn-rojo-folio">X</button>
+                        </form>
+                    {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
+                </span>
             </div>
-            <div class="col-md-6">
-                <h4 class="titulo-seccion">INSUMOS</h4>
-                {% for ins in insumos_registrados %}
-                <div class="card card-registro border-ins">
-                    <div class="p-3 d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fw-bold" style="color: var(--verde-btn);">{{ ins['nombre'] if ins is mapping else ins.nombre }}</div>
-                            <span class="badge bg-success">Cantidad: {{ ins['usado'] if ins is mapping else ins.usado }}</span>
-                        </div>
-                        {% set id_ins = ins['id'] if ins is mapping else ins.id %}
-                        {% if id_ins %}
-                        <a href="{{ url_for('enfermeria.editar_insumo_paciente', insumo_paciente_id=id_ins) }}" class="btn-edit-circular" style="width: 32px; height: 32px;">
-                            <i class="fas fa-box fa-sm"></i>
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+            <div style="padding: 10px; white-space: pre-wrap;">{{ r.texto_nota }}</div>
         </div>
-
-        <div class="text-center mt-5">
-            <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn btn-lg px-5 shadow" style="background: white; color: var(--titles); border-radius: 50px; font-weight: bold; border: 2px solid var(--titles);">
-                <i class="fas fa-arrow-left me-2"></i> REGRESAR AL PANEL
-            </a>
-        </div>
-
-    </div>
+        {% endif %}
+    {% endfor %}
 </div>
 {% endblock %}

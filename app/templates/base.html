@@ -142,8 +142,8 @@
         SOFTWARE SM
       </a>
       <div id="reloj-digital" style="color: #236e7b; font-family: monospace; font-size: 0.85rem; margin-top: -5px; font-weight: bold;">
-        00:00:00
-      </div>
+    00/00/0000 | 00:00:00
+</div>
     </div>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSM" aria-controls="navbarSM" aria-expanded="false" aria-label="Menú de navegación">
@@ -215,21 +215,25 @@
   });
 </script>
 <script>
-    function actualizarReloj() {
-        const ahora = new Date();
-        // Formateamos la hora para que siempre tenga 2 dígitos (ej: 09:05:01)
-        const horas = String(ahora.getHours()).padStart(2, '0');
-        const minutos = String(ahora.getMinutes()).padStart(2, '0');
-        const segundos = String(ahora.getSeconds()).padStart(2, '0');
-        
-        const tiempoString = `${horas}:${minutos}:${segundos}`;
-        document.getElementById('reloj-digital').textContent = tiempoString;
-    }
+function actualizarReloj() {
+    const ahora = new Date();
+    
+    // Formato de Fecha: DD/MM/AAAA
+    const dia = String(ahora.getDate()).padStart(2, '0');
+    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+    const anio = ahora.getFullYear();
+    
+    // Formato de Hora: HH:MM:SS
+    const horas = String(ahora.getHours()).padStart(2, '0');
+    const minutos = String(ahora.getMinutes()).padStart(2, '0');
+    const segundos = String(ahora.getSeconds()).padStart(2, '0');
+    
+    const fechaCompleta = `${dia}/${mes}/${anio} | ${horas}:${minutos}:${segundos}`;
+    document.getElementById('reloj-digital').textContent = fechaCompleta;
+}
 
-    // Ejecutar la función cada segundo
-    setInterval(actualizarReloj, 1000);
-
-    // Llamarla una vez al cargar para que no empiece en 00:00:00
-    actualizarReloj();
+// Ejecutar cada segundo
+setInterval(actualizarReloj, 1000);
+actualizarReloj(); // Llamada inicial para evitar el 00:00:00
 </script>
 </html>
