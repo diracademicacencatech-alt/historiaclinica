@@ -588,41 +588,62 @@ def pdf_libro_historia(historia_id):
     if historia.cie10_principal:
         diag_cie10 = DiagnosticoCIE10.query.filter_by(codigo=historia.cie10_principal).first()
 
-    # --- PROCESAR MEDICAMENTOS GENERALES DE LA HISTORIA ---
-    medicamentos = []
+    # --- 1. MEDICAMENTOS GENERALES (Ingreso) ---
+    medicamentos_procesados = []
     if getattr(historia, 'medicamentos_json', None):
         try:
             datos_json = json.loads(historia.medicamentos_json)
             for m in datos_json:
-                cod = str(m.get('codigo', '')).strip()
-                med_db = Medicamento.query.filter_by(codigo=cod).first()
-                m['nombre'] = med_db.nombre if med_db else f"Cod: {cod}"
-                medicamentos.append(m)
-        except Exception as e:
-            print(f"Error procesando medicamentos para el PDF: {e}")
+                med_db = Medicamento.query.filter_by(codigo=str(m.get('codigo', '')).strip()).first()
+                
+                # Procesar cantidad y vía con los nombres exactos de tu formulario
+                cant_v = m.get('cantidad_solicitada') or m.get('cantidad') or 0
+                try:
+                    cant_f = int(float(cant_v))
+                except:
+                    cant_f = cant_v
 
-    # --- PROCESAR ÓRDENES (MEDICAMENTOS Y LABORATORIOS) ---
+                medicamentos_procesados.append({
+                    'nombre': med_db.nombre if med_db else f"Cod: {m.get('codigo')}",
+                    'dosis': m.get('dosis') or m.get('dosis_pres', 'N/A'),
+                    'frecuencia': m.get('frecuencia', '8'),
+                    'cantidad': cant_f,
+                    'unidad': m.get('unidad_inventario') or m.get('unidad', ''),
+                    'via': m.get('via_administracion') or m.get('via', 'N/A')
+                })
+        except Exception as e:
+            print(f"Error meds ingreso PDF: {e}")
+
+    # --- 2. ÓRDENES (Medicamentos y Laboratorios) ---
     ordenes_con_todo = []
     for orden in ordenes:
-        # 1. Procesar Medicamentos de la Orden (JSON)
         meds_orden = []
         if orden.medicamentos_json:
             try:
                 meds_lista_orden = json.loads(orden.medicamentos_json)
                 for mo in meds_lista_orden:
-                    cod_o = str(mo.get('codigo', '')).strip()
-                    med_db_o = Medicamento.query.filter_by(codigo=cod_o).first()
-                    mo['nombre'] = med_db_o.nombre if med_db_o else f"Cod: {cod_o}"
-                    meds_orden.append(mo)
-            except:
-                meds_orden = []
+                    med_db_o = Medicamento.query.filter_by(codigo=str(mo.get('codigo', '')).strip()).first()
+                    
+                    cant_o = mo.get('cantidad_solicitada') or mo.get('cantidad') or 0
+                    try:
+                        cant_o_f = int(float(cant_o))
+                    except:
+                        cant_o_f = cant_o
 
-        # 2. PROCESAR LABORATORIOS (Relación SQLAlchemy)
-        # Según tu modelo, orden.examenes_lab es una lista de OrdenLaboratorioItem
+                    meds_orden.append({
+                        'nombre': med_db_o.nombre if med_db_o else f"Cod: {mo.get('codigo')}",
+                        'dosis': mo.get('dosis') or mo.get('dosis_pres', 'N/A'),
+                        'frecuencia': mo.get('frecuencia', '8'),
+                        'cantidad': cant_o_f,
+                        'unidad': mo.get('unidad_inventario') or mo.get('unidad', ''),
+                        'via': mo.get('via_administracion') or mo.get('via', 'N/A')
+                    })
+            except Exception as e:
+                print(f"Error meds orden PDF: {e}")
+
         labs_orden = []
         if orden.examenes_lab:
             for item_lab in orden.examenes_lab:
-                # Accedemos al nombre a través de la relación item_lab.examen
                 labs_orden.append({
                     'nombre': item_lab.examen.nombre if item_lab.examen else "Examen no encontrado",
                     'estado': item_lab.estado
@@ -633,6 +654,7 @@ def pdf_libro_historia(historia_id):
             'medicamentos': meds_orden,
             'laboratorios': labs_orden
         })
+
     ruta_logo = os.path.join(current_app.root_path, 'static', 'img', 'logo.png')
     html = render_template(
         'pacientes/pdf_libro.html',
@@ -640,7 +662,7 @@ def pdf_libro_historia(historia_id):
         fecha_ingreso_local=fecha_ingreso_local,
         ordenes_con_meds=ordenes_con_todo,
         diag_cie10=diag_cie10,
-        medicamentos=medicamentos,
+        medicamentos=medicamentos_procesados, # Usamos la lista nueva
         now=datetime.now(),
     )
     
@@ -655,15 +677,56 @@ def pdf_libro_historia(historia_id):
 def ver_historia(historia_id):
     historia = HistoriaClinica.query.get_or_404(historia_id)
     ordenes = OrdenMedica.query.filter_by(historia_id=historia_id).all()
-    fecha_ingreso_local = historia.fecha_registro if historia.fecha_registro else None
-
+    
+    # 1. Procesar Diagnóstico CIE-10
     diag_cie10 = None
     if historia.cie10_principal:
         diag_cie10 = DiagnosticoCIE10.query.filter_by(codigo=historia.cie10_principal).first()
 
+    # 2. Procesar Medicamentos que vienen en el INGRESO (bloque 5)
+    meds_ingreso = []
+    if historia.medicamentos_json:
+        try:
+            lista_ingreso = json.loads(historia.medicamentos_json)
+            for m in lista_ingreso:
+                # 1. Buscar nombre en DB
+                cod = m.get('codigo', '').strip()
+                med_db = Medicamento.query.filter_by(codigo=cod).first()
+                
+                # 2. PROCESAR CANTIDAD (Nombre exacto: cantidad_solicitada)
+                cant_valor = m.get('cantidad_solicitada') or 0
+                try:
+                    cant_formateada = int(float(cant_valor))
+                except:
+                    cant_formateada = cant_valor
+
+                # 3. PROCESAR VÍA (Nombre exacto: via_administracion)
+                via_real = m.get('via_administracion') or 'N/A'
+
+                # 4. PROCESAR UNIDAD (Nombre exacto: unidad_inventario)
+                unidad_real = m.get('unidad_inventario') or ''
+                
+                frec_valor = m.get('frecuencia')
+                
+                # Si sigue siendo None o vacío, le ponemos '8' por defecto o un aviso
+                if not frec_valor:
+                    frec_valor = '8' # Valor estándar si no se encuentra
+
+                meds_ingreso.append({
+                    'nombre_mostrar': med_db.nombre if med_db else m.get('nombre', 'S/N'),
+                    'dosis': m.get('dosis', 'N/A'),
+                    'frecuencia': frec_valor,
+                    'cantidad': cant_formateada, 
+                    'unidad': unidad_real,
+                    'via': via_real
+                })
+        except Exception as e:
+            print(f"Error procesando JSON: {e}")
+            meds_ingreso = []
+    
+    # 3. Procesar Órdenes Médicas (bloque 6)
     ordenes_con_todo = []
     for orden in ordenes:
-        # Medicamentos
         meds_orden = []
         if orden.medicamentos_json:
             try:
@@ -671,12 +734,31 @@ def ver_historia(historia_id):
                 for m in meds_lista:
                     cod = m.get('codigo', '').strip()
                     med_db = Medicamento.query.filter_by(codigo=cod).first()
-                    m['nombre'] = med_db.nombre if med_db else f"No encontrado ({cod})"
-                    meds_orden.append(m)
+                    
+                    # PROCESAR CANTIDAD (Limpiar el 4.000 a 4)
+                    cant_v = m.get('cantidad_solicitada') or m.get('cantidad') or 0
+                    try:
+                        cant_formateada = int(float(cant_v))
+                    except:
+                        cant_formateada = cant_v
+
+                    # PROCESAR VÍA Y UNIDAD
+                    via_v = m.get('via_administracion') or m.get('via') or 'N/A'
+                    uni_v = m.get('unidad_inventario') or m.get('unidad') or ''
+
+                    # Creamos el objeto limpio para la tabla
+                    meds_orden.append({
+                        'nombre': med_db.nombre if med_db else f"No encontrado ({cod})",
+                        'dosis': m.get('dosis') or m.get('dosis_pres', 'N/A'),
+                        'frecuencia': m.get('frecuencia', '8'),
+                        'cantidad': cant_formateada,
+                        'unidad': uni_v,
+                        'via': via_v
+                    })
             except Exception as e:
+                print(f"Error en meds orden: {e}")
                 meds_orden = []
 
-        # Laboratorios (Usando la relación definida en el modelo OrdenMedica)
         labs_orden = []
         if orden.examenes_lab:
             for item_lab in orden.examenes_lab:
@@ -694,9 +776,10 @@ def ver_historia(historia_id):
     return render_template(
         'pacientes/ver_historia.html',
         historia=historia,
-        fecha_ingreso_local=fecha_ingreso_local,
+        fecha_ingreso_local=historia.fecha_registro,
         ordenes_con_meds=ordenes_con_todo,
-        diag_cie10=diag_cie10,
+        meds_ingreso=meds_ingreso, 
+        diag_cie10=diag_cie10
     )
 
 @pacientes_bp.route('/api/medicamentos/buscar', methods=['GET'])

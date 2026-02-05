@@ -9,7 +9,14 @@
       --text-links: #0b6169;
       --text-secondary: #5f5f5f;
       --bg-containers: #f0e7d8;
+      --sm-bg-principal: #ffffff; /* Fondo Blanco */
     }
+
+    footer, body > footer, .navbar + footer {
+        display: none !important;
+    }
+
+    body { background-color: var(--sm-bg-principal) !important; }
 
     .titulo-principal { 
       color: var(--titles); 
@@ -26,9 +33,7 @@
       margin-top: 25px;
       margin-bottom: 15px;
       text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      display: flex; align-items: center; gap: 10px;
     }
 
     .section-white-box {
@@ -45,7 +50,7 @@
         border-radius: 15px;
         overflow: hidden;
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-        border: none;
+        border: 1px solid #eee;
     }
 
     .table-sm-custom thead {
@@ -55,8 +60,9 @@
         font-size: 0.8rem;
     }
 
+    /* Botón verde principal solicitado */
     .btn-sm-verde {
-        background-color: var(--titles) !important;
+        background-color: #28a745 !important;
         color: white !important;
         border: none !important;
         font-weight: 700;
@@ -65,33 +71,14 @@
         border-radius: 10px;
         transition: all 0.2s;
         display: inline-block;
-        text-align: center;
+        text-align: center; 
         width: 100%;
     }
 
     .btn-sm-verde:hover {
-        background-color: var(--text-links) !important;
+        background-color: #218838 !important;
         transform: translateY(-2px);
     }
-
-    .nav-links {
-      margin-top: 40px;
-      padding-top: 25px;
-      border-top: 1px dashed rgba(0,0,0,0.15);
-      text-align: center;
-    }
-
-    .btn-nav {
-      color: var(--text-links);
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 10px 15px;
-      text-transform: uppercase;
-    }
-
-    .modal-content { border-radius: 15px; border: none; }
-    .modal-header { background-color: var(--titles); color: white; }
 </style>
 {% endblock %}
 
@@ -102,66 +89,61 @@
 
     <h5 class="titulo-seccion">📋 Información del Paciente</h5>
     <div class="section-white-box">
-        <div class="row">
-            <div class="col-md-8 border-end">
-                <p><strong>Paciente:</strong> {{ registro.paciente.nombre if registro.paciente else 'N/A' }}</p>
-                <p><strong>Identificación:</strong> {{ registro.paciente.numero if registro.paciente else 'N/A' }}</p>
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <p class="mb-1"><strong>Paciente:</strong> {{ registro.paciente.nombre if registro.paciente else 'N/A' }}</p>
+                <p class="mb-0"><strong>Identificación:</strong> {{ registro.paciente.numero if registro.paciente else 'N/A' }}</p>
             </div>
-            <div class="col-md-4 ps-md-4 text-end">
+            <div class="col-md-4 text-md-end">
                 <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" 
-                    class="btn-nav" style="border: 1px solid var(--titles); border-radius: 8px;">
+                    class="btn btn-outline-primary btn-sm fw-bold px-3" style="border-radius: 8px; text-transform: uppercase;">
                     ← Volver a registros
                 </a>
             </div>
         </div>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
     <h5 class="titulo-seccion">📋 Medicamentos Formulados</h5>
     <div class="table-responsive table-sm-custom mb-4">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th class="ps-3">Medicamento</th>
-                    <th>Dosis</th>
-                    <th>Frecuencia</th>
-                    <th>Vía Orden</th>
-                    <th class="text-center">Formulada</th>
-                    <th class="text-center">Admin.</th>
-                    <th class="text-center">Pendiente</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if medicamentos_formulados %}
-                    {% for med in medicamentos_formulados %}
-                    <tr>
-                        <td class="ps-3"><strong>{{ med.nombre }}</strong><br><small class="text-muted">{{ med.codigo }}</small></td>
-                        <td>{{ med.dosis }} {{ med.unidad }}</td>
-                        <td>{{ med.frecuencia }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ med.via_administracion or med.via }}</span></td>
-                        <td class="text-center">{{ med.cantidad_formulada }}</td>
-                        <td class="text-center text-success fw-bold">{{ med.cantidad_administrada }}</td>
-                        <td class="text-center fw-bold {{ 'text-danger' if med.pendiente > 0 else 'text-muted' }}">
-                            {{ med.pendiente if med.pendiente > 0 else '✓' }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr><td colspan="7" class="text-center py-4">No hay medicamentos formulados.</td></tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th class="ps-3">Medicamento</th>
+                <th>Dosis</th>
+                <th>Frecuencia</th> <th>Vía Orden</th>
+                <th class="text-center">Formulada</th>
+                <th class="text-center">Admin.</th>
+                <th class="text-center">Pendiente</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for med in medicamentos_formulados %}
+            <tr>
+                <td class="ps-3">
+                    <strong>{{ med.nombre }}</strong><br>
+                    <small class="text-muted">{{ med.codigo }}</small>
+                </td>
+                <td>{{ med.dosis }}</td>
+                
+                <td class="fw-bold" style="color: #0b6169; text-transform: capitalize;">
+    {{ med.frecuencia }}
+</td>
+                
+                <td>
+                    <span class="badge bg-light text-dark border">
+                        {{ med.via if med.via else 'VO' }}
+                    </span>
+                </td>
+                <td class="text-center">{{ med.cantidad_formulada }}</td>
+                <td class="text-center text-success fw-bold">{{ med.cantidad_administrada | float }}</td>
+                <td class="text-center fw-bold {{ 'text-danger' if med.pendiente > 0 else 'text-muted' }}">
+                    {{ med.pendiente if med.pendiente > 0 else '✓' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
     <h5 class="titulo-seccion">➕ Registrar Aplicación</h5>
     <div class="section-white-box" style="border-left-color: #28a745;">
@@ -173,9 +155,9 @@
                     <option value="">-- Seleccione del listado --</option>
                     {% for med in medicamentos_formulados %}
                     <option value="{{ med.codigo }}" 
-                            data-via="{{ med.via_administracion or med.via }}" 
-                            data-unidad="{{ med.unidad }}">
-                        {{ med.nombre }} ({{ med.via_administracion or med.via }})
+                            data-via="{{ med.via }}" 
+                            data-unidad="{{ med.unidad_inventario }}">
+                        {{ med.nombre }} ({{ med.via }})
                     </option>
                     {% endfor %}
                 </select>
@@ -196,11 +178,11 @@
                     <option value="OTRA">OTRA</option>
                 </select>
             </div>
-            <div class="col-md-6">
-                <label class="form-label fw-bold">Fecha y Hora</label>
-                <input type="datetime-local" name="hora_administracion" value="{{ hora_actual }}" class="form-control shadow-sm">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Hora de Aplicación *</label>
+                <input type="time" name="hora_admin" id="hora_admin" class="form-control shadow-sm" required>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <label class="form-label fw-bold">Observaciones / Nota de Enfermería</label>
                 <input type="text" name="observaciones" class="form-control shadow-sm" placeholder="Opcional">
             </div>
@@ -210,8 +192,6 @@
                 </button>
             </div>
         </form>
-        {% else %}
-            <div class="text-center py-3 text-muted">No hay medicamentos pendientes para administración.</div>
         {% endif %}
     </div>
 
@@ -223,100 +203,62 @@
                     <th class="ps-3">Medicamento</th>
                     <th>Cant.</th>
                     <th>Vía</th>
-                    <th>Fecha/Hora</th>
+                    <th>Hora</th>
                     <th>Observaciones</th>
                     <th class="text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                {# Ordenamos el historial por hora de administración #}
                 {% if administraciones %}
                     {% for admin in administraciones|sort(attribute='hora_administracion', reverse=True) %}
                     <tr>
-                        <td class="ps-3">
-                            <strong>{{ admin.medicamento.nombre if admin.medicamento else 'N/A' }}</strong>
-                        </td>
+                        <td class="ps-3"><strong>{{ admin.medicamento.nombre if admin.medicamento else 'N/A' }}</strong></td>
                         <td>{{ admin.cantidad }} {{ admin.unidad or '' }}</td>
                         <td><span class="badge bg-info text-dark">{{ admin.via }}</span></td>
-                        <td>{{ admin.hora_administracion.strftime('%H:%M') }} <small class="text-muted">{{ admin.hora_administracion.strftime('%d/%m') }}</small></td>
+                        <td class="fw-bold">{{ admin.hora_administracion.strftime('%H:%M') if admin.hora_administracion else 'N/A' }}</td>
                         <td class="small text-muted">{{ admin.observaciones or '---' }}</td>
                         <td class="text-center">
-                            <div class="d-flex justify-content-center gap-1">
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ admin.id }}">✏️</button>
-                                <form method="POST" action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}" onsubmit="return confirm('¿Eliminar registro?')">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">🗑️</button>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{{ url_for('enfermeria.editar_administracion_med', admin_id=admin.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" title="Editar">✏️</a>
+                                <form method="POST" action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}" 
+                                      onsubmit="return confirm('¿Eliminar registro?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">🗑️</button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                     {% endfor %}
                 {% else %}
-                    <tr><td colspan="6" class="text-center py-4">Sin aplicaciones registradas aún en este turno.</td></tr>
+                    <tr><td colspan="6" class="text-center py-4">Sin aplicaciones registradas aún.</td></tr>
                 {% endif %}
             </tbody>
         </table>
     </div>
-
-    <div class="nav-links">
-        <a href="{{ url_for('menu.inicio') }}" class="btn-nav">Ir al Inicio Principal</a>
-        <span class="separator">|</span>
-        <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn-nav">Volver al Paciente</a>
-    </div>
 </div>
-
-{# MODALES DE EDICIÓN #}
-{% for admin in administraciones %}
-<div class="modal fade" id="modalEditar{{ admin.id }}" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <form method="POST" action="{{ url_for('enfermeria.editar_administracion_medicamento', admin_id=admin.id) }}" class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Editar Aplicación</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Cantidad</label>
-                    <input type="number" name="cantidad" value="{{ admin.cantidad }}" step="0.1" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Observaciones</label>
-                    <textarea name="observaciones" class="form-control" rows="2">{{ admin.observaciones }}</textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
-                <button type="submit" class="btn-sm-verde" style="width: auto;">Guardar Cambios</button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endfor %}
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ahora = new Date();
+    const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+    const inputHora = document.getElementById('hora_admin');
+    if(inputHora) inputHora.value = horaActual;
+});
+
 function autoLlenarMedicamento() {
     const sel = document.getElementById('selectMedicamento');
     const opt = sel.options[sel.selectedIndex];
     const selectVia = document.getElementById('selectVia');
     
     if (opt && opt.value !== "") {
-        // Obtenemos la vía que viene de la orden (ej: "INTRAVENOSA" o "ORAL")
         const viaOrden = opt.dataset.via ? opt.dataset.via.trim().toUpperCase() : "";
-        
         if (viaOrden) {
-            // Mapeo inteligente para reconocer términos comunes
             for (let i = 0; i < selectVia.options.length; i++) {
-                const valorOpcion = selectVia.options[i].value.toUpperCase(); // Ej: "IV", "VO"
-                const textoOpcion = selectVia.options[i].text.toUpperCase();  // Ej: "INTRAVENOSA", "VÍA ORAL"
-
-                // Si la vía de la orden coincide con el código (IV) o con el texto (INTRAVENOSA)
-                if (viaOrden === valorOpcion || 
-                    textoOpcion.includes(viaOrden) || 
-                    viaOrden.includes(valorOpcion) ||
-                    (viaOrden === "INTRAVENOSA" && valorOpcion === "IV") ||
-                    (viaOrden === "ORAL" && valorOpcion === "VO")) {
-                    
+                const valorOpcion = selectVia.options[i].value.toUpperCase();
+                // Si la vía de la orden coincide con la opción del select
+                if (viaOrden === valorOpcion || viaOrden.includes(valorOpcion)) {
                     selectVia.selectedIndex = i;
-                    return;
+                    break;
                 }
             }
         }

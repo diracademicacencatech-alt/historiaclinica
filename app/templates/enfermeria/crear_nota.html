@@ -8,6 +8,20 @@
       --titles: #236e7b;
       --text-links: #0b6169;
       --text-secondary: #5f5f5f;
+      --sm-bg-principal: #ffffff;
+    }
+
+    /* OCULTAR FOOTER DE LA BASE */
+    footer, body > footer, .navbar + footer {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        visibility: hidden !important;
+    }
+
+    body { 
+        background-color: var(--sm-bg-principal) !important;
     }
 
     .titulo-principal { 
@@ -30,7 +44,6 @@
       gap: 10px;
     }
 
-    /* BLOQUE DE INFORMACIÓN DEL PACIENTE */
     .section-white-box {
       background: #ffffff;
       padding: 25px;
@@ -40,7 +53,6 @@
       border-left: 6px solid var(--titles);
     }
 
-    /* ESTILO PARA EL FORMULARIO */
     .form-label {
         font-weight: 700;
         color: var(--titles);
@@ -54,12 +66,6 @@
         padding: 12px;
     }
 
-    .form-control:focus, .form-select:focus {
-        border-color: var(--titles);
-        box-shadow: 0 0 0 0.25rem rgba(35, 110, 123, 0.15);
-    }
-
-    /* BOTÓN VERDE PRINCIPAL */
     .btn-sm-verde {
         background-color: var(--titles) !important;
         color: white !important;
@@ -76,24 +82,19 @@
     .btn-sm-verde:hover {
         background-color: var(--text-links) !important;
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    /* NAVEGACIÓN INFERIOR */
-    .nav-links {
-      margin-top: 40px;
-      padding-top: 25px;
-      border-top: 1px dashed rgba(0,0,0,0.15);
-      text-align: center;
-    }
-
-    .btn-nav {
-      color: var(--text-links);
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 10px 15px;
-      text-transform: uppercase;
+    /* Estilo del footer nuevo */
+    .footer-ajustado-final {
+        text-align: center;
+        width: 100%;
+        padding: 30px 0;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-top: 1px dashed #eee;
+        margin-top: 40px;
     }
 </style>
 {% endblock %}
@@ -108,7 +109,7 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <p class="mb-1"><strong>Paciente:</strong> {{ paciente.nombre }}</p>
-                <p class="mb-0"><strong>Identificación:</strong> {{ paciente.id }}</p>
+                <p class="mb-0"><strong>Identificación:</strong> {{ paciente.numero }}</p>
             </div>
             <div class="col-md-4 text-md-end text-start mt-3 mt-md-0">
                 <span class="badge bg-light text-dark border p-2">REGISTRO NUEVO</span>
@@ -121,35 +122,39 @@
         <form method="POST" action="{{ url_for('enfermeria.crear_nota', paciente_id=paciente.id) }}">
             
             <div class="row">
-                <div class="col-md-6 mb-4">
-                    <label for="historia_clinica_id" class="form-label">Relacionar con Historia Clínica (Opcional)</label>
-                    <select id="historia_clinica_id" name="historia_clinica_id" class="form-select shadow-sm">
-                        <option value="">-- Seleccione una historia clínica --</option>
-                        {% for historia in historias %}
-                        <option value="{{ historia.id }}">
-                            {{ historia.tipo_historia }} - Ingreso: {{ historia.numero_ingreso }} 
-                            ({{ historia.fecha_registro.strftime('%d/%m/%Y') if historia.fecha_registro else '' }})
-                        </option>
-                        {% endfor %}
+                <div class="col-md-4 mb-4">
+                    <label for="hora_nota" class="form-label">Hora del Registro *</label>
+                    <input type="time" id="hora_nota" name="hora_nota" class="form-control shadow-sm" required>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <label for="tipo_nota" class="form-label">Tipo de nota *</label>
+                    <select id="tipo_nota" name="tipo_nota" class="form-select shadow-sm" required>
+                        <option value="">-- Seleccione tipo --</option>
+                        <option value="ingreso">Nota de Ingreso</option>
+                        <option value="egreso">Nota de Egreso</option>
+                        <option value="intermedia">Evolución</option>
+                        <option value="recibo">Recibo de Turno</option>
+                        <option value="entrega">Entrega de Turno</option>
                     </select>
                 </div>
 
-                <div class="col-md-6 mb-4">
-                    <label for="tipo_nota" class="form-label">Tipo de nota *</label>
-                    <select id="tipo_nota" name="tipo_nota" class="form-select shadow-sm" required>
-                        <option value="">-- Seleccione tipo de nota --</option>
-                        <option value="ingreso">Nota de Ingreso</option>
-                        <option value="egreso">Nota de Egreso</option>
-                        <option value="intermedia">Nota Intermedia / Evolución</option>
-                        <option value="recibo">Recibo de Turno</option>
-                        <option value="entrega">Entrega de Turno</option>
+                <div class="col-md-4 mb-4">
+                    <label for="historia_clinica_id" class="form-label">Historia Clínica (Opcional)</label>
+                    <select id="historia_clinica_id" name="historia_clinica_id" class="form-select shadow-sm">
+                        <option value="">-- Vincular ingreso --</option>
+                        {% for historia in historias %}
+                        <option value="{{ historia.id }}">
+                            #{{ historia.numero_ingreso }} - {{ historia.tipo_historia }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 
                 <div class="col-12 mb-4">
                     <label for="nota" class="form-label">Contenido de la nota / Descripción Clínica *</label>
                     <textarea id="nota" name="nota" class="form-control shadow-sm" rows="10" 
-                              placeholder="Escriba aquí de forma detallada la nota de enfermería..." required></textarea>
+                              placeholder="Escriba detalladamente la nota..." required></textarea>
                 </div>
             </div>
 
@@ -162,22 +167,43 @@
                 <div class="col-md-4">
                     <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" 
                        class="btn btn-outline-secondary w-100 p-3 fw-bold" style="border-radius: 10px; text-transform: uppercase;">
-                        Cancelar
+                        Cancelar/Volver
                     </a>
                 </div>
             </div>
         </form>
     </div>
 
-    <div class="nav-links">
-        <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" class="btn-nav">
-            Buscar otro paciente
-        </a>
-        <span class="separator">|</span>
-        <a href="{{ url_for('menu.inicio') }}" class="btn-nav">
-            Volver al Menú Principal
-        </a>
+    <div class="footer-ajustado-final">
+        &copy; 2026 Software SM - CENCATECH
     </div>
-
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function establecerHoraActual() {
+            const ahora = new Date();
+            const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+            const inputHora = document.getElementById('hora_nota');
+            
+            inputHora.max = horaActual; 
+            if (!inputHora.value) {
+                inputHora.value = horaActual;
+            }
+        }
+        establecerHoraActual();
+
+        // Validación de no futuro al enviar
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const ahora = new Date();
+            const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+            const inputHora = document.getElementById('hora_nota');
+            
+            if (inputHora.value > horaActual) {
+                alert('La hora del registro no puede ser superior a la hora actual.');
+                e.preventDefault();
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -203,7 +203,37 @@
             <div class="text-area"><b>[A] Análisis:</b><br>{{ historia.analisis or 'No registra' }}</div>
             <div class="text-area"><b>[P] Plan:</b><br>{{ historia.plan or 'No registra' }}</div>
         </div>
-
+        
+        <div class="section">
+            <div class="section-title">2.1 Plan Farmacológico de Ingreso</div>
+            {% if medicamentos %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 35%;">Medicamento</th>
+                        <th style="width: 15%;">Dosis</th>
+                        <th style="width: 15%;">Frecuencia</th>
+                        <th style="width: 20%;">Cant. Recetada</th>
+                        <th style="width: 15%;">Vía</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in medicamentos %}
+                    <tr>
+                        <td><b>{{ m.nombre }}</b></td>
+                        <td>{{ m.dosis }}</td>
+                        <td>Cada {{ m.frecuencia }}h</td>
+                        <td><b>{{ m.cantidad }}</b> {{ m.unidad }}</td>
+                        <td>{{ m.via }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-area">No se registraron medicamentos en el ingreso.</div>
+            {% endif %}
+        </div>
+         
         {% if historia.signos_vitales %}
         <div class="section">
             <div class="section-title">3. Signos Vitales de Ingreso</div>
@@ -269,10 +299,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 40%;">Medicamento</th>
-                        <th>Dosis</th>
-                        <th>Frecuencia</th>
-                        <th>Vía</th>
+                        <th style="width: 35%;">Medicamento</th>
+                        <th style="width: 15%;">Dosis</th>
+                        <th style="width: 15%;">Frecuencia</th>
+                        <th style="width: 20%;">Cant.</th> <th style="width: 15%;">Vía</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -281,8 +311,7 @@
                         <td><b>{{ med.nombre }}</b></td>
                         <td>{{ med.dosis }}</td>
                         <td>{{ med.frecuencia }}</td>
-                        <td>{{ med.via_administracion or med.via }}</td>
-                    </tr>
+                        <td>{{ med.cantidad }}</td> <td>{{ med.via }}</td> </tr>
                     {% endfor %}
                 </tbody>
             </table>

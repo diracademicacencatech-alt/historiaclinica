@@ -17,6 +17,15 @@
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
+    /* OCULTAR FOOTER DE LA BASE SIN ROMPER NADA */
+    footer, body > footer, .navbar + footer {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        visibility: hidden !important;
+    }
+
     .header-container-sm {
         background: #ffffff;
         border-top: 5px solid var(--sm-titles-btns);
@@ -71,6 +80,18 @@
     
     .btn-save-sm { background-color: var(--sm-titles-btns); color: white; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; font-size: 0.7rem; cursor: pointer; }
     .form-control-sm { border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px; width: 100%; }
+
+    .footer-ajustado-final {
+        text-align: center;
+        width: 100%;
+        padding: 30px 0;
+        color: var(--sm-secondary-text);
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-top: 1px solid #eee;
+        margin-top: 40px;
+    }
 </style>
 {% endblock %}
 
@@ -78,7 +99,7 @@
 <div class="header-container-sm">
     <div class="header-flex">
         <div class="brand-section">
-            <h1 class="brand-title">REGISTROS ENFERMERÍA</h1>
+            <h1 class="brand-title">ENFERMERÍA</h1>
         </div>
         <div class="info-section-sm">
             <div class="mb-1"><span class="info-pill">TURNO: {{ turno_actual }}</span></div>
@@ -87,7 +108,7 @@
 </div>
 
 <div class="container">
-    <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" class="btn-back-sm">← Volver al Menú Principal</a>
+    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente_id) }}" class="btn-back-sm">← Volver al Menú del Paciente</a>
 
     {% set h = historias[0] if historias else None %}
     <div class="ficha-paciente">
@@ -124,12 +145,16 @@
                     </div>
                     <div class="panel-body">
                         <div class="row g-2">
+                            <div class="col-md-2">
+                                <label class="label-ficha">Hora Registro</label>
+                                <input type="time" name="hora_sv" class="form-control-sm" required>
+                            </div>
                             <div class="col-md-2"><label class="label-ficha">T.A.</label><input type="text" name="ta" class="form-control-sm"></div>
-                            <div class="col-md-2"><label class="label-ficha">F.C.</label><input type="text" name="fc" class="form-control-sm"></div>
-                            <div class="col-md-2"><label class="label-ficha">F.R.</label><input type="text" name="fr" class="form-control-sm"></div>
-                            <div class="col-md-2"><label class="label-ficha">T°</label><input type="text" name="temp" class="form-control-sm"></div>
+                            <div class="col-md-1"><label class="label-ficha">F.C.</label><input type="text" name="fc" class="form-control-sm"></div>
+                            <div class="col-md-1"><label class="label-ficha">F.R.</label><input type="text" name="fr" class="form-control-sm"></div>
+                            <div class="col-md-1"><label class="label-ficha">T°</label><input type="text" name="temp" class="form-control-sm"></div>
                             <div class="col-md-2"><label class="label-ficha">SO2</label><input type="text" name="so2" class="form-control-sm"></div>
-                            <div class="col-md-2"><label class="label-ficha">Glicemia</label><input type="text" name="control_glicemia" class="form-control-sm"></div>
+                            <div class="col-md-3"><label class="label-ficha">Glicemia</label><input type="text" name="control_glicemia" class="form-control-sm"></div>
                         </div>
                     </div>
                 </div>
@@ -247,6 +272,10 @@
         <span class="me-4">Total Egresos: <strong class="text-danger">-{{ total_elim }} ml</strong></span>
         <span>Balance Turno: <strong style="color: var(--sm-titles-btns); font-size: 1.1rem;">{{ balance_total }} ml</strong></span>
     </div>
+
+    <div class="footer-ajustado-final">
+        &copy; 2026 Software SM - CENCATECH
+    </div>
 </div>
 
 <datalist id="list_ingresos">
@@ -261,4 +290,35 @@
 <datalist id="list_vias_elim">
     <option value="Sonda Vesical"><option value="Diarrea"><option value="Emesis"><option value="Sonda Gastrica"><option value="Dren Penrose"><option value="Hemovac"><option value="Otros Drenes"><option value="Tubo en T"><option value="Tubo a Torax"><option value="Ventriculostomia"><option value="Bolsa Recolectora"><option value="Irrigacion Vesical"><option value="Espontaneo">
 </datalist>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function establecerLimitesHora() {
+            const ahora = new Date();
+            const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+            const inputsHora = document.querySelectorAll('input[type="time"]');
+            inputsHora.forEach(input => {
+                input.max = horaActual; 
+                if (!input.value) {
+                    input.value = horaActual;
+                }
+            });
+        }
+        establecerLimitesHora();
+
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const ahora = new Date();
+            const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+            const inputsHora = document.querySelectorAll('input[type="time"]');
+            let esValido = true;
+            inputsHora.forEach(input => {
+                if (input.value && input.value > horaActual) {
+                    alert('No se permiten registros con horas futuras.');
+                    esValido = false;
+                }
+            });
+            if (!esValido) e.preventDefault();
+        });
+    });
+</script>
 {% endblock %}

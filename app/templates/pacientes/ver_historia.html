@@ -176,7 +176,36 @@
                 <p class="mb-0"><strong>P:</strong> {{ historia.plan }}</p>
             </div>
         </section>
-
+        <section class="seccion-informe">
+            <h6 class="titulo-seccion">5.1 PLAN FARMACOLÓGICO DE INGRESO</h6>
+            <div class="cuadro-texto">
+                {% if meds_ingreso %}
+                <table class="tabla-informe">
+    <thead>
+        <tr style="background: #f2f2f2;">
+            <th style="width: 35%;">Medicamento</th>
+            <th style="width: 15%;">Dosis</th>
+            <th style="width: 15%;">Frecuencia</th>
+            <th style="width: 20%;">Cant. Recetada</th> <th style="width: 15%;">Vía</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in meds_ingreso %}
+        <tr>
+            <tr>
+    <td style="text-align: left;"><strong>{{ m.nombre_mostrar }}</strong></td>
+    <td>{{ m.dosis }}</td>
+    <td>Cada {{ m.frecuencia }} horas</td>
+    <td><strong>{{ m.cantidad }}</td> <td>{{ m.via }}</td> </tr>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+                {% else %}
+                <p class="small text-muted">No se registraron medicamentos en el formulario de ingreso inicial.</p>
+                {% endif %}
+            </div>
+        </section>
         {% if ordenes_con_meds %}
         <section class="seccion-informe" style="page-break-before: always;">
             <h6 class="titulo-seccion">6. ÓRDENES MÉDICAS Y PLAN DE TRATAMIENTO</h6>
@@ -198,30 +227,26 @@
                 {% endif %}
 
                 {% if item.medicamentos %}
-                <div class="mb-2">
-                    <p class="mb-1" style="color: var(--sm-primary);"><strong>💊 Medicamentos Prescritos:</strong></p>
-                    <table class="tabla-informe">
-                        <thead>
-                            <tr style="background: #f2f2f2;">
-                                <th style="width: 40%;">Medicamento</th>
-                                <th style="width: 20%;">Dosis</th>
-                                <th style="width: 20%;">Frecuencia</th>
-                                <th style="width: 20%;">Vía</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for med in item.medicamentos %}
-                            <tr>
-                                <td><strong>{{ med.nombre }}</strong></td>
-                                <td>{{ med.dosis }}</td>
-                                <td>{{ med.frecuencia }}</td>
-                                <td>{{ med.via_administracion or med.via }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% endif %}
+<table class="tabla-informe">
+    <thead>
+        <tr style="background: #f2f2f2;">
+            <th style="width: 30%;">Medicamento</th>
+            <th style="width: 15%;">Dosis</th>
+            <th style="width: 15%;">Frecuencia</th>
+            <th style="width: 15%;">Cantidad</th>
+            <th style="width: 15%;">Vía</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for med in item.medicamentos %} <tr>
+            <td style="text-align: left;"><strong>{{ med.nombre }}</strong></td>
+            <td>{{ med.dosis }}</td>
+            <td>{{ med.frecuencia }}h</td>
+            <td><strong>{{ med.cantidad }}</strong> {{ med.unidad }}</td> <td>{{ med.via }}</td> </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
 
                 {% if item.laboratorios %}
                 <div class="mb-2" style="margin-top: 10px;">

@@ -84,7 +84,7 @@
 
 <div class="hoja-folio">
     <div style="text-align:center; border: 2px solid #000; padding: 10px;">
-        <h2 style="margin:0; color: var(--titles);">REGISTRO CLÍNICO DE ENFERMERÍA</h2>
+        <h2 style="margin:0; color: var(--titles);">REGISTRO CLÍNICO ENFERMERÍA</h2>
         <p style="margin:5px 0;"><strong>{{ paciente.nombre }}</strong> | Doc: {{ paciente.numero }} | Cama: {{ paciente.cama or 'S/A' }}</p>
     </div>
 
@@ -122,35 +122,42 @@
         </tbody>
     </table>
 
-    <div class="seccion-negra">Balance de Líquidos</div>
+    <div class="seccion-negra">Líquidos Administrados</div>
     <table>
         <thead>
-            <tr>
-                <th style="width: 15%;">FECHA/HORA</th>
-                <th>ADMINISTRADOS</th>
-                <th>ELIMINADOS</th>
-                <th class="no-print" style="width: 15%;">ACCIÓN</th>
-            </tr>
+            <tr><th style="width: 15%;">FECHA/HORA</th><th>LÍQUIDO / CANTIDAD</th><th class="no-print" style="width: 15%;">ACCIÓN</th></tr>
         </thead>
         <tbody>
-            {% for r in registros %}
-                {% set adm = r.balance_liquidos_dict.get('administrados', {}) %}
-                {% set eli = r.balance_liquidos_dict.get('eliminados', {}) %}
-                {% if adm.get('cantidad') or eli.get('cantidad') %}
+            {% for r in registros if r.balance_liquidos_dict.get('administrados', {}).get('cantidad') %}
                 <tr>
                     <td>{{ r.fecha_registro.strftime('%d/%m %H:%M') }}</td>
-                    <td>{{ adm.get('liquido') or 'S/N' }}: {{ adm.get('cantidad', 0) }}cc</td>
-                    <td>{{ eli.get('tipo_liquido') or 'S/N' }}: {{ eli.get('cantidad', 0) }}cc</td>
+                    <td>{{ r.balance_liquidos_dict.administrados.liquido }}: {{ r.balance_liquidos_dict.administrados.cantidad }}cc</td>
                     <td class="no-print">
                         {% if puede_editar_turno_template(r) %}
                             <a href="{{ url_for('enfermeria.editar_balance', registro_id=r.id) }}" class="btn-verde-folio">Editar</a>
-                            <form action="{{ url_for('enfermeria.eliminar_balance_enfermeria', registro_id=r.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar balance?')">
-                                <button type="submit" class="btn-rojo-folio">X</button>
-                            </form>
                         {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
                     </td>
                 </tr>
-                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="seccion-negra">Líquidos Eliminados</div>
+    <table>
+        <thead>
+            <tr><th style="width: 15%;">FECHA/HORA</th><th>TIPO / CANTIDAD</th><th class="no-print" style="width: 15%;">ACCIÓN</th></tr>
+        </thead>
+        <tbody>
+            {% for r in registros if r.balance_liquidos_dict.get('eliminados', {}).get('cantidad') %}
+                <tr>
+                    <td>{{ r.fecha_registro.strftime('%d/%m %H:%M') }}</td>
+                    <td>{{ r.balance_liquidos_dict.eliminados.tipo_liquido }}: {{ r.balance_liquidos_dict.eliminados.cantidad }}cc</td>
+                    <td class="no-print">
+                        {% if puede_editar_turno_template(r) %}
+                            <a href="{{ url_for('enfermeria.editar_balance', registro_id=r.id) }}" class="btn-verde-folio">Editar</a>
+                        {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -185,44 +192,52 @@
     </table>
 
     <div class="seccion-negra">Insumos y Materiales</div>
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 10%;">ESTADO</th>
-                <th>INSUMO</th>
-                <th style="width: 8%;">CANT.</th>
-                <th>FECHA/OBSERVACIÓN</th>
-                <th class="no-print" style="width: 15%;">ACCIÓN</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ins in insumos_registrados %}
-            <tr style="background-color: #f9f9f9;">
-                <td><strong>USADO</strong></td>
-                <td>{{ ins.nombre }}</td>
-                <td>{{ ins.usado }}</td>
-                <td>{{ ins.fecha_uso }} - {{ ins.observaciones }}</td>
-                <td class="no-print">
-                    {% if ins.registro_obj and puede_editar_turno_template(ins.registro_obj) %}
-                        <a href="{{ url_for('enfermeria.gestionar_insumos', paciente_id=paciente.id) }}" class="btn-verde-folio">Editar</a>
-                        {# Para insumos, asumo una ruta genérica de eliminación o gestión ya que no estaba definida explícitamente #}
-                    {% else %}<span class="text-bloqueado">Bloqueado</span>{% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-            {% for pen in insumos_pendientes %}
-            <tr>
-                <td style="color: #5f5f5f;">PENDIENTE</td>
-                <td>{{ pen.nombre }}</td>
-                <td>{{ pen.solicitado }}</td>
-                <td>Solicitado: {{ pen.fecha_solicitud }}</td>
-                <td class="no-print">
-                    <a href="{{ url_for('enfermeria.gestionar_insumos', paciente_id=paciente.id) }}" class="btn-verde-folio">Gestionar</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<table>
+    <thead>
+        <tr>
+            <th style="width: 10%;">ESTADO</th>
+            <th>INSUMO</th>
+            <th style="width: 8%;">CANT.</th>
+            <th>FECHA/OBSERVACIÓN</th>
+            <th class="no-print" style="width: 15%;">ACCIÓN</th>
+        </tr>
+    </thead>
+    <tbody>
+        {# 1. Insumos USADOS #}
+        {% for ins in insumos_registrados %}
+        <tr style="background-color: #f9f9f9;">
+            <td><strong>USADO</strong></td>
+            <td>{{ ins.nombre }}</td>
+            <td>{{ ins.usado }}</td>
+            <td>{{ ins.fecha_uso }} - {{ ins.observaciones or '' }}</td>
+            <td class="no-print">
+    {# Comparamos la fecha del insumo con la fecha actual del servidor #}
+    {% set fecha_hoy = ahora_bogota().strftime('%Y-%m-%d') %}
+    {% set fecha_insumo = ins.fecha_uso.split(' ')[0] if ins.fecha_uso else '' %}
+
+    {% if fecha_insumo == fecha_hoy %}
+        <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}" class="btn-verde-folio">Editar</a>
+    {% else %}
+        <span class="text-bloqueado">Cerrado</span>
+    {% endif %}
+</td>
+        </tr>
+        {% endfor %}
+
+        {# 2. Insumos PENDIENTES #}
+        {% for pen in insumos_pendientes %}
+        <tr>
+            <td style="color: #5f5f5f;">PENDIENTE</td>
+            <td>{{ pen.nombre }}</td>
+            <td>{{ pen.solicitado }}</td>
+            <td>Solicitado: {{ pen.fecha_solicitud }}</td>
+            <td class="no-print">
+                <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}" class="btn-verde-folio">Gestionar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
     <div class="seccion-negra">Notas de Evolución</div>
     {% for r in registros %}
