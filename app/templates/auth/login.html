@@ -1,15 +1,79 @@
 {% extends 'base.html' %}
-{% block title %}Iniciar Sesión{% endblock %}
+{% block title %}Iniciar Sesión - SOFTWARE SM{% endblock %}
+
 {% block content %}
-<h2>Iniciar Sesión</h2>
-<form method="post">
-  <label>Usuario o Email:</label><br>
-  <input type="text" name="username_or_email" required><br>
-  <label>Contraseña:</label><br>
-  <input type="password" name="password" required><br>
-  <button type="submit">Entrar</button>
-</form>
-{% for message in get_flashed_messages(with_categories=true) %}
-  <div class="alert alert-{{ message[0] }}">{{ message[1] }}</div>
-{% endfor %}
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+        
+        <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
+            
+            <div style="background: var(--sm-primary); height: 10px;"></div>
+            
+            <div class="card-body p-4 p-md-5">
+                
+                <div class="text-center mb-5">
+                    <div class="mb-3 d-inline-block p-3 rounded-circle shadow-sm" style="background: var(--sm-bg);">
+                        <i class="fas fa-user-shield fa-3x" style="color: var(--sm-primary);"></i>
+                    </div>
+                    <h2 class="fw-bold" style="color: var(--sm-primary); letter-spacing: -1px; margin-bottom: 5px;">SOFTWARE SM</h2>
+                    <p class="text-muted small text-uppercase fw-bold" style="letter-spacing: 1px;">Gestión Clínica Especializada</p>
+                </div>
+
+                <form method="post">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold" style="color: var(--sm-accent);">USUARIO O EMAIL</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0" style="border-radius: 12px 0 0 12px;">
+                                <i class="fas fa-envelope-open text-muted"></i>
+                            </span>
+                            <input type="text" name="username_or_email" class="form-control form-control-lg bg-light border-0" 
+                                   placeholder="Nombre de usuario" required 
+                                   style="border-radius: 0 12px 12px 0; font-size: 1rem;">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold" style="color: var(--sm-accent);">CONTRASEÑA</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0" style="border-radius: 12px 0 0 12px;">
+                                <i class="fas fa-key text-muted"></i>
+                            </span>
+                            <input type="password" name="password" class="form-control form-control-lg bg-light border-0" 
+                                   placeholder="••••••••" required 
+                                   style="border-radius: 0 12px 12px 0; font-size: 1rem;">
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-lg text-white shadow" 
+                                style="background: var(--sm-primary); border-radius: 15px; font-weight: 800; padding: 15px; transition: 0.3s;">
+                            INGRESAR AL SISTEMA <i class="fas fa-chevron-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p class="text-muted small">CENCATECH &copy; 2025 | Todos los derechos reservados</p>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    /* Efecto hover para el botón */
+    .btn:hover {
+        background: var(--sm-accent) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(35, 110, 123, 0.3) !important;
+    }
+    /* Estilo para los inputs al hacer foco */
+    .form-control:focus {
+        background: #fff !important;
+        box-shadow: 0 0 0 3px rgba(35, 110, 123, 0.1);
+        border: 1px solid var(--sm-primary) !important;
+    }
+</style>
 {% endblock %}

@@ -73,6 +73,7 @@
         display: inline-block;
         text-align: center; 
         width: 100%;
+        cursor: pointer;
     }
 
     .btn-sm-verde:hover {
@@ -83,10 +84,31 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-2">
-    
-    <h2 class="titulo-principal">💊 Administración de Medicamentos</h2>
+<div class="container-fluid mt-2">
+    {# Alerta de error por URL #}
+    {% if request.args.get('error_msg') %}
+      <div class="alert alert-danger" role="alert" style="background-color: #f0e7d8; border: 2px solid #236e7b; color: #0b6169; border-radius: 8px; padding: 15px; margin-bottom: 20px; position: relative;">
+        <strong style="color: #236e7b;">⚠️ ATENCIÓN:</strong> {{ request.args.get('error_msg') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="float: right; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+    {% endif %}
 
+    {# Alertas Flashed de éxito o error interno del sistema #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+</div>
+
+<div class="container py-2">
+    <h2 class="titulo-principal">💊 Administración de Medicamentos</h2>
+    
     <h5 class="titulo-seccion">📋 Información del Paciente</h5>
     <div class="section-white-box">
         <div class="row align-items-center">
@@ -105,45 +127,39 @@
 
     <h5 class="titulo-seccion">📋 Medicamentos Formulados</h5>
     <div class="table-responsive table-sm-custom mb-4">
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th class="ps-3">Medicamento</th>
-                <th>Dosis</th>
-                <th>Frecuencia</th> <th>Vía Orden</th>
-                <th class="text-center">Formulada</th>
-                <th class="text-center">Admin.</th>
-                <th class="text-center">Pendiente</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for med in medicamentos_formulados %}
-            <tr>
-                <td class="ps-3">
-                    <strong>{{ med.nombre }}</strong><br>
-                    <small class="text-muted">{{ med.codigo }}</small>
-                </td>
-                <td>{{ med.dosis }}</td>
-                
-                <td class="fw-bold" style="color: #0b6169; text-transform: capitalize;">
-    {{ med.frecuencia }}
-</td>
-                
-                <td>
-                    <span class="badge bg-light text-dark border">
-                        {{ med.via if med.via else 'VO' }}
-                    </span>
-                </td>
-                <td class="text-center">{{ med.cantidad_formulada }}</td>
-                <td class="text-center text-success fw-bold">{{ med.cantidad_administrada | float }}</td>
-                <td class="text-center fw-bold {{ 'text-danger' if med.pendiente > 0 else 'text-muted' }}">
-                    {{ med.pendiente if med.pendiente > 0 else '✓' }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Medicamento</th>
+                    <th>Dosis</th>
+                    <th>Frecuencia</th> <th>Vía Orden</th>
+                    <th class="text-center">Formulada</th>
+                    <th class="text-center">Admin.</th>
+                    <th class="text-center">Pendiente</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for med in medicamentos_formulados %}
+                <tr>
+                    <td class="ps-3">
+                        <strong>{{ med.nombre }}</strong><br>
+                        <small class="text-muted">{{ med.codigo }}</small>
+                    </td>
+                    <td>{{ med.dosis }}</td>
+                    <td class="fw-bold" style="color: #0b6169; text-transform: capitalize;">{{ med.frecuencia }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ med.via if med.via else 'VO' }}</span>
+                    </td>
+                    <td class="text-center">{{ med.cantidad_formulada }}</td>
+                    <td class="text-center text-success fw-bold">{{ med.cantidad_administrada | float }}</td>
+                    <td class="text-center fw-bold {{ 'text-danger' if med.pendiente > 0 else 'text-muted' }}">
+                        {{ med.pendiente if med.pendiente > 0 else '✓' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <h5 class="titulo-seccion">➕ Registrar Aplicación</h5>
     <div class="section-white-box" style="border-left-color: #28a745;">
@@ -180,7 +196,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Hora de Aplicación *</label>
-                <input type="time" name="hora_admin" id="hora_admin" class="form-control shadow-sm" required>
+                <input type="time" name="hora_administracion" id="hora_admin" class="form-control shadow-sm" required>
             </div>
             <div class="col-md-8">
                 <label class="form-label fw-bold">Observaciones / Nota de Enfermería</label>
@@ -192,6 +208,8 @@
                 </button>
             </div>
         </form>
+        {% else %}
+        <p class="text-center py-3 text-muted">No hay medicamentos formulados disponibles para este registro.</p>
         {% endif %}
     </div>
 
@@ -219,12 +237,13 @@
                         <td class="small text-muted">{{ admin.observaciones or '---' }}</td>
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-2">
-                                <a href="{{ url_for('enfermeria.editar_administracion_med', admin_id=admin.id) }}" 
-                                   class="btn btn-sm btn-outline-primary" title="Editar">✏️</a>
-                                <form method="POST" action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}" 
-                                      onsubmit="return confirm('¿Eliminar registro?')">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">🗑️</button>
-                                </form>
+                                <a href="{{ url_for('enfermeria.editar_administracion_medicamento', admin_id=admin.id) }}" 
+   class="btn btn-sm btn-outline-primary" title="Editar">✏️</a>
+                                <form action="{{ url_for('enfermeria.eliminar_administracion_medicamento', admin_id=admin.id) }}" method="POST" style="display:inline;">
+    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Está seguro de eliminar este registro?')">
+        🗑️
+    </button>
+</form>
                             </div>
                         </td>
                     </tr>
@@ -255,7 +274,6 @@ function autoLlenarMedicamento() {
         if (viaOrden) {
             for (let i = 0; i < selectVia.options.length; i++) {
                 const valorOpcion = selectVia.options[i].value.toUpperCase();
-                // Si la vía de la orden coincide con la opción del select
                 if (viaOrden === valorOpcion || viaOrden.includes(valorOpcion)) {
                     selectVia.selectedIndex = i;
                     break;

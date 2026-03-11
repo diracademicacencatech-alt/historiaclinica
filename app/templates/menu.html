@@ -1,64 +1,194 @@
 {% extends 'base.html' %}
-{% block title %}Menú Principal{% endblock %}
+{% block title %}Software SM - Dashboard{% endblock %}
 
 {% block content %}
-<div style="text-align: center; margin-bottom: 40px;">
-    <h1 style="font-size: 3em; font-weight: bold; color: #236e7b; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">CENCATECH</h1>
-    <p style="font-size: 1.2em; color: #236e7b; font-style: italic; margin: 0;">Aprender es hacer, servir es transformar</p>
-</div>
+<div class="dashboard-wrapper">
+    <nav class="sidebar-professional">
+        
+        
+        <div class="sidebar-menu">
+            <p class="menu-label">MODULOS</p>
+            <a href="{{ url_for('pacientes.listar') }}" class="menu-link active">
+                <i class="fas fa-users"></i> Pacientes
+            </a>
+            <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" class="menu-link">
+                <i class="fas fa-user-nurse"></i> Enfermería
+            </a>
+            <a href="{{ url_for('ayudas.inicio_ayudas') }}" class="menu-link">
+                <i class="fas fa-microscope"></i> Ayudas Diagnósticas
+            </a>
 
-<div class="row g-4 justify-content-center">
+            <p class="menu-label">Configuración</p>
+            <div class="settings-grid">
+                <a href="{{ url_for('inventario.listar_insumos') }}" title="Insumos"><i class="fas fa-box"></i></a>
+                <a href="{{ url_for('param.medicamentos') }}" title="Medicamentos"><i class="fas fa-pills"></i></a>
+                <a href="{{ url_for('param.cie10') }}" title="CIE-10"><i class="fas fa-notes-medical"></i></a>
+                <a href="{{ url_for('param.laboratorios') }}" title="Laboratorios"><i class="fas fa-vial"></i></a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content-pro">
+       <section class="welcome-banner">
+            <div class="banner-text">
+                <h2>¡Hola!</h2>
+                <p>Para iniciar revisa los modulos de la izquierda</p>
+            </div>
+            <div class="banner-img">
+                <i class="fas fa-hospital-user shadow-lg"></i>
+            </div>
+        </section>
+
+<style>
+    /* 1. Reset y Estructura Base */
+    body, html { margin: 0; padding: 0; overflow-x: hidden; }
+
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background-color: #f4f7f6;
+        width: 100%;
+    }
+
+    /* 2. Sidebar Profesional */
+    .sidebar-professional {
+    width: 280px;
+    min-width: 280px;
+    background: #1a1d23;
+    color: #fff;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+
+    /* --- CAMBIOS PARA ELIMINAR EL ESPACIO SOBRANTE --- */
+    height: fit-content;      /* La altura se ajusta solo a lo que ocupan los botones */
+    max-height: calc(100vh - 40px); /* Evita que crezca más que la pantalla */
+    margin: 20px;            /* Crea el efecto de "flotado" */
+    border-radius: 24px;     /* Redondea el corte inferior */
     
-    <div class="col-12 col-md-6 col-lg-4">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; height: 100%;">
-            <h3 style="margin: 0 0 25px 0; font-size: 1.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">📋 HISTORIAS CLÍNICAS</h3>
-            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px);">
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
-                        <span>👥</span>
-                        <a href="{{ url_for('pacientes.listar') }}" style="color: white; text-decoration: none; font-weight: bold;">Pacientes</a>
-                    </li>
-                    <li style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
-                        <span>👨‍⚕️</span>
-                        <a href="{{ url_for('ayudas.inicio_ayudas') }}" style="color: white; text-decoration: none; font-weight: bold;">Ayudas Dx</a>
-                    </li>
-                    <li style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
-                        <span>👩‍⚕️</span>
-                        <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" style="color: white; text-decoration: none; font-weight: bold;">Enfermería</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
+    position: sticky;
+    top: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
 
-    <div class="col-12 col-md-6 col-lg-4">
-        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
-            <h3 style="margin: 0 0 25px 0; font-size: 1.8em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🟦 MÓDULO 2</h3>
-            <p style="margin: 0; opacity: 0.8;">Próximamente...</p>
-        </div>
-    </div>
+    .logo-text { font-size: 1.5rem; font-weight: 800; color: #0c0b0b; letter-spacing: 1px; margin-bottom: 20px; }
+    .logo-text span { color: #3498db; }
 
-    <div class="col-12 col-md-6 col-lg-4">
-        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; height: 100%;">
-            <h3 style="margin: 0 0 25px 0; font-size: 1.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">⚙️ PARAMETRIZACIÓN</h3>
-            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px);">
-                <ul style="list-style: none; padding: 0; margin: 0; text-align:left;">
-                    <li style="margin: 8px 0;">
-                        <a href="{{ url_for('inventario.listar_insumos') }}" style="color: white; text-decoration: none; font-weight: bold;">🧴 Insumos médicos</a>
-                    </li>
-                    <li style="margin: 8px 0;">
-                        <a href="{{ url_for('param.medicamentos') }}" style="color: white; text-decoration: none; font-weight: bold;">💊 Medicamentos</a>
-                    </li>
-                    <li style="margin: 8px 0;">
-                        <a href="{{ url_for('param.cie10') }}" style="color: white; text-decoration: none; font-weight: bold;">📚 Códigos CIE‑10</a>
-                    </li>
-                    <li style="margin: 8px 0;">
-                        <a href="{{ url_for('param.laboratorios') }}" style="color: white; text-decoration: none; font-weight: bold;">🧪 Exámenes de laboratorio</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
+    /* 3. Etiquetas y Enlaces del Menú (MEJORADOS) */
+    .menu-label { 
+        font-size: 0.7rem; 
+        text-transform: uppercase; 
+        color: #dde6e9; 
+        font-weight: 700; 
+        margin-top: 30px; 
+        margin-bottom: 12px;
+        letter-spacing: 1.2px;
+        padding-left: 5px;
+    }
 
-</div>
+    .menu-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        color: #eaeef0;
+        text-decoration: none !important;
+        border-radius: 12px; /* Más redondeado */
+        margin-bottom: 8px;
+        transition: all 0.3s ease; /* Transición más suave */
+    }
+
+    .menu-link i { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1rem; }
+
+    .menu-link:hover { 
+        background: rgba(255, 255, 255, 0.05); 
+        color: #fff; 
+        transform: translateX(5px); /* Efecto de desplazamiento al pasar el mouse */
+    }
+
+    .menu-link.active { 
+        background: #236e7b; /* Tu color primario */
+        color: #fff; 
+        box-shadow: 0 4px 12px rgba(35, 110, 123, 0.2);
+    }
+
+    /* 4. Grilla de Configuración (MEJORADA 2x2) */
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* Cambio a 2 columnas para mejor tamaño */
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .settings-grid a {
+        background: #2d3436; 
+        color: #fff; 
+        height: 45px; /* Un poco más altos para facilitar el click */
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        border-radius: 10px; 
+        transition: 0.3s; 
+        text-decoration: none;
+        border: 1px solid transparent;
+    }
+
+    .settings-grid a:hover { 
+        background: #3498db; 
+        transform: translateY(-2px); /* Efecto de levante */
+    }
+
+    /* 5. Contenido Principal */
+    .main-content-pro {
+        flex-grow: 1;
+        padding: 40px;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+
+    /* 6. Banner y Cards */
+    .welcome-banner {
+        background: linear-gradient(135deg, #236e7b 0%, #3498db 100%);
+        padding: 40px;
+        border-radius: 24px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+
+    .welcome-banner h2 { font-weight: 800; font-size: 2rem; margin: 0; }
+    .banner-img i { font-size: 5rem; opacity: 0.3; }
+
+    .quick-access-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: 0.3s;
+    }
+    
+    .stat-card:hover { transform: translateY(-5px); }
+
+    .stat-icon {
+        width: 55px; height: 55px; border-radius: 15px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    }
+    .stat-icon.blue { background: #e3f2fd; color: #1e88e5; }
+    .stat-icon.green { background: #e8f5e9; color: #43a047; }
+    .stat-icon.orange { background: #fff3e0; color: #fb8c00; }
+
+    .stat-details h3 { font-size: 0.75rem; color: #95a5a6; margin: 0; text-transform: uppercase; }
+    .stat-details p { font-size: 1.2rem; font-weight: 700; color: #2d3436; margin: 0; }
+</style>
 {% endblock %}

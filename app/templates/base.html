@@ -5,235 +5,208 @@
     <title>{% block title %}Software SM{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
-    <!-- Bootstrap CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
-    <style>
-        /* Colores base del login: fondo beige y acentos verde azulado */
-        :root {
-            --sm-bg: #f7d5ba;        /* beige de fondo */
-            --sm-card-bg: #f0e7d8;   /* beige algo más claro para contenedores */
-            --sm-primary: #236e7b;   /* verde azulado */
-            --sm-primary-soft: #0b616920;
-            --sm-text-main: #0b6169;
-            --sm-text-muted: #5f5f5f;
-        }
+   <style>
+    :root {
+        --sm-bg: #f4f7f6;
+        --sm-primary: #236e7b;
+        --sm-accent: #0b6169;
+        --sm-card-bg: #ffffff;
+        --sm-text: #334756;
+    }
 
-        body {
-            background-color: var(--sm-bg);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
+    body {
+        background-color: var(--sm-bg);
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--sm-text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+    }
 
-        /* NAVBAR estilo tarjeta superior, misma línea de colores */
-        .navbar-sm {
-            background-color: var(--sm-card-bg) !important;
-            border-bottom: 3px solid var(--sm-primary);
-        }
+    /* NAVBAR MEJORADA */
+    .navbar-sm {
+        background-color: white !important;
+        border-bottom: 3px solid var(--sm-primary);
+        padding: 0.5rem 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
 
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.5rem;
-            color: var(--sm-primary) !important;
-            letter-spacing: 0.03em;
-        }
+    /* LOGO */
+    .logo-img {
+        height: 75px;
+        width: auto;
+        image-rendering: -webkit-optimize-contrast;
+        object-fit: contain;
+    }
 
-        .navbar-nav .nav-link {
-            color: var(--sm-primary) !important;
-            font-weight: 500;
-        }
+    /* RELOJ */
+    #reloj-digital {
+        background: var(--sm-primary);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.95rem;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        white-space: nowrap;
+    }
 
-        .navbar-nav .nav-link:hover,
-        .navbar-nav .nav-link:focus {
-            color: #094b50 !important;
-        }
-
-        .dropdown-menu {
-            border-radius: 12px;
-            border: 1px solid var(--sm-primary-soft);
-        }
-
-        .dropdown-item:hover {
-            background-color: var(--sm-primary-soft);
-        }
-
-        /* Contenedor principal tipo tarjeta suave */
-        .sm-main-container {
-            max-width: 1200px;
-            margin-top: 2rem;
-            margin-bottom: 2rem;
-            background-color: var(--sm-card-bg);
-            border-radius: 24px;
-            border: 3px solid var(--sm-primary);
-            padding: 2rem 2rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            box-sizing: border-box; /* Asegura que el padding no "infle" el ancho */
-        }
-
-        .sm-main-title {
-            color: var(--sm-text-main);
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .sm-main-subtitle {
-            text-align: center;
-            color: var(--sm-text-muted);
-            margin-bottom: 1.5rem;
-        }
-
-        /* Mensajes flash dentro de la tarjeta */
-        .sm-alert {
-            border-radius: 16px;
-        }
-
-        footer {
-            margin-top: 1rem;
-            padding: 0.75rem;
-            background-color: transparent;
-            text-align: center;
-            color: var(--sm-text-main);
-            font-size: 0.85rem;
-        }
-        /* --- AJUSTES PARA CELULARES (RESPONSIVE) --- */
-@media (max-width: 768px) {
-    /* 1. Reducir márgenes y padding en el contenedor principal para ganar espacio */
+    /* CONTENEDOR PRINCIPAL: Flexible y sin límites de ancho */
     .sm-main-container {
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-        padding: 1.2rem 1rem; /* Padding mucho más pequeño en móvil */
-        border-radius: 15px;    /* Bordes menos pronunciados */
-        border-width: 2px;
+        flex: 1;
+        width: 100%;
+        margin: 0;
+        padding: 0; 
+        display: flex;
+        flex-direction: column;
     }
 
-    /* 2. Forzar que todas las TABLAS del sistema tengan scroll lateral si no caben */
-    table {
-        display: block;
-        width: 100% !important;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+    /* Area para mensajes flash */
+    .flash-messages-container {
+        padding: 1rem 2rem 0 2rem;
     }
 
-    /* 3. Ajustar títulos para que no se vean gigantes */
-    .sm-main-title {
-        font-size: 1.5rem;
+    footer {
+        padding: 1rem;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #888;
+        background: white;
+        border-top: 1px solid #dee2e6;
     }
 
-    /* 4. Hacer que las tarjetas (cards) de Bootstrap ocupen todo el ancho */
-    .card {
-        margin-bottom: 1rem;
-    }
+    /* --- AJUSTES DE RESPONSIVIDAD (TELEFONOS) --- */
+    @media (max-width: 768px) {
+        .logo-img { height: 55px; }
+        #reloj-digital { font-size: 0.8rem; }
 
-    /* 5. Asegurar que los inputs y botones no se salgan */
-    input, select, textarea {
-        font-size: 16px !important; /* Evita el zoom automático en iPhone */
-    }
-}
-    </style>
+        /* Ajuste del layout principal en móvil */
+        .dashboard-wrapper {
+            flex-direction: column !important;
+        }
 
+        /* El sidebar en móvil se adapta al ancho total y deja de ser sticky fijo */
+        .sidebar-professional {
+            width: 100% !important;
+            min-width: 100% !important;
+            height: auto !important;
+            position: relative !important;
+            top: 0 !important;
+            margin: 10px 0 !important; /* Margen pequeño arriba/abajo */
+            border-radius: 15px !important;
+            padding: 20px !important;
+        }
+
+        /* El contenido principal se ajusta */
+        .main-content-pro {
+            padding: 15px !important;
+        }
+
+        /* Ajuste de tarjetas y banners en móvil */
+        .welcome-banner {
+            flex-direction: column;
+            text-align: center;
+            padding: 20px !important;
+        }
+        
+        .welcome-banner h2 { font-size: 1.5rem !important; }
+        .banner-img { display: none; } /* Ocultar icono grande para ahorrar espacio */
+
+        .quick-access-grid {
+            grid-template-columns: 1fr !important; /* Una tarjeta por fila */
+        }
+
+        /* La rejilla de configuración se mantiene funcional */
+        .settings-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 5px !important;
+        }
+    }
+</style>
     {% block head %}{% endblock %}
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light shadow-sm" style="background-color: #f0e7d8; border-bottom: 2px solid #236e7b;">
-  <div class="container">
-    <div class="d-flex flex-column">
-      <a class="navbar-brand mb-0 h1" href="{{ url_for('menu.inicio') }}" style="color: #236e7b; font-weight: bold; padding-bottom: 0;">
-        SOFTWARE SM
-      </a>
-      <div id="reloj-digital" style="color: #236e7b; font-family: monospace; font-size: 0.85rem; margin-top: -5px; font-weight: bold;">
-    00/00/0000 | 00:00:00
-</div>
-    </div>
+<nav class="navbar navbar-expand-lg navbar-light navbar-sm sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('menu.inicio') }}">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" 
+                 alt="CENCATECH" 
+                 class="logo-img">
+        </a>
+        
+        <div id="reloj-digital" class="d-none d-md-block ms-3">
+            00/00/0000 | 00:00:00
+        </div>
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSM" aria-controls="navbarSM" aria-expanded="false" aria-label="Menú de navegación">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+        {% if current_user.is_authenticated %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSM">
+            <span class="navbar-toggler-icon"></span>
+        </button>
   
-    <div class="collapse navbar-collapse" id="navbarSM">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="modulosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #0b6169; font-weight: 600;">
-            Módulos
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="modulosDropdown">
-            <li><a class="dropdown-item" href="{{ url_for('ayudas.inicio_ayudas') }}">AyudasDx</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('pacientes.listar') }}">Pacientes</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('enfermeria.inicio_enfermeria') }}">Enfermería</a></li>
-          </ul>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('auth.logout') }}" style="color: #0b6169;">Cerrar sesión</a>
-        </li>
-      </ul>
+        <div class="collapse navbar-collapse" id="navbarSM">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item me-3">
+                    <a class="nav-link fw-bold" href="{{ url_for('menu.inicio') }}" style="color: var(--sm-accent);">
+                        <i class="fas fa-home me-1"></i> Inicio
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle fw-bold" href="#" id="dropMod" role="button" data-bs-toggle="dropdown" style="color: var(--sm-accent);">
+                        <i class="fas fa-th me-1"></i> Módulos
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 10px;">
+                        <li><a class="dropdown-item py-2" href="{{ url_for('pacientes.listar') }}"><i class="fas fa-users me-2 text-primary"></i>Pacientes</a></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('enfermeria.inicio_enfermeria') }}"><i class="fas fa-user-nurse me-2 text-primary"></i>Enfermería</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Salir</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
     </div>
-  </div>
 </nav>
 
-<div class="container d-flex justify-content-center">
-  <div class="sm-main-container w-100">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show sm-alert flash-alert" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+<div class="sm-main-container">
+    <div class="flash-messages-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 10px;">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+    </div>
 
     {% block content %}{% endblock %}
-  </div>
 </div>
 
 <footer>
-  &copy; 2025 Software SM - CENCATECH
+    <strong>CENCATECH</strong> &copy; 2025 | Sistema de Gestión Médica
 </footer>
 
-<!-- Bootstrap JS CDN y Popper.js -->
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function actualizarReloj() {
+        const ahora = new Date();
+        const f = ahora.toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'});
+        const h = ahora.toLocaleTimeString('es-ES', {hour12: false});
+        const el = document.getElementById('reloj-digital');
+        if(el) el.textContent = `${f} | ${h}`;
+    }
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj();
+</script>
 {% block scripts %}{% endblock %}
-
 </body>
-
-<script>
-  // Ocultar automáticamente solo los mensajes flash
-  document.addEventListener('DOMContentLoaded', function () {
-    const alerts = document.querySelectorAll('.flash-alert');
-    if (!alerts.length) return;
-
-    setTimeout(() => {
-      alerts.forEach(a => {
-        a.classList.remove('show');
-        a.classList.add('hide');
-        setTimeout(() => a.remove(), 300);
-      });
-    }, 2000); // 2 segundos
-  });
-</script>
-<script>
-function actualizarReloj() {
-    const ahora = new Date();
-    
-    // Formato de Fecha: DD/MM/AAAA
-    const dia = String(ahora.getDate()).padStart(2, '0');
-    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-    const anio = ahora.getFullYear();
-    
-    // Formato de Hora: HH:MM:SS
-    const horas = String(ahora.getHours()).padStart(2, '0');
-    const minutos = String(ahora.getMinutes()).padStart(2, '0');
-    const segundos = String(ahora.getSeconds()).padStart(2, '0');
-    
-    const fechaCompleta = `${dia}/${mes}/${anio} | ${horas}:${minutos}:${segundos}`;
-    document.getElementById('reloj-digital').textContent = fechaCompleta;
-}
-
-// Ejecutar cada segundo
-setInterval(actualizarReloj, 1000);
-actualizarReloj(); // Llamada inicial para evitar el 00:00:00
-</script>
 </html>

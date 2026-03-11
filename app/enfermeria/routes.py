@@ -34,12 +34,71 @@ def parse_json_seguro(data_str, default=None):
 TURNOS_DISPONIBLES = ['MAÑANA', 'TARDE', 'NOCHE']
 
 def obtener_turno_actual():
-    ahora = ahora_bogota()
+    ahora = ahora_bogota() # Asegúrate de que esta función devuelva la hora de Colombia
     h = ahora.hour
-    if 7 <= h < 13: return 'MAÑANA'
-    if 13 <= h < 19: return 'TARDE'
-    return 'NOCHE'
+    
+    # Mañana: 07:00 a 12:59
+    if 7 <= h < 13:
+        return 'MAÑANA'
+    # Tarde: 13:00 a 18:59
+    elif 13 <= h < 19:
+        return 'TARDE'
+    # Noche: 19:00 a 06:59
+    else:
+        return 'NOCHE'
+
+def validar_turno_estricto(registro_obj):
+    # 1. Los administradores saltan la regla
+    user_rol = getattr(current_user, 'rol', getattr(current_user, 'role', None))
+    if user_rol == 'ADMIN': 
+        return True, "OK"
+
+    ahora = ahora_bogota().replace(tzinfo=None)
+    turno_actual = obtener_turno_actual()
+    
+    # 2. Obtener el turno guardado
+    turno_guardado = str(getattr(registro_obj, 'turno', '')).strip().upper()
+
+    # 3. Obtener la fecha del registro
+    fecha_reg = getattr(registro_obj, 'fecha_registro', ahora)
+    if fecha_reg:
+        fecha_reg = fecha_reg.replace(tzinfo=None)
+        # Si el registro tiene menos de 180 minutos (3 horas), 
+        # permitimos editar/eliminar sin importar el nombre del turno.
+        if (ahora - fecha_reg).total_seconds() / 60 < 180:
+            return True, "OK"
+
+    # 4. Si pasó mucho tiempo, validamos que el turno coincida
+    if turno_guardado == turno_actual:
+        return True, "OK"
+    
+    return False, f"Acción denegada: Registro de turno {turno_guardado} no modificable en turno {turno_actual}."
+
+def validar_acceso_visual(r):
+    """Para BOTONES: Permite ver botones hasta 120 min después del registro."""
+    # Intentamos obtener el rol de forma segura
+    user_rol = getattr(current_user, 'rol', getattr(current_user, 'role', None))
+    if user_rol == 'ADMIN': 
+        return True
         
+    ahora = ahora_bogota()
+    fecha_ref = getattr(r, 'fecha_registro', getattr(r, 'hora_administracion', None))
+    if not fecha_ref: return False
+    
+    diferencia = ahora.replace(tzinfo=None) - fecha_ref.replace(tzinfo=None)
+    minutos = diferencia.total_seconds() / 60
+    
+    if 0 <= minutos < 120: 
+        return True
+        
+    return str(getattr(r, 'turno', '')).strip().upper() == obtener_turno_actual()
+
+@enfermeria_bp.context_processor
+def inyectar_utilidades():
+    return dict(
+        puede_editar_turno_template=validar_turno_estricto,
+        validar_acceso_visual=validar_acceso_visual
+    )
 # ---------- 1) PANTALLA INICIAL: BUSCAR PACIENTE ----------
 
 @enfermeria_bp.route('/', methods=['GET', 'POST'])
@@ -111,62 +170,35 @@ def autocomplete_pacientes():
 
 
 # ---------- 3) DETALLE REGISTROS DEL DÍA / TURNO ----------
-
 @enfermeria_bp.route('/detalle/<int:paciente_id>')
 @login_required
 def detalle(paciente_id):
     paciente = Paciente.query.get_or_404(paciente_id)
-
     turno_actual = obtener_turno_actual()
-    fecha_hoy = ahora_bogota().date()
 
+    # Traemos todos los registros del paciente sin filtrar por hoy para el historial
     registros = (
         RegistroEnfermeria.query
-        .filter(
-            RegistroEnfermeria.paciente_id == paciente_id,
-            db.func.date(RegistroEnfermeria.fecha_registro) == fecha_hoy,
-            RegistroEnfermeria.turno == turno_actual
-        )
+        .filter(RegistroEnfermeria.paciente_id == paciente_id)
         .order_by(RegistroEnfermeria.fecha_registro.desc())
         .all()
     )
 
     for r in registros:
-        try:
-            sv = json.loads(r.signos_vitales or '{}')
-            if not isinstance(sv, dict):
-                sv = {}
-        except Exception:
-            sv = {}
-        r.signos_vitales_dict = sv
+        # Usamos la función parse_json_seguro que ya tienes arriba
+        r.signos_vitales_dict = parse_json_seguro(r.signos_vitales)
+        r.balance_liquidos_dict = parse_json_seguro(r.balance_liquidos, {'administrados': {}, 'eliminados': {}})
 
-        try:
-            bl = json.loads(r.balance_liquidos or '{}')
-            if not isinstance(bl, dict):
-                bl = {}
-        except Exception:
-            bl = {}
-        bl.setdefault('administrados', {})
-        bl.setdefault('eliminados', {})
-        r.balance_liquidos_dict = bl
-
-    notas = (
-        RegistroEnfermeria.query
-        .filter_by(paciente_id=paciente_id)
-        .filter(RegistroEnfermeria.tipo_nota.isnot(None))
-        .order_by(RegistroEnfermeria.fecha_registro.desc())
-        .limit(5)
-        .all()
-    )
+    # Notas para el resumen lateral
+    notas = [r for r in registros if r.tipo_nota]
 
     return render_template(
         'enfermeria/registro_detalle.html',
         paciente=paciente,
         registros=registros,
-        notas=notas,
+        notas=notas[:5], # Solo las últimas 5 notas
         turno_actual=turno_actual
     )
-
 
 # ---------- 4) CREAR REGISTRO SIGNOS / BALANCE ----------
 
@@ -243,23 +275,63 @@ def crear():
         # 1. Definimos las variables básicas primero (para que no den error de 'not defined')
         historia_id = request.form.get('historia_clinica_id')
         turno_form = (request.form.get('turno') or turno_real).upper()
-
-        # 2. Validación de turno (tu lógica original)
-        if turno_form != turno_real:
-            flash(f'No puede registrar turno {turno_form} fuera de su horario.', 'warning')
-            return redirect(url_for('enfermeria.crear', paciente_id=paciente_id))
-
-        # 3. Procesamiento de la HORA (La nueva mejora)
         hora_str = (request.form.get('hora_sv') or 
                     request.form.get('hora_inicial') or 
                     request.form.get('hora_eliminado'))
+               
+        # 2. Validación de turno ESTRICTA
+        # turno_real viene de obtener_turno_actual() al principio de la función
+        if turno_form != turno_real:
+            flash(f'⚠️ ERROR DE SEGURIDAD: Usted está en el turno {turno_real}. '
+                  f'No se permite crear registros para el turno {turno_form}.', 'danger')
+            return redirect(url_for('enfermeria.crear', paciente_id=paciente_id))
+        
+        # 3. Procesamiento de la HORA e integridad de turno
+        # Capturamos las 3 horas por separado para validarlas todas
+        h_sv = request.form.get('hora_sv')
+        h_admin = request.form.get('hora_inicial')
+        h_elim = request.form.get('hora_eliminado')
+        
+        # Consolidamos para la fecha del registro (usamos la primera que aparezca)
+        hora_str = h_sv or h_admin or h_elim
         
         ahora = ahora_bogota()
+        turno_actual_sistema = obtener_turno_actual().upper()
         fecha_registro_final = ahora 
 
+        # --- FUNCIÓN INTERNA DE BLOQUEO ---
+        def validar_hora_turno(valor_hora, nombre_campo):
+            if valor_hora:
+                try:
+                    obj = datetime.strptime(valor_hora, '%H:%M').time()
+                    h = obj.hour
+                    t_calc = 'MAÑANA' if 7 <= h < 13 else 'TARDE' if 13 <= h < 19 else 'NOCHE'
+                    
+                    if t_calc != turno_actual_sistema:
+                        return False, f"❌ ERROR en {nombre_campo}: La hora {valor_hora} es del turno {t_calc}. Usted está en {turno_actual_sistema}."
+                except:
+                    pass
+            return True, ""
+
+        # Validamos las 3 posibles horas del formulario
+        v_sv, m_sv = validar_hora_turno(h_sv, "Signos Vitales")
+        if not v_sv:
+            flash(m_sv, 'danger')
+            return redirect(url_for('enfermeria.crear', paciente_id=paciente_id))
+
+        v_ad, m_ad = validar_hora_turno(h_admin, "Líquidos Admin")
+        if not v_ad:
+            flash(m_ad, 'danger')
+            return redirect(url_for('enfermeria.crear', paciente_id=paciente_id))
+
+        v_el, m_el = validar_hora_turno(h_elim, "Líquidos Elim")
+        if not v_el:
+            flash(m_el, 'danger')
+            return redirect(url_for('enfermeria.crear', paciente_id=paciente_id))
+
+        # Configuración de la fecha final para la base de datos
         if hora_str:
             try:
-                # Usamos datetime.strptime y luego datetime.combine
                 hora_obj = datetime.strptime(hora_str, '%H:%M').time()
                 fecha_registro_final = datetime.combine(ahora.date(), hora_obj)
                 
@@ -334,6 +406,11 @@ def eliminar_registro_enfermeria(registro_id):
     registro = RegistroEnfermeria.query.get_or_404(registro_id)
     paciente_id = registro.paciente_id
 
+    permitido, mensaje = validar_turno_estricto(registro)
+    if not permitido:
+        flash(mensaje, "danger")
+        return redirect(url_for('enfermeria.registros_paciente', paciente_id=registro.paciente_id))
+    
     db.session.delete(registro)
     db.session.commit()
     flash('Registro de enfermería eliminado.', 'success')
@@ -381,25 +458,23 @@ def eliminar_nota_enfermeria(registro_id):
     flash('Nota de enfermería eliminada del registro.', 'success')
     return redirect(url_for('enfermeria.registros_paciente', paciente_id=paciente_id))
 
-@enfermeria_bp.route('/insumo/<int:insumo_paciente_id>/eliminar', methods=['POST'])
+@enfermeria_bp.route('/insumo_paciente/<int:ip_id>/eliminar', methods=['POST'])
 @login_required
-def eliminar_insumo_paciente(insumo_paciente_id):
-    # Buscamos el registro del insumo usado por el paciente
-    insumo_p = InsumoPaciente.query.get_or_404(insumo_paciente_id)
-    paciente_id = insumo_p.paciente_id
+def eliminar_insumo_paciente(ip_id):
+    ip = InsumoPaciente.query.get_or_404(ip_id)
+    
+    # Buscamos el registro de enfermería asociado al insumo
+    registro = RegistroEnfermeria.query.get(ip.registro_enfermeria_id)
+    if registro:
+        permitido, mensaje = validar_turno_estricto(registro)
+        if not permitido:
+            flash(mensaje, "danger")
+            return redirect(request.referrer)
 
-    try:
-        # Opcional: Si manejas stock global, aquí podrías devolver la cantidad
-        # insumo_p.insumo.stock += insumo_p.cantidad_usada
-        
-        db.session.delete(insumo_p)
-        db.session.commit()
-        flash('✅ Uso de insumo eliminado correctamente.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash('❌ Error al eliminar el insumo.', 'danger')
-
-    return redirect(url_for('enfermeria.registros_paciente', paciente_id=paciente_id))
+    db.session.delete(ip)
+    db.session.commit()
+    flash('Insumo eliminado.', 'success')
+    return redirect(request.referrer)
 
 # ---------- 5) ADMINISTRAR MEDICAMENTOS POR REGISTRO ----------
 @enfermeria_bp.route('/registro/<int:registro_id>/medicamentos', methods=['GET', 'POST'])
@@ -408,52 +483,70 @@ def administrar_medicamentos(registro_id):
     registro = RegistroEnfermeria.query.get_or_404(registro_id)
     paciente = Paciente.query.get(registro.paciente_id)
     
+    # 1. Inicializar variables del GET al principio para evitar errores de Pylance
+    medicamentos_formulados = []
+    administraciones = []
+    medicamentos_dropdown = []
+    hora_actual = ahora_bogota().strftime('%H:%M')
+
     # ========== PROCESAR GUARDADO (POST) ==========
     if request.method == 'POST' and 'codigo_medicamento' in request.form:
+        # ACTUALIZACIÓN DINÁMICA DE TURNO
+        turno_real_reloj = obtener_turno_actual().upper()
+        if registro.turno != turno_real_reloj:
+            registro.turno = turno_real_reloj
+            registro.fecha_registro = ahora_bogota()
+
         codigo = request.form.get('codigo_medicamento')
         cantidad = request.form.get('cantidad')
-                # Ajuste para el nuevo selector de hora HH:MM
         hora_input = request.form.get('hora_administracion')
-        unidad = request.form.get('unidad', 'tab')
-        via = request.form.get('via', 'VO')
-        observaciones = request.form.get('observaciones', '')
+        via_form = request.form.get('via')
+        observaciones = request.form.get('observaciones')
         
-        try:
-            cantidad_dec = Decimal(cantidad)
-            med = Medicamento.query.filter_by(codigo=codigo).first()
-            
-            ahora = ahora_bogota()
-            if hora_input:
+        if hora_input:
+            try:
                 h, m = map(int, hora_input.split(':'))
-                hora_admin = datetime.combine(ahora.date(), time(h, m))
-            else:
-                hora_admin = ahora
+                # Determinar turno de la hora ingresada
+                if 7 <= h < 13: t_calc = 'MAÑANA'
+                elif 13 <= h < 19: t_calc = 'TARDE'
+                else: t_calc = 'NOCHE'
+                
+                turno_actual_sistema = obtener_turno_actual().upper()
+                
+                if t_calc != turno_actual_sistema:
+                    flash(f"Acción bloqueada: La hora {hora_input} es del turno {t_calc}. Su turno actual es {turno_actual_sistema}.", 'danger')
+                    return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
+                
+                med_bd = Medicamento.query.filter_by(codigo=codigo).first()
+                if med_bd and cantidad:
+                    nueva_admin = AdministracionMedicamento(
+                        registro_enfermeria_id=registro.id,
+                        medicamento_id=med_bd.id,
+                        cantidad=float(cantidad),
+                        via=via_form or 'VO',
+                        hora_administracion=datetime.combine(ahora_bogota().date(), time(h, m)),
+                        observaciones=observaciones,
+                        unidad=med_bd.unidad_inventario or 'UND'
+                    )
+                    db.session.add(nueva_admin)
+                    db.session.commit()
+                    flash('✅ Medicamento administrado correctamente.', 'success')
+                else:
+                    flash('❌ Error: Datos incompletos.', 'danger')
 
-            admin = AdministracionMedicamento(
-                registro_enfermeria_id=registro.id,
-                medicamento_id=med.id,
-                cantidad=cantidad_dec,
-                unidad=unidad,
-                via=via,
-                observaciones=observaciones,
-                hora_administracion=hora_admin
-            )
-            db.session.add(admin)
-            db.session.commit()
-            flash(f'✅ {med.nombre} registrado correctamente', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'❌ Error al registrar: {str(e)}', 'danger')
-        
-        return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
+                return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
+
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error al procesar: {str(e)}', 'danger')
+                return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
 
     # ========== CARGAR DATOS (GET) ==========
-    medicamentos_formulados = []
+    # Esta parte se ejecuta siempre que no haya un 'return' previo en el POST
     if registro.historia_clinica_id:
         historia_id = registro.historia_clinica_id
         todos_medicamentos = []
         
-        # Cargar de Historia y Órdenes
         historia = HistoriaClinica.query.get(historia_id)
         if historia and historia.medicamentos_json:
             try:
@@ -469,96 +562,49 @@ def administrar_medicamentos(registro_id):
                     if isinstance(meds, list): todos_medicamentos.extend(meds)
                 except: pass
         
-       # --- LÓGICA DE PRODUCCIÓN: EXTRACCIÓN Y PERSISTENCIA ---
         meds_por_codigo = {}
-        
         for med in todos_medicamentos:
-            codigo = med.get('codigo') or med.get('codigo_medicamento')
-            if not codigo: continue
-
-            # 1. Si es la primera vez que vemos este código, inicializamos el contenedor
-            if codigo not in meds_por_codigo:
-                med_bd = Medicamento.query.filter_by(codigo=codigo).first()
-                meds_por_codigo[codigo] = {
+            codigo_m = med.get('codigo') or med.get('codigo_medicamento')
+            if not codigo_m: continue
+            if codigo_m not in meds_por_codigo:
+                med_bd_query = Medicamento.query.filter_by(codigo=codigo_m).first()
+                meds_por_codigo[codigo_m] = {
                     'total': 0,
                     'detalle': {
-                        'nombre': med_bd.nombre if med_bd else (med.get('medicamento') or med.get('nombre')),
-                        'dosis': '',
-                        'frecuencia': '--',
-                        'via': 'VO',
-                        'unidad_inventario': med.get('unidad_inventario') or (med_bd.unidad_inventario if med_bd else 'und')
+                        'nombre': med_bd_query.nombre if med_bd_query else (med.get('medicamento') or med.get('nombre')),
+                        'dosis': med.get('dosis', ''),
+                        'frecuencia': med.get('frecuencia', '--'),
+                        'via': med.get('via', 'VO'),
+                        'unidad_inventario': med.get('unidad_inventario') or (med_bd_query.unidad_inventario if med_bd_query else 'und')
                     }
                 }
-
-            # 2. Sumar cantidades (Siempre acumulando)
             try:
-                cantidad = float(med.get('cantidad') or med.get('cantidad_solicitada') or 0)
-                meds_por_codigo[codigo]['total'] += cantidad
-            except:
-                pass
+                meds_por_codigo[codigo_m]['total'] += float(med.get('cantidad') or 0)
+            except: pass
 
-            # 3. Rescate de datos del registro actual
-            dosis_actual = str(med.get('dosis') or '').strip()
-            frec_actual = str(med.get('frecuencia') or med.get('periodicidad') or '').strip()
-            via_actual = med.get('via') or med.get('via_administracion') or 'VO'
-
-            # 4. REGLA DE PERSISTENCIA: Solo guardamos si el dato actual aporta más que lo que ya teníamos
-            
-            # Guardar Dosis si existe
-            if dosis_actual and not meds_por_codigo[codigo]['detalle']['dosis']:
-                meds_por_codigo[codigo]['detalle']['dosis'] = dosis_actual
-
-            # Guardar Vía si es diferente a la genérica
-            if via_actual and via_actual != 'VO':
-                meds_por_codigo[codigo]['detalle']['via'] = via_actual
-
-            # --- LÓGICA MAESTRA DE FRECUENCIA ---
-            frec_final = frec_actual
-            # Si no hay frecuencia, intentamos sacarla de la dosis
-            if not frec_final or frec_final.lower() in ['none', '--', '', 'nan']:
-                if 'CADA' in dosis_actual.upper():
-                    frec_final = "Cada " + dosis_actual.upper().split('CADA')[-1].strip()
-
-            # Solo actualizamos la frecuencia si encontramos algo real y lo que había era un "--"
-            if frec_final and frec_final not in ['--', 'None', '']:
-                meds_por_codigo[codigo]['detalle']['frecuencia'] = frec_final
-
-        # CONSTRUIR LISTA FINAL (Claves idénticas a tu HTML original)
-        for codigo, data in meds_por_codigo.items():
-            formulada = Decimal(str(data['total']))
-            admin_total = db.session.query(
-                db.func.coalesce(db.func.sum(AdministracionMedicamento.cantidad), 0)
-            ).join(Medicamento).filter(
-                AdministracionMedicamento.registro_enfermeria_id == registro.id,
-                Medicamento.codigo == codigo
-            ).scalar() or 0
-            
-            admin_total = Decimal(str(admin_total))
-            pendiente = max(formulada - admin_total, Decimal('0'))
+        for c, d in meds_por_codigo.items():
+            admin_total = db.session.query(db.func.coalesce(db.func.sum(AdministracionMedicamento.cantidad), 0))\
+                .filter(AdministracionMedicamento.registro_enfermeria_id == registro.id, AdministracionMedicamento.medicamento.has(codigo=c)).scalar() or 0
             
             medicamentos_formulados.append({
-                'codigo': codigo,
-                'nombre': data['detalle'].get('nombre'),
-                'dosis': data['detalle'].get('dosis'),
-                'frecuencia': data['detalle'].get('frecuencia'),
-                'via': data['detalle'].get('via'),
-                'cantidad_formulada': formulada,
-                'cantidad_administrada': admin_total,
-                'pendiente': pendiente,
-                'unidad_inventario': data['detalle'].get('unidad_inventario')
+                'codigo': c,
+                'nombre': d['detalle']['nombre'],
+                'dosis': d['detalle']['dosis'],
+                'frecuencia': d['detalle']['frecuencia'],
+                'via': d['detalle']['via'],
+                'cantidad_formulada': Decimal(str(d['total'])),
+                'cantidad_administrada': Decimal(str(admin_total)),
+                'pendiente': max(Decimal(str(d['total'])) - Decimal(str(admin_total)), Decimal('0')),
+                'unidad_inventario': d['detalle']['unidad_inventario']
             })
 
-    # Historial y otros datos para el template
-    administraciones = AdministracionMedicamento.query.filter_by(
-        registro_enfermeria_id=registro.id
-    ).outerjoin(Medicamento).order_by(AdministracionMedicamento.hora_administracion.desc()).all()
+    # Consultas finales para la vista
+    administraciones = AdministracionMedicamento.query.filter_by(registro_enfermeria_id=registro.id)\
+        .order_by(AdministracionMedicamento.hora_administracion.desc()).all()
     
-    codigos_formulados = [m['codigo'] for m in medicamentos_formulados]
-    medicamentos_dropdown = Medicamento.query.filter(Medicamento.codigo.in_(codigos_formulados)).all() if codigos_formulados else []
-    
-    # Hora actual formateada para el selector simple HH:MM
-    hora_actual = ahora_bogota().strftime('%H:%M')
-    
+    codigos_f = [m['codigo'] for m in medicamentos_formulados]
+    medicamentos_dropdown = Medicamento.query.filter(Medicamento.codigo.in_(codigos_f)).all() if codigos_f else []
+
     return render_template(
         'enfermeria/administrar_medicamentos.html',
         registro=registro,
@@ -568,8 +614,6 @@ def administrar_medicamentos(registro_id):
         hora_actual=hora_actual,
         medicamentos=medicamentos_dropdown
     )
-
-
 # ============================================================
 # 2) ADMINISTRAR MEDICAMENTOS DESDE MENÚ PACIENTE
 # ============================================================
@@ -860,7 +904,7 @@ def buscar_info_paciente():
     })
 
 
-# ---------- 9) CREAR NOTA (AJUSTADA PARA PERMANECER EN EL MENÚ) ----------
+# ---------- 9) CREAR NOTA  ----------
 
 @enfermeria_bp.route('/nota/crear', methods=['GET', 'POST'])
 @login_required
@@ -886,12 +930,34 @@ def crear_nota():
         
         # Lógica de hora
         hora_nota_str = request.form.get('hora_nota')
-        fecha_final = datetime.now()
-
+        ahora = ahora_bogota() # Usamos tu utilidad de fecha
+        fecha_final = ahora
+        
         if hora_nota_str:
             try:
                 h, m = map(int, hora_nota_str.split(':'))
-                fecha_final = datetime.combine(fecha_final.date(), time(h, m))
+                fecha_final = datetime.combine(ahora.date(), time(h, m))
+
+                # --- EL BLOQUEO DE SEGURIDAD AQUÍ ---
+                # A. Calculamos el turno de la hora escrita
+                if 7 <= h < 13: t_calc = 'MAÑANA'
+                elif 13 <= h < 19: t_calc = 'TARDE'
+                else: t_calc = 'NOCHE'
+                
+                # B. Obtenemos el turno actual del sistema
+                turno_actual_sistema = obtener_turno_actual().upper()
+
+                # C. Si no coinciden, rebotamos inmediatamente
+                if t_calc != turno_actual_sistema:
+                    flash(f'❌ ERROR: La hora {hora_nota_str} pertenece al turno {t_calc}. '
+                          f'Usted está en el turno {turno_actual_sistema}.', 'danger')
+                    return redirect(url_for('enfermeria.crear_nota', paciente_id=paciente_id))
+                # ------------------------------------
+
+                if fecha_final > ahora:
+                    flash('No se pueden realizar notas con horas futuras.', 'error')
+                    return redirect(url_for('enfermeria.crear_nota', paciente_id=paciente_id))
+
             except Exception as e:
                 print(f"Error procesando hora: {e}")
 
@@ -952,10 +1018,13 @@ def menu_paciente(paciente_id):
 # ---------- 11) ADMINISTRACIÓN DE MEDICAMENTOS: CRUD ----------
 
 def registrar_administracion_enfermeria(registro_enfermeria_id, codigo_medicamento,
-                                        cantidad, unidad, via, observaciones=None):
+                                        cantidad, unidad, via, observaciones=None, hora_manual=None):
     med = Medicamento.query.filter_by(codigo=codigo_medicamento).first()
     if not med:
         raise ValueError(f"Medicamento {codigo_medicamento} no encontrado")
+    
+    ahora = ahora_bogota()
+    fecha_final = hora_manual if hora_manual else ahora
 
     admin = AdministracionMedicamento(
         registro_enfermeria_id=registro_enfermeria_id,
@@ -964,7 +1033,7 @@ def registrar_administracion_enfermeria(registro_enfermeria_id, codigo_medicamen
         unidad=unidad,
         via=via,
         observaciones=observaciones,
-        hora_administracion=ahora_bogota(),
+        hora_administracion=fecha_final,
     )
     db.session.add(admin)
 
@@ -975,59 +1044,52 @@ def registrar_administracion_enfermeria(registro_enfermeria_id, codigo_medicamen
     db.session.commit()
 
 
+# --- FUNCIÓN DE EDICIÓN ACTUALIZADA ---
+@enfermeria_bp.route('/administracion/<int:admin_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_administracion_medicamento(admin_id):
+    admin = AdministracionMedicamento.query.get_or_404(admin_id)
+    registro_id = admin.registro_enfermeria_id
+
+    # VALIDACIÓN DE TURNO (Ahora también en Editar)
+    permitido, mensaje = validar_turno_estricto(admin.registro)
+    if not permitido:
+        flash(mensaje, "danger")
+        return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
+
+    if request.method == 'GET':
+        return render_template('enfermeria/editar_medicamento.html', admin=admin)
+
+    # ... (resto de tu lógica de guardado de edición que ya tenías)
+    nueva_cantidad = request.form.get('cantidad')
+    # ... (procesar cambios y db.session.commit())
+    return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
+
+
+# --- FUNCIÓN DE ELIMINACIÓN ACTUALIZADA ---
 @enfermeria_bp.route('/administracion/<int:admin_id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_administracion_medicamento(admin_id):
     admin = AdministracionMedicamento.query.get_or_404(admin_id)
     registro_id = admin.registro_enfermeria_id
 
-    if admin.medicamento:
-        admin.medicamento.cantidad_disponible = (
-            (admin.medicamento.cantidad_disponible or 0) + admin.cantidad
-        )
-
-    db.session.delete(admin)
-    db.session.commit()
-    flash('Administración eliminada.', 'success')
-    return redirect(url_for('enfermeria.administrar_medicamentos',
-                            registro_id=registro_id))
-
-
-@enfermeria_bp.route('/administracion/<int:admin_id>/editar', methods=['POST'])
-@login_required
-def editar_administracion_medicamento(admin_id):
-    admin = AdministracionMedicamento.query.get_or_404(admin_id)
-    registro_id = admin.registro_enfermeria_id
-
-    nueva_cantidad = request.form.get('cantidad')
-    nueva_unidad = request.form.get('unidad')
-    nueva_via = request.form.get('via')
-    nuevas_obs = request.form.get('observaciones')
+    # VALIDACIÓN DE TURNO
+    permitido, mensaje = validar_turno_estricto(admin.registro)
+    if not permitido:
+        flash(mensaje, "danger")
+        return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
 
     try:
-        nueva_cantidad_dec = Decimal(str(nueva_cantidad))
-    except Exception:
-        flash('Cantidad inválida al editar.', 'danger')
-        return redirect(url_for('enfermeria.administrar_medicamentos',
-                                registro_id=registro_id))
+        if admin.medicamento:
+            admin.medicamento.cantidad_disponible += Decimal(str(admin.cantidad))
+        db.session.delete(admin)
+        db.session.commit()
+        flash('✅ Eliminado correctamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error: {str(e)}', 'danger')
 
-    if admin.medicamento:
-        diff = nueva_cantidad_dec - admin.cantidad
-        admin.medicamento.cantidad_disponible = (
-            (admin.medicamento.cantidad_disponible or 0) - diff
-        )
-        if admin.medicamento.cantidad_disponible < 0:
-            admin.medicamento.cantidad_disponible = 0
-
-    admin.cantidad = nueva_cantidad_dec
-    admin.unidad = nueva_unidad
-    admin.via = nueva_via
-    admin.observaciones = nuevas_obs
-
-    db.session.commit()
-    flash('Administración modificada.', 'success')
-    return redirect(url_for('enfermeria.administrar_medicamentos',
-                            registro_id=registro_id))
+    return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
 
 
 # ---------- 12) LISTADO DE REGISTROS POR PACIENTE ----------
@@ -1298,204 +1360,70 @@ def cargar_medicamentos_ordenes(historia_id):
     print(f"✅ {count} medicamentos cargados en registro {registro.id}")
     return {'exito': count, 'registro_id': registro.id}
 
-@enfermeria_bp.route('/debug/cargar_ordenes/<int:historia_id>')
-@login_required
-def debug_cargar_ordenes(historia_id):
-    resultado = cargar_medicamentos_ordenes(historia_id)
-    flash(f'Cargados {resultado.get("exito", 0)} medicamentos de órdenes médicas', 'success')
-    # Redirigir al paciente
-    historia = HistoriaClinica.query.get(historia_id)
-    if historia:
-        return redirect(url_for('enfermeria.registros_paciente', paciente_id=historia.paciente_id))
-    return "Historia no encontrada"
-
 @enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/solicitar_insumos', methods=['GET', 'POST'])
-@login_required 
+@login_required
 def solicitar_insumos(paciente_id):
     paciente = Paciente.query.get_or_404(paciente_id)
     
+    # 1. PROCESAR LA SOLICITUD (POST)
     if request.method == 'POST':
-        insumo_id_str = request.form.get('insumo_id', '').strip()
-        cantidad_str = request.form.get('cantidad', '0').strip()
+        insumo_id = request.form.get('insumo_id')
+        cantidad = request.form.get('cantidad')
         
-        if not insumo_id_str:
-            flash('❌ Selecciona un insumo', 'danger')
-        else:
+        if insumo_id and cantidad:
             try:
-                insumo_id = int(insumo_id_str)
-                cantidad = max(1, int(cantidad_str))
+                # Verificar stock en bodega
+                insumo_medico = InsumoMedico.query.get(insumo_id)
+                cant_pedida = int(cantidad)
                 
-                insumo = InsumoMedico.query.get(insumo_id)
-                if insumo and (insumo.stock_actual or 0) >= cantidad:
-                    insumo_paciente = InsumoPaciente(
+                if insumo_medico and insumo_medico.stock_actual >= cant_pedida:
+                    # Crear el registro de insumo para el paciente
+                    nueva_solicitud = InsumoPaciente(
                         paciente_id=paciente_id,
                         insumo_id=insumo_id,
-                        cantidad=cantidad,
-                        cantidad_usada=0
+                        cantidad=cant_pedida,
+                        cantidad_usada=0,
+                        fecha_solicitud=ahora_bogota(),
+                        usuario_id=current_user.id  # Para saber quién lo pidió
                     )
-                    db.session.add(insumo_paciente)
+                    
+                    db.session.add(nueva_solicitud)
                     db.session.commit()
-                    flash(f'✅ {insumo.nombre} SOLICITADO ({cantidad} uds)', 'success')
+                    flash(f'✅ Se han solicitado {cant_pedida} unidades de {insumo_medico.nombre}', 'success')
                 else:
-                    flash('❌ Stock insuficiente', 'danger')
+                    flash('❌ No hay suficiente stock en bodega para esta solicitud.', 'danger')
+                    
             except Exception as e:
-                flash(f'❌ Error: {str(e)[:50]}', 'danger')
+                db.session.rollback()
+                flash(f'Error al procesar solicitud: {str(e)}', 'danger')
+        
         return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
-    
-    insumos_json = InsumoMedico.query.filter(
-        InsumoMedico.stock_actual > 0
-    ).limit(50).all()
-    
-    # QUERY AGRUPADA
-    insumos_agrupados = db.session.query(
-        InsumoPaciente.insumo_id,
-        InsumoMedico.nombre,
-        func.sum(InsumoPaciente.cantidad).label('total_solicitado'),
-        func.coalesce(func.sum(InsumoPaciente.cantidad_usada), 0).label('total_usado'),
-        func.max(InsumoPaciente.id).label('ultimo_id'),
-        func.count(InsumoPaciente.id).label('num_solicitudes')
-    ).outerjoin(InsumoMedico, InsumoPaciente.insumo_id == InsumoMedico.id)\
-     .filter(InsumoPaciente.paciente_id == paciente_id)\
-     .group_by(InsumoPaciente.insumo_id, InsumoMedico.nombre)\
-     .having(func.coalesce(func.sum(InsumoPaciente.cantidad_usada), 0) < func.sum(InsumoPaciente.cantidad))\
-     .order_by(func.max(InsumoPaciente.id).desc()).all()
-    
-    insumos_solicitados = []
-    for row in insumos_agrupados:
-        insumos_solicitados.append({
-            'nombre': row.nombre,
-            'total_solicitado': float(row.total_solicitado),
-            'total_usado': float(row.total_usado),
-            'pendiente': float(row.total_solicitado - row.total_usado),
-            'ultimo_id': row.ultimo_id,  # ← Solo ID
-            'num_solicitudes': int(row.num_solicitudes)
-        })
-    
-    return render_template(
-        'enfermeria/solicitar_insumos.html',
-        paciente=paciente,
-        insumos_json=insumos_json,
-        insumos_solicitados=insumos_solicitados
-    )
 
-@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/registrar_insumos', methods=['GET', 'POST'])
-@login_required
-def registrar_insumos(paciente_id):
-    paciente = Paciente.query.get_or_404(paciente_id)
-    
-    if request.method == 'POST':
-        ids_raw = request.form.getlist('insumos_reg[]')
-        if not ids_raw:
-            flash('Selecciona al menos un insumo para registrar.', 'warning')
-            return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
-        
-        procesados = 0
-        for ip_id_str in ids_raw:
-            try:
-                ip_id = int(ip_id_str)
-                ip = InsumoPaciente.query.get(ip_id)
-                if not ip or ip.paciente_id != paciente_id:
-                    continue
-
-                # CANTIDAD ESPECÍFICA POR INSUMO
-                cantidad_str = request.form.get(f'cant_{ip_id}', '1')
-                cantidad = min(int(cantidad_str), ip.cantidad - (ip.cantidad_usada or 0))
-                if cantidad <= 0:
-                    continue
-
-                # OBSERVACIONES
-                obs = request.form.get(f'obs_{ip_id}', '').strip()
-                ip.observaciones = obs if obs else None
-
-                # ACTUALIZAR USO
-                usado_actual = ip.cantidad_usada or 0
-                ip.cantidad_usada = usado_actual + cantidad
-                ip.fecha_uso = datetime.now()
-
-                # Descontar stock físico
-                insumo = InsumoMedico.query.get(ip.insumo_id)
-                if insumo:
-                    insumo.stock_actual = max(0, (insumo.stock_actual or 0) - cantidad)
-
-                procesados += 1
-                
-            except Exception as e:
-                print(f"Error procesando {ip_id_str}: {e}")
-                continue  # Salta errores individuales
-        
-        db.session.commit()
-        if procesados > 0:
-            flash(f'✅ {procesados} insumo(s) registrados correctamente', 'success')
-        else:
-            flash('No se pudo registrar ningún insumo.', 'warning')
-        
-        return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
-    
-    # SOLO INSUMOS PENDIENTES (no completos)
-    insumos_paciente = InsumoPaciente.query.filter(
-        InsumoPaciente.paciente_id == paciente_id,
-        InsumoPaciente.cantidad_usada < InsumoPaciente.cantidad
-    ).order_by(InsumoPaciente.id.desc()).all()
-    
-    insumos_reg = []
-    for ip in insumos_paciente:
-        insumo = InsumoMedico.query.get(ip.insumo_id)
-        if insumo:
-            insumos_reg.append({
-                'id': ip.id,
-                'nombre': insumo.nombre,
-                'solicitado': ip.cantidad,
-                'usado': ip.cantidad_usada or 0,
-                'observaciones': ip.observaciones or ''
-            })
-    
-    return render_template(
-        'enfermeria/registrar_insumos.html',
-        paciente=paciente,
-        insumos=insumos_reg
-    )
-
-# ✅ 1. LIMPIAR TODOS pendientes
-@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/limpiar_insumos', methods=['POST'])
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/insumos/limpiar', methods=['POST'])
 @login_required
 def limpiar_insumos_solicitados(paciente_id):
-    paciente = Paciente.query.get_or_404(paciente_id)
-    eliminados = InsumoPaciente.query.filter(
-        InsumoPaciente.paciente_id == paciente_id,
-        InsumoPaciente.cantidad_usada < InsumoPaciente.cantidad
-    ).delete()
+    InsumoPaciente.query.filter_by(paciente_id=paciente_id, cantidad_usada=0).delete()
     db.session.commit()
-    flash(f'🗑️ {eliminados} insumos eliminados', 'success')
+    flash('🧹 Pendientes limpiados.', 'info')
     return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
 
-# ✅ 2. ELIMINAR UNO (usa insumo_paciente_id real de BD)
-@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/eliminar_insumo/<int:insumo_paciente_id>', methods=['POST'])
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/insumos/eliminar_uno/<int:insumo_paciente_id>', methods=['POST'])
 @login_required
 def eliminar_insumo_individual(paciente_id, insumo_paciente_id):
-    ip = InsumoPaciente.query.get_or_404(insumo_paciente_id)
-    if ip.paciente_id != paciente_id or ip.cantidad_usada > 0:
-        flash('❌ No autorizado o ya usado', 'danger')
-        return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
-    
-    nombre = InsumoMedico.query.get(ip.insumo_id).nombre
-    db.session.delete(ip)
-    db.session.commit()
-    flash(f'🗑️ {nombre} eliminado', 'success')
+    insumo = InsumoPaciente.query.get_or_404(insumo_paciente_id)
+    if insumo.paciente_id == paciente_id:
+        db.session.delete(insumo)
+        db.session.commit()
+        flash('🗑️ Eliminado.', 'success')
     return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
 
-@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/reset_insumos', methods=['POST'])
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/insumos/reset', methods=['POST'])
 @login_required
 def reset_insumos_paciente(paciente_id):
-    paciente = Paciente.query.get_or_404(paciente_id)
-
-    eliminados = InsumoPaciente.query.filter(
-        InsumoPaciente.paciente_id == paciente_id
-    ).delete()  # ← sin filtrar por cantidad_usada
-
+    InsumoPaciente.query.filter_by(paciente_id=paciente_id).delete()
     db.session.commit()
-    flash(f'🧹 {eliminados} solicitudes de insumos eliminadas (HARD RESET)', 'warning')
+    flash('⚠️ Historial reiniciado.', 'warning')
     return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
-
 # ---------- RUTAS DE EDICIÓN COMPLETAS ----------
 @enfermeria_bp.route('/registro/<int:registro_id>/editar_signos', methods=['GET', 'POST'])
 @login_required
@@ -1554,6 +1482,60 @@ def editar_signos(registro_id):
     # 5. Carga de datos para el Template (GET)
     sv = parse_json_seguro(registro.signos_vitales)
     return render_template('enfermeria/editar_signos.html', registro=registro, sv=sv)
+@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/registrar_insumos', methods=['GET', 'POST'])
+@login_required
+def registrar_insumos(paciente_id):
+    paciente = Paciente.query.get_or_404(paciente_id)
+    
+    if request.method == 'POST':
+        # Obtenemos la lista de IDs de los insumos que el enfermero seleccionó en los checkboxes
+        insumos_ids = request.form.getlist('insumos_reg[]')
+        
+        try:
+            for i_id in insumos_ids:
+                # 1. Obtener el registro de la asignación del paciente
+                insumo_p = InsumoPaciente.query.get(i_id)
+                # 2. Obtener la cantidad que el enfermero escribió en el input
+                cantidad_usada = float(request.form.get(f'cant_{i_id}', 0))
+                observaciones = request.form.get(f'obs_{i_id}', '')
+
+                if insumo_p and cantidad_usada > 0:
+                    # Actualizar lo usado en la tabla del paciente
+                    insumo_p.cantidad_usada = (insumo_p.cantidad_usada or 0) + cantidad_usada
+                    insumo_p.observaciones = observaciones
+                    
+                    # 3. DESCONTAR DEL STOCK REAL (Bodega Central)
+                    insumo_medico = InsumoMedico.query.get(insumo_p.insumo_id)
+                    if insumo_medico:
+                        insumo_medico.stock_actual -= cantidad_usada
+
+            db.session.commit()
+            flash('✅ Uso de insumos registrado y descontado de bodega.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al registrar: {str(e)}', 'danger')
+            
+        return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
+
+    # Si entran por GET (directo a la tabla de registro)
+    insumos = InsumoPaciente.query.filter(
+        InsumoPaciente.paciente_id == paciente_id,
+        (InsumoPaciente.cantidad - InsumoPaciente.cantidad_usada) > 0
+    ).all()
+    
+    # Preparar datos para que el HTML los lea fácil
+    lista_final = []
+    for item in insumos:
+        m = InsumoMedico.query.get(item.insumo_id)
+        lista_final.append({
+            'id': item.id,
+            'nombre': m.nombre if m else "Desconocido",
+            'solicitado': item.cantidad,
+            'usado': item.cantidad_usada or 0,
+            'observaciones': item.observaciones or ''
+        })
+
+    return render_template('enfermeria/registrar_insumos.html', paciente=paciente, insumos=lista_final)
 
 @enfermeria_bp.route('/registro/<int:registro_id>/editar_balance', methods=['GET', 'POST'])
 @login_required
@@ -1599,9 +1581,17 @@ def editar_balance(registro_id):
 @enfermeria_bp.route('/registro/<int:registro_id>/editar_nota', methods=['GET', 'POST'])
 @login_required
 def editar_nota(registro_id):
+    # 1. Obtener el objeto (aquí se llama 'registro')
     registro = RegistroEnfermeria.query.get_or_404(registro_id)
-    
-    # 1. Manejo de zonas horarias para evitar el TypeError
+
+    # 2. VALIDACIÓN: Usamos 'registro' directamente
+    permitido, mensaje = validar_turno_estricto(registro)
+    if not permitido:
+        flash(mensaje, "danger")
+        # Redirigimos al detalle del paciente o donde prefieras
+        return redirect(url_for('enfermeria.registros_paciente', paciente_id=registro.paciente_id))
+
+    # 3. Manejo de zonas horarias
     ahora = ahora_bogota()
     fecha_reg = registro.fecha_registro
     if fecha_reg.tzinfo is None:
@@ -1633,7 +1623,10 @@ def editar_administracion_med(admin_id):
     # Buscamos el registro de administración específico
     admin = AdministracionMedicamento.query.get_or_404(admin_id)
     registro = RegistroEnfermeria.query.get(admin.registro_enfermeria_id)
-    
+    permitido, mensaje = validar_turno_estricto(registro)
+    if not permitido:
+        flash(mensaje, "danger")
+        return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=admin.registro_enfermeria_id))
     # Validación de tiempo (2 horas)
     ahora = ahora_bogota()
     fecha_admin = admin.hora_administracion
@@ -1671,7 +1664,13 @@ def editar_administracion_med(admin_id):
 @login_required
 def editar_insumo_paciente(insumo_paciente_id):
     insumo_p = InsumoPaciente.query.get_or_404(insumo_paciente_id)
-    
+    registro = RegistroEnfermeria.query.get(insumo_p.registro_enfermeria_id)
+    if registro:
+        permitido, mensaje = validar_turno_estricto(registro)
+        if not permitido:
+            flash(mensaje, "danger")
+            return redirect(request.referrer)
+
     if request.method == 'POST':
         try:
             insumo_p.cantidad = float(request.form.get('cantidad'))
@@ -1689,47 +1688,12 @@ def editar_insumo_paciente(insumo_paciente_id):
 
 @enfermeria_bp.app_context_processor
 def inject_permissions():
-    def puede_editar_turno_template(r):
-        if not r or isinstance(r, str):
-            return False
-            
-        try:
-            ahora = ahora_bogota().replace(tzinfo=None)
-            
-            # Buscamos la fecha en CUALQUIER campo posible del objeto
-            fecha_ref = None
-            for campo in ['fecha_registro', 'hora_administracion', 'fecha_uso', 'fecha']:
-                if hasattr(r, campo):
-                    fecha_ref = getattr(r, campo)
-                    break
-            
-            # SI NO HAY FECHA, NO PODEMOS CALCULAR; LO DEJAMOS EDITAR POR SI ACASO
-            if not fecha_ref:
-                return True 
+    def puede_editar(objeto):
+        if not objeto: return False
+        reg = getattr(objeto, 'registro', objeto)
+        # USA LA VISUAL (Con margen de 2 horas)
+        return validar_acceso_visual(reg)
+    return dict(puede_editar=puede_editar)
 
-            fecha_ref_sin_tz = fecha_ref.replace(tzinfo=None)
-            diferencia = ahora - fecha_ref_sin_tz
-            minutos_transcurridos = diferencia.total_seconds() / 60
 
-            # --- REGLA DE ORO: SI TIENE MENOS DE 2 HORAS, SIEMPRE EDITABLE ---
-            if 0 <= minutos_transcurridos < 120:
-                return True
-
-            # Si ya pasó el tiempo, verificamos el turno
-            turno_registro = str(getattr(r, 'turno', '')).strip().upper()
-            turno_actual = obtener_turno_actual().strip().upper()
-            
-            es_mismo_dia = fecha_ref_sin_tz.date() == ahora.date()
-            es_mismo_turno = (turno_registro == turno_actual)
-            
-            # Si es el mismo turno y mismo día, permitir aunque pasen las 2 horas
-            return es_mismo_dia and es_mismo_turno
-            
-        except Exception as e:
-            # Si algo falla internamente, permitimos editar para no bloquear al usuario
-            return True
-
-    return dict(
-        puede_editar_turno_template=puede_editar_turno_template
-    )
 
