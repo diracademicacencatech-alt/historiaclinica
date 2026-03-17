@@ -7,128 +7,81 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
-   <style>
-    :root {
-        --sm-bg: #f4f7f6;
-        --sm-primary: #236e7b;
-        --sm-accent: #0b6169;
-        --sm-card-bg: #ffffff;
-        --sm-text: #334756;
-    }
-
-    body {
-        background-color: var(--sm-bg);
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        color: var(--sm-text);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        margin: 0;
-        padding: 0;
-    }
-
-    /* NAVBAR MEJORADA */
-    .navbar-sm {
-        background-color: white !important;
-        border-bottom: 3px solid var(--sm-primary);
-        padding: 0.5rem 1rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-
-    /* LOGO */
-    .logo-img {
-        height: 75px;
-        width: auto;
-        image-rendering: -webkit-optimize-contrast;
-        object-fit: contain;
-    }
-
-    /* RELOJ */
-    #reloj-digital {
-        background: var(--sm-primary);
-        color: white;
-        padding: 8px 15px;
-        border-radius: 10px;
-        font-family: 'Courier New', monospace;
-        font-size: 0.95rem;
-        font-weight: bold;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        white-space: nowrap;
-    }
-
-    /* CONTENEDOR PRINCIPAL: Flexible y sin límites de ancho */
-    .sm-main-container {
-        flex: 1;
-        width: 100%;
-        margin: 0;
-        padding: 0; 
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* Area para mensajes flash */
-    .flash-messages-container {
-        padding: 1rem 2rem 0 2rem;
-    }
-
-    footer {
-        padding: 1rem;
-        text-align: center;
-        font-size: 0.85rem;
-        color: #888;
-        background: white;
-        border-top: 1px solid #dee2e6;
-    }
-
-    /* --- AJUSTES DE RESPONSIVIDAD (TELEFONOS) --- */
-    @media (max-width: 768px) {
-        .logo-img { height: 55px; }
-        #reloj-digital { font-size: 0.8rem; }
-
-        /* Ajuste del layout principal en móvil */
-        .dashboard-wrapper {
-            flex-direction: column !important;
+    <link rel="stylesheet" href="/static/css/nombre_de_tu_archivo.css">
+    <style>
+        :root {
+            --sm-bg: #f4f7f6;
+            --sm-primary: #236e7b;
+            --sm-accent: #0b6169;
+            --sm-card-bg: #ffffff;
+            --sm-text: #334756;
         }
 
-        /* El sidebar en móvil se adapta al ancho total y deja de ser sticky fijo */
-        .sidebar-professional {
-            width: 100% !important;
-            min-width: 100% !important;
-            height: auto !important;
-            position: relative !important;
-            top: 0 !important;
-            margin: 10px 0 !important; /* Margen pequeño arriba/abajo */
-            border-radius: 15px !important;
-            padding: 20px !important;
-        }
-
-        /* El contenido principal se ajusta */
-        .main-content-pro {
-            padding: 15px !important;
-        }
-
-        /* Ajuste de tarjetas y banners en móvil */
-        .welcome-banner {
+        body {
+            background-color: var(--sm-bg);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--sm-text);
+            min-height: 100vh;
+            display: flex;
             flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-sm {
+            background-color: white !important;
+            border-bottom: 3px solid var(--sm-primary);
+            padding: 0.5rem 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .logo-img {
+            height: 75px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        #reloj-digital {
+            background: var(--sm-primary);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .sm-main-container {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flash-messages-container {
+            padding: 1rem 2rem 0 2rem;
+        }
+
+        .main-content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        footer {
+            padding: 1rem;
             text-align: center;
-            padding: 20px !important;
-        }
-        
-        .welcome-banner h2 { font-size: 1.5rem !important; }
-        .banner-img { display: none; } /* Ocultar icono grande para ahorrar espacio */
-
-        .quick-access-grid {
-            grid-template-columns: 1fr !important; /* Una tarjeta por fila */
+            font-size: 0.85rem;
+            color: #888;
+            background: white;
+            border-top: 1px solid #dee2e6;
         }
 
-        /* La rejilla de configuración se mantiene funcional */
-        .settings-grid {
-            grid-template-columns: repeat(4, 1fr) !important;
-            gap: 5px !important;
+        @media (max-width: 768px) {
+            .logo-img { height: 55px; }
+            #reloj-digital { display: none !important; }
         }
-    }
-</style>
+    </style>
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -136,9 +89,7 @@
 <nav class="navbar navbar-expand-lg navbar-light navbar-sm sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="{{ url_for('menu.inicio') }}">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" 
-                 alt="CENCATECH" 
-                 class="logo-img">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="CENCATECH" class="logo-img">
         </a>
         
         <div id="reloj-digital" class="d-none d-md-block ms-3">
@@ -161,9 +112,15 @@
                     <a class="nav-link dropdown-toggle fw-bold" href="#" id="dropMod" role="button" data-bs-toggle="dropdown" style="color: var(--sm-accent);">
                         <i class="fas fa-th me-1"></i> Módulos
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 10px;">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                         <li><a class="dropdown-item py-2" href="{{ url_for('pacientes.listar') }}"><i class="fas fa-users me-2 text-primary"></i>Pacientes</a></li>
-                        <li><a class="dropdown-item py-2" href="{{ url_for('enfermeria.inicio_enfermeria') }}"><i class="fas fa-user-nurse me-2 text-primary"></i>Enfermería</a></li>
+                        
+                        <li>
+                            <a class="dropdown-item py-2" href="{{ url_for('enfermeria.inicio_enfermeria') }}">
+                                <i class="fas fa-user-nurse me-2 text-primary"></i>Enfermería
+                            </a>
+                        </li>
+                        
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Salir</a></li>
                     </ul>
@@ -179,7 +136,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 10px;">
+              <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
@@ -188,7 +145,12 @@
         {% endwith %}
     </div>
 
-    {% block content %}{% endblock %}
+    <main class="main-content">
+        <div id="contenido-principal">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
 </div>
 
 <footer>
@@ -196,6 +158,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
 <script>
     function actualizarReloj() {
         const ahora = new Date();
@@ -207,6 +171,8 @@
     setInterval(actualizarReloj, 1000);
     actualizarReloj();
 </script>
+
 {% block scripts %}{% endblock %}
+
 </body>
 </html>

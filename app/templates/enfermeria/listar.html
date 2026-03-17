@@ -1,201 +1,99 @@
-{% extends "base.html" %}
+<div id="contenido-a-extraer">
+    <style>
+        /* ... (tus estilos se mantienen intactos) ... */
+        :root { --titles: #236e7b; --text-links: #0b6169; }
+        .btn-gestion-total {
+            background-color: var(--titles);
+            color: white !important;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.3s;
+        }
+        .btn-gestion-total:hover { background-color: #1a525c; transform: scale(1.02); }
+    </style>
 
-{% block title %}Pacientes con Historia Clínica - Software SM{% endblock %}
+    <div class="container py-2 fade-in-content">
+        <h2 class="titulo-principal"><i class="fas fa-users-medical"></i> Selección de Paciente</h2>
 
-{% block head %}
-<style>
-    :root {
-      --titles: #236e7b;
-      --text-links: #0b6169;
-      --text-secondary: #5f5f5f;
-    }
+        <div class="search-box">
+            <label class="form-label fw-bold mb-2" style="font-size: 0.8rem; text-transform: uppercase;">Localizar para Gestión Integral</label>
+            <div class="input-group">
+                <input type="text" id="buscador_paciente" class="form-control input-search-custom" placeholder="Documento o nombre del paciente...">
+                <button class="btn btn-search-custom" onclick="buscarYCompletarPaciente()">
+                    <i class="fas fa-search"></i> BUSCAR PACIENTE
+                </button>
+            </div>
+        </div>
 
-    .titulo-principal { 
-      color: var(--titles); 
-      font-weight: 800;
-      text-transform: uppercase;
-      margin-bottom: 25px;
-    }
-
-    /* CAJA DE BÚSQUEDA */
-    .search-box {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 15px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-      border-left: 6px solid var(--titles);
-    }
-
-    /* TABLA PERSONALIZADA */
-    .table-sm-custom {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border: none;
-    }
-
-    .table-sm-custom thead {
-        background-color: var(--titles);
-        color: white;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-    }
-
-    .table-sm-custom th, .table-sm-custom td {
-        padding: 15px;
-        vertical-align: middle;
-    }
-
-    /* BOTONES DE ACCIÓN */
-    .btn-action-verde {
-        background-color: var(--titles) !important;
-        color: white !important;
-        border: none !important;
-        font-weight: 600;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        padding: 8px 12px;
-        border-radius: 8px;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.2s;
-    }
-
-    .btn-action-verde:hover {
-        background-color: var(--text-links) !important;
-        transform: translateY(-1px);
-    }
-
-    .btn-pdf {
-        background-color: #5f5f5f !important;
-        color: white !important;
-        border: none;
-        font-size: 0.75rem;
-        padding: 8px 12px;
-        border-radius: 8px;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-
-    .btn-pdf:hover {
-        background-color: #444 !important;
-    }
-
-    .input-search-custom {
-        border-radius: 10px 0 0 10px;
-        border: 2px solid #eee;
-    }
-
-    .btn-search-custom {
-        border-radius: 0 10px 10px 0;
-        background-color: var(--titles);
-        color: white;
-        border: none;
-        padding: 0 20px;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container py-2">
-    
-    <h2 class="titulo-principal"><i class="fas fa-users-medical"></i> Control de Pacientes</h2>
-
-    <div class="search-box">
-        <label class="form-label fw-bold mb-2" style="color: var(--titles); font-size: 0.8rem; text-transform: uppercase;">Localizar Paciente</label>
-        <div class="input-group">
-            <input type="text" id="buscador_paciente" class="form-control input-search-custom" placeholder="Documento, nombre o número de ingreso...">
-            <button class="btn btn-search-custom" onclick="buscarYCompletarPaciente()">
-                <i class="fas fa-search"></i> BUSCAR
-            </button>
+        <div class="table-responsive table-sm-custom">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Documento</th>
+                        <th style="width: 50%;">Nombre Completo</th>
+                        <th style="width: 35%;" class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="pacientes_tbody">
+                    {% for paciente in pacientes %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">{{ paciente.numero }}</span></td>
+                        <td class="fw-bold" style="color: var(--text-links);">{{ paciente.nombre }}</td>
+                        <td class="text-center">
+                            <a class="btn-gestion-total" 
+                               hx-get="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" 
+                               hx-target="#contenido-principal"
+                               style="cursor:pointer;">
+                                <i class="fas fa- hospital-user"></i> ABRIR EXPEDIENTE
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <div class="table-responsive table-sm-custom">
-        <table class="table table-hover mb-0" id="tabla_pacientes">
-            <thead>
-                <tr>
-                    <th style="width: 10%;">ID</th>
-                    <th style="width: 35%;">Nombre del Paciente</th>
-                    <th style="width: 40%;">Acciones Clínicas</th>
-                    <th style="width: 15%;" class="text-center">Reportes</th>
-                </tr>
-            </thead>
-            <tbody id="pacientes_tbody">
-                {% for paciente in pacientes %}
-                <tr>
-                    <td><span class="badge bg-light text-dark border">{{ paciente.id }}</span></td>
-                    <td class="fw-bold" style="color: var(--text-links);">{{ paciente.nombre }}</td>
-                    <td>
-                        <div class="d-flex flex-wrap gap-1">
-                            <a class="btn-action-verde" href="{{ url_for('enfermeria.crear', paciente_id=paciente.id) }}">
-                                <i class="fas fa-plus-circle"></i> Registro
-                            </a>
-                            <a class="btn-action-verde" href="{{ url_for('enfermeria.detalle', paciente_id=paciente.id) }}">
-                                <i class="fas fa-list"></i> Ver Historial
-                            </a>
-                            <a class="btn-action-verde" href="{{ url_for('enfermeria.crear_nota', paciente_id=paciente.id) }}">
-                                <i class="fas fa-pen"></i> Notas
-                            </a>
-                        </div>
-                    </td>
-                    <td class="text-center">
-                        <a class="btn btn-pdf" href="{{ url_for('enfermeria.exportar_pdf', paciente_id=paciente.id) }}" target="_blank">
-                            <i class="fas fa-file-pdf"></i> PDF
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+    <script>
+    (function() {
+        window.buscarYCompletarPaciente = function() {
+            const queryInput = document.getElementById('buscador_paciente');
+            const query = queryInput.value.trim();
+            if (!query) return;
 
-<script>
-function buscarYCompletarPaciente() {
-  var query = document.getElementById('buscador_paciente').value.trim();
-  if (!query) {
-    location.reload();
-    return;
-  }
-  fetch('/enfermeria/api/buscar_info_paciente?q=' + encodeURIComponent(query))
-    .then(r => r.json())
-    .then(data => {
-      let tbody = document.getElementById('pacientes_tbody');
-      tbody.innerHTML = "";
-      if (data.error) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No se encontró ningún paciente con ese criterio</td></tr>';
-        return;
-      }
-      // Se genera la fila con el mismo estilo de los botones verdes
-      let fila = `
-        <tr class="table-light">
-          <td><span class="badge bg-light text-dark border">${data.paciente_id}</span></td>
-          <td class="fw-bold" style="color: var(--text-links);">${data.nombre}</td>
-          <td>
-            <div class="d-flex flex-wrap gap-1">
-                <a class="btn-action-verde" href="/enfermeria/crear?paciente_id=${data.paciente_id}">
-                    <i class="fas fa-plus-circle"></i> Registro
-                </a>
-                <a class="btn-action-verde" href="/enfermeria/detalle/${data.paciente_id}">
-                    <i class="fas fa-list"></i> Ver Historial
-                </a>
-                <a class="btn-action-verde" href="/enfermeria/nota/crear?paciente_id=${data.paciente_id}">
-                    <i class="fas fa-pen"></i> Notas
-                </a>
-            </div>
-          </td>
-          <td class="text-center">
-            <a class="btn btn-pdf" href="/enfermeria/pdf/${data.paciente_id}" target="_blank">
-                <i class="fas fa-file-pdf"></i> PDF
+            const tbody = document.getElementById('pacientes_tbody');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><div class="spinner-border text-teal" role="status"></div></td></tr>';
+
+            fetch('/enfermeria/api/buscar_info_paciente?q=' + encodeURIComponent(query))
+                .then(r => r.json())
+                .then(data => {
+                    tbody.innerHTML = "";
+                    if (data.error) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No se encontró el paciente</td></tr>';
+                        return;
+                    }
+                    
+                    // Busca esta línea en el script de listar.html y déjala exactamente así:
+tbody.innerHTML = `
+    <tr class="table-light">
+        <td><span class="badge bg-light text-dark border">${data.documento}</span></td>
+        <td class="fw-bold" style="color: var(--text-links);">${data.nombre}</td>
+        <td class="text-center">
+            <a class="btn-gestion-total" 
+               href="/enfermeria/paciente/${data.paciente_id}/menu">
+                <i class="fas fa-hospital-user"></i> ABRIR EXPEDIENTE
             </a>
-          </td>
-        </tr>
-      `;
-      tbody.innerHTML = fila;
-    });
-}
-</script>
-{% endblock %}
+        </td>
+    </tr>`;
+                    
+                    // IMPORTANTE: Como el contenido es dinámico, le decimos a HTMX que procese el nuevo botón
+                    htmx.process(tbody);
+                });
+        };
+    })();
+    </script>
+</div>

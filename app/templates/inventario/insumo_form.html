@@ -2,40 +2,67 @@
 {% block title %}{{ 'Editar' if insumo else 'Nuevo' }} Insumo{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>{{ 'Editar' if insumo else 'Nuevo' }} insumo</h2>
+<div id="contenido-a-extraer">
+    <div class="container mt-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-box-open me-2"></i>
+                    {{ 'Editar' if insumo else 'Registrar Nuevo' }} Insumo Médico
+                </h4>
+            </div>
+            <div class="card-body bg-light">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Código de Referencia</label>
+                            <input type="text" name="codigo" class="form-control"
+                                   value="{{ insumo.codigo if insumo else '' }}" 
+                                   placeholder="Ej: INS-100" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold">Nombre del Insumo</label>
+                            <input type="text" name="nombre" class="form-control"
+                                   value="{{ insumo.nombre if insumo else '' }}" 
+                                   placeholder="Ej: Jeringa 5cc, Gasa estéril..." required>
+                        </div>
 
-  <form method="POST">
-    <div class="mb-3">
-      <label class="form-label">Código</label>
-      <input type="text" name="codigo" class="form-control"
-             value="{{ insumo.codigo if insumo else '' }}" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Nombre</label>
-      <input type="text" name="nombre" class="form-control"
-             value="{{ insumo.nombre if insumo else '' }}" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Stock actual</label>
-      <input type="number" step="0.1" name="stock_actual" class="form-control"
-             value="{{ insumo.stock_actual if insumo else 0 }}">
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Unidad</label>
-      <input type="text" name="unidad" class="form-control"
-             value="{{ insumo.unidad if insumo else 'Unidad' }}">
-    </div>
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" name="activo" id="activoCheck"
-             {% if not insumo or insumo.activo %}checked{% endif %}>
-      <label class="form-check-label" for="activoCheck">
-        Activo
-      </label>
-    </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold text-primary">Stock Actual</label>
+                            <input type="number" step="0.1" name="stock_actual" class="form-control border-primary"
+                                   value="{{ insumo.stock_actual if insumo else 0 }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Unidad de Medida</label>
+                            <input type="text" name="unidad" class="form-control"
+                                   value="{{ insumo.unidad if insumo else 'Unidad' }}"
+                                   placeholder="Ej: Unidad, Caja, Rollo">
+                        </div>
 
-    <button type="submit" class="btn btn-success">Guardar</button>
-    <a href="{{ url_for('inventario.listar_insumos') }}" class="btn btn-secondary">Cancelar</a>
-  </form>
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="activo" id="activoCheck"
+                                       {% if not insumo or insumo.activo %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="activoCheck">
+                                    Este insumo está disponible para uso
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('inventario.listar_insumos') }}" class="btn btn-secondary px-4">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-info text-white px-5">
+                            <i class="fas fa-save"></i> Guardar Insumo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

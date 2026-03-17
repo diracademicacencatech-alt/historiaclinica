@@ -2,68 +2,84 @@
 {% block title %}Exámenes de Laboratorio{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>🧪 Exámenes de Laboratorio</h2>
+<div id="contenido-a-extraer">
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>🧪 Catálogo de Exámenes</h2>
+            <button class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Nuevo Examen
+            </button>
+        </div>
 
-  <!-- Buscador -->
-  <div class="mb-3 d-flex justify-content-end">
-    <form method="GET" action="{{ url_for('param.laboratorios') }}" class="d-flex">
-      <input type="text" name="q" class="form-control form-control-sm me-2"
-             placeholder="Buscar por nombre o grupo..."
-             value="{{ q or '' }}">
-      <button type="submit" class="btn btn-outline-light btn-sm">
-        <i class="fas fa-search"></i> Buscar
-      </button>
-    </form>
-  </div>
+        <div class="card mb-3 bg-light">
+            <div class="card-body py-2">
+                <form method="GET" action="{{ url_for('param.laboratorios') }}" class="d-flex">
+                    <input type="text" name="q" class="form-control form-control-sm me-2"
+                           placeholder="Buscar por nombre o grupo..."
+                           value="{{ q or '' }}">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
 
-  <table class="table table-sm table-striped">
-   <thead class="table-dark">
-  <tr>
-    <th>ID</th>
-    <th>Nombre examen</th>
-    <th>Grupo</th>
-    <th style="width:110px;">Activo</th>
-    <th style="width:120px;">Acciones</th>
-  </tr>
-</thead>
-<tbody>
-  {% for ex in examenes %}
-  <tr>
-    <td>{{ ex.id }}</td>
-    <td>
-      <a href="{{ url_for('param.laboratorio_detalle', examen_id=ex.id) }}">
-        {{ ex.nombre }}
-      </a>
-    </td>
-    <td>{{ ex.grupo or '-' }}</td>
-    <td>
-      <form method="POST"
-            action="{{ url_for('param.laboratorio_toggle', examen_id=ex.id) }}"
-            style="display:inline">
-        {% if ex.activo %}
-        <button type="submit" class="btn btn-success btn-sm px-3 py-1">Sí</button>
-        {% else %}
-        <button type="submit" class="btn btn-secondary btn-sm px-3 py-1">No</button>
-        {% endif %}
-      </form>
-    </td>
-    <td>
-      <form method="POST"
-            action="{{ url_for('param.laboratorio_eliminar', examen_id=ex.id) }}"
-            style="display:inline"
-            onsubmit="return confirm('¿Eliminar examen {{ ex.nombre }} y todos sus parámetros?');">
-        <button type="submit" class="btn btn-danger btn-sm px-3 py-1">
-          ELIMINAR
-        </button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</tbody>
- 
-  </table>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre examen</th>
+                        <th>Grupo</th>
+                        <th class="text-center" style="width:110px;">Activo</th>
+                        <th class="text-center" style="width:150px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ex in examenes %}
+                    <tr>
+                        <td>{{ ex.id }}</td>
+                        <td>
+                            <a href="{{ url_for('param.laboratorio_detalle', examen_id=ex.id) }}" class="fw-bold text-decoration-none">
+                                <i class="fas fa-file-medical"></i> {{ ex.nombre }}
+                            </a>
+                        </td>
+                        <td><span class="badge bg-info text-dark">{{ ex.grupo or 'General' }}</span></td>
+                        <td class="text-center">
+                            <form method="POST" action="{{ url_for('param.laboratorio_toggle', examen_id=ex.id) }}">
+                                <button type="submit" class="btn btn-{{ 'success' if ex.activo else 'secondary' }} btn-sm w-75">
+                                    {{ 'Sí' if ex.activo else 'No' }}
+                                </button>
+                            </form>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{{ url_for('param.laboratorio_detalle', examen_id=ex.id) }}" class="btn btn-outline-primary btn-sm" title="Editar parámetros">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('param.laboratorio_eliminar', examen_id=ex.id) }}" 
+                                      onsubmit="return confirm('¿Eliminar examen {{ ex.nombre }}?');" style="display:inline">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not examenes %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No se encontraron exámenes en el catálogo.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
 
-  <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">← Volver al menú</a>
-</div>
-{% endblock %}
+        <div class="mt-4">
+            <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-chevron-left"></i> Volver al menú
+            </a>
+        </div>
+    </div>
+</div> {% endblock %}

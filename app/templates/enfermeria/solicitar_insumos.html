@@ -96,6 +96,26 @@
             <small class="opacity-75">Solicitud y control de stock por paciente</small>
         </div>
     </div>
+    <div class="card mb-4 shadow-sm border-0" style="border-radius: 12px; border-left: 5px solid #28a745;">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h6 class="mb-1 fw-bold text-success">
+                    <i class="fas fa-file-import me-2"></i>Actualizar Inventario Masivo
+                </h6>
+                <p class="small text-muted mb-0">Suba un Excel con: <strong>codigo, nombre, stock_actual, unidad</strong></p>
+            </div>
+            <div class="col-md-6">
+                <form action="{{ url_for('inventario.importar_excel') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                    <input type="file" name="archivo_excel" class="form-control form-control-sm" accept=".xlsx, .xls" required>
+                    <button type="submit" class="btn btn-success btn-sm px-3">
+                        <i class="fas fa-upload me-1"></i> Procesar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
     <div class="card card-solicitud mb-5">
         <div class="card-header p-3">
@@ -105,16 +125,25 @@
             <form method="POST" action="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}">
                 <div class="row g-3">
                     <div class="col-md-7">
-                        <label class="form-label fw-bold small text-uppercase">Insumo / Stock Central</label>
-                        <select name="insumo_id" class="form-select shadow-sm" style="border-radius: 10px;" required>
-                            <option value="">-- Seleccione el insumo --</option>
-                            {% for insumo in insumos_json %}
-                            <option value="{{ insumo.id }}">
-                                {{ insumo.nombre }} (Disponible: {{ insumo.stock_actual }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+    <label class="form-label fw-bold small text-uppercase">Buscador de Insumos (Nombre o Código)</label>
+    <div class="position-relative">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0" style="border-radius: 10px 0 0 10px;">
+                <i class="fas fa-search text-muted"></i>
+            </span>
+            <input type="text" id="buscador-insumo-input" class="form-control border-start-0" 
+                   style="border-radius: 0 10px 10px 0;" 
+                   placeholder="Escriba para buscar..." autocomplete="off">
+        </div>
+        
+        <div id="lista-resultados-insumos" class="list-group position-absolute w-100 shadow-lg" 
+             style="z-index: 1050; max-height: 250px; overflow-y: auto;"></div>
+        
+        <input type="hidden" name="insumo_id" id="insumo_id_final" required>
+        
+        <div id="info-stock-ayuda" class="mt-1 small fw-bold text-muted"></div>
+    </div>
+</div>
                     <div class="col-md-2">
                         <label class="form-label fw-bold small text-uppercase">Cantidad</label>
                         <input type="number" name="cantidad" class="form-control shadow-sm" style="border-radius: 10px;" min="1" value="1" required>
@@ -226,4 +255,54 @@
         </a>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputBuscador = document.getElementById('buscador-insumo-input');
+    const listaResultados = document.getElementById('lista-resultados-insumos');
+    const inputHiddenId = document.getElementById('insumo_id_final');
+    const infoStock = document.getElementById('info-stock-ayuda');
+
+    inputBuscador.addEventListener('input', function() {
+        const query = this.value;
+        
+        if (query.length > 1) {
+            // Llamamos a la API que creamos en Python
+            fetch(`/enfermeria/buscar_insumo_api?q=${query}`)
+                .then(res => res.json())
+                .then(data => {
+                    listaResultados.innerHTML = '';
+                    data.forEach(insumo => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'list-group-item list-group-item-action py-2';
+                        btn.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><strong>${insumo.codigo}</strong> - ${insumo.nombre}</span>
+                                <span class="badge bg-info text-dark">${insumo.stock} ${insumo.unidad}</span>
+                            </div>
+                        `;
+                        
+                        btn.onclick = function() {
+                            inputBuscador.value = insumo.nombre;
+                            inputHiddenId.value = insumo.id;
+                            infoStock.innerHTML = `<i class="fas fa-info-circle"></i> Seleccionado: ${insumo.nombre} | Stock: ${insumo.stock} ${insumo.unidad}`;
+                            listaResultados.innerHTML = '';
+                        };
+                        listaResultados.appendChild(btn);
+                    });
+                });
+        } else {
+            listaResultados.innerHTML = '';
+        }
+    });
+
+    // Cerrar lista si se hace clic fuera
+    document.addEventListener('click', function(e) {
+        if (e.target !== inputBuscador) {
+            listaResultados.innerHTML = '';
+        }
+    });
+});
+</script>
 {% endblock %}

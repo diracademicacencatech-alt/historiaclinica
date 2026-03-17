@@ -7,7 +7,7 @@ from app.utils.fechas import tz_bogota
 from app.auth import auth_bp
 from app.pacientes import pacientes_bp
 from app.ayudas import ayudas_bp
-from app.enfermeria import enfermeria_bp
+from app.enfermeria.routes import enfermeria_bp
 from app.menu import menu_bp
 from app.utils.fechas import ahora_bogota
 from app.inventario.routes import inventario_bp

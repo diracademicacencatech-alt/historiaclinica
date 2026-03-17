@@ -496,13 +496,18 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <div class="col">
-      <div class="input-group">
+  <div class="input-group">
     <span class="input-group-text">C/</span>
-    <input type="number" class="form-control" name="frecuencia" 
-           placeholder="8" min="1" max="24" required>
+    <input type="number" 
+           class="form-control" 
+           name="medicamentos[0][frecuencia]" 
+           placeholder="8" 
+           min="1" 
+           max="24" 
+           required>
     <span class="input-group-text">horas</span>
+  </div>
 </div>
-    </div>
 
     <div class="col">
       <input type="number" step="0.001" min="0"
@@ -652,6 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const items = container.querySelectorAll('.medicamento-item');
       items.forEach((item, index) => {
         item.querySelectorAll('select, input').forEach(el => {
+          // Esta línea ahora sí encontrará la frecuencia porque empezará por "medicamentos"
           el.name = el.name.replace(/medicamentos\[\d+]/, 'medicamentos[' + index + ']');
         });
       });
@@ -661,9 +667,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const items = container.querySelectorAll('.medicamento-item');
       const ultimo = items[items.length - 1];
       const clon = ultimo.cloneNode(true);
-      clon.querySelectorAll('select, input').forEach(el => { el.value = ''; });
+      
+      // Limpiar todos los valores para que la nueva fila esté vacía
+      clon.querySelectorAll('select, input').forEach(el => { 
+        el.value = ''; 
+      });
+
       container.appendChild(clon);
-      renumerar();
+      renumerar(); // Al ejecutar esto, el nuevo input de frecuencia se llamará correctamente
     });
 
     container.addEventListener('click', function (e) {

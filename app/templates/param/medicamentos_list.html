@@ -2,83 +2,101 @@
 {% block title %}Medicamentos{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>💊 Catálogo de Medicamentos</h2>
+<div id="contenido-a-extraer">
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>💊 Catálogo de Medicamentos</h2>
+            <div class="btn-group">
+                <a href="{{ url_for('param.medicamento_nuevo') }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus"></i> Nuevo Medicamento
+                </a>
+            </div>
+        </div>
 
-  <div class="mb-3 d-flex justify-content-between align-items-center">
-    <!-- Nuevo medicamento -->
-    <a href="{{ url_for('param.medicamento_nuevo') }}" class="btn btn-primary btn-sm">
-      <i class="fas fa-plus"></i> Nuevo medicamento
-    </a>
+        <div class="card mb-3 bg-light">
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <form method="GET" action="{{ url_for('param.medicamentos') }}" class="d-flex">
+                            <input type="text" name="q" class="form-control form-control-sm me-2"
+                                   placeholder="Buscar por código o nombre..."
+                                   value="{{ q or '' }}">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="document.getElementById('form-masivo').submit();">
+                            <i class="fas fa-trash"></i> Eliminar seleccionados
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <!-- Buscador -->
-    <form method="GET" action="{{ url_for('param.medicamentos') }}" class="d-flex">
-      <input type="text" name="q" class="form-control form-control-sm me-2"
-             placeholder="Buscar por código o nombre..."
-             value="{{ q or '' }}">
-      <button type="submit" class="btn btn-outline-light btn-sm">
-        <i class="fas fa-search"></i> Buscar
-      </button>
-    </form>
+        <form id="form-masivo" method="POST" action="{{ url_for('param.medicamentos_eliminar_seleccionados') }}"
+              onsubmit="return confirm('¿Eliminar los medicamentos seleccionados?');">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width:30px;">
+                                <input type="checkbox" class="form-check-input" id="checkAllMed"
+                                       onclick="document.querySelectorAll('.chk-med').forEach(c=>c.checked=this.checked);">
+                            </th>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Forma / Presentación</th>
+                            <th class="text-center">Stock</th>
+                            <th>Unidad</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in medicamentos %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="med_ids" value="{{ m.id }}" class="form-check-input chk-med">
+                            </td>
+                            <td><code>{{ m.codigo }}</code></td>
+                            <td><strong>{{ m.nombre }}</strong></td>
+                            <td>
+                                <small class="text-muted">{{ m.forma_farmaceutica or '-' }}</small><br>
+                                <small>{{ m.presentacion or '-' }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge {{ 'bg-success' if m.cantidad_disponible > 0 else 'bg-danger' }}">
+                                    {{ m.cantidad_disponible or 0 }}
+                                </span>
+                            </td>
+                            <td>{{ m.unidad_inventario or '-' }}</td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a href="{{ url_for('param.medicamento_editar', med_id=m.id) }}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not medicamentos %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No hay medicamentos registrados.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
 
-    <!-- Eliminar seleccionados -->
-    <form method="POST"
-          action="{{ url_for('param.medicamentos_eliminar_seleccionados') }}"
-          onsubmit="return confirm('¿Eliminar los medicamentos seleccionados?');">
-      <button type="submit" class="btn btn-danger btn-sm">
-        <i class="fas fa-trash"></i> Eliminar seleccionados
-      </button>
-    </form>
-  </div>
-
-  <form method="POST"
-        action="{{ url_for('param.medicamentos_eliminar_seleccionados') }}">
-    <table class="table table-sm table-striped">
-      <thead class="table-dark">
-        <tr>
-          <th style="width:30px;">
-            <input type="checkbox" id="checkAllMed"
-                   onclick="document.querySelectorAll('.chk-med').forEach(c=>c.checked=this.checked);">
-          </th>
-          <th>ID</th>
-          <th>Código</th>
-          <th>Nombre</th>
-          <th>Forma</th>
-          <th>Presentación</th>
-          <th class="text-end">Cant. disp.</th>
-          <th>Unidad</th>
-          <th style="width:120px;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in medicamentos %}
-        <tr>
-          <td>
-            <input type="checkbox" name="med_ids" value="{{ m.id }}" class="chk-med">
-          </td>
-          <td>{{ m.id }}</td>
-          <td><code>{{ m.codigo }}</code></td>
-          <td>{{ m.nombre }}</td>
-          <td>{{ m.forma_farmaceutica or '-' }}</td>
-          <td>{{ m.presentacion or '-' }}</td>
-          <td class="text-end">{{ m.cantidad_disponible or 0 }}</td>
-          <td>{{ m.unidad_inventario or '-' }}</td>
-          <td>
-            <form method="POST"
-                  action="{{ url_for('param.medicamento_eliminar', med_id=m.id) }}"
-                  style="display:inline"
-                  onsubmit="return confirm('¿Eliminar medicamento {{ m.nombre }}?');">
-              <button type="submit" class="btn btn-danger btn-sm px-3 py-1">
-                <i class="fas fa-trash-alt me-1"></i> ELIMINAR
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </form>
-
-  <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">← Volver al menú</a>
+        <div class="mt-4">
+            <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-chevron-left"></i> Volver al menú
+            </a>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,89 +1,92 @@
-{% extends 'base.html' %}
+{% extends "base.html" if not request.headers.get('HX-Request') else "" %}
 {% block title %}Software SM - Dashboard{% endblock %}
 
 {% block content %}
 <div class="dashboard-wrapper">
     <nav class="sidebar-professional">
-        
-        
         <div class="sidebar-menu">
             <p class="menu-label">MODULOS</p>
-            <a href="{{ url_for('pacientes.listar') }}" class="menu-link active">
+            
+            <a hx-get="{{ url_for('pacientes.listar') }}" 
+               hx-target="#contenido-principal" 
+               hx-select="#contenido-a-extraer"
+               hx-push-url="true"
+               class="menu-link active"
+               style="cursor: pointer;">
                 <i class="fas fa-users"></i> Pacientes
             </a>
-            <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" class="menu-link">
-                <i class="fas fa-user-nurse"></i> Enfermería
-            </a>
-            <a href="{{ url_for('ayudas.inicio_ayudas') }}" class="menu-link">
+
+            <a hx-get="/enfermeria/" 
+   hx-target="#contenido-principal" 
+   hx-swap="innerHTML"
+   class="menu-link"
+   style="cursor: pointer;">
+    <i class="fas fa-user-nurse"></i> Enfermería
+</a>
+
+            <a hx-get="{{ url_for('ayudas.inicio_ayudas') }}" 
+               hx-target="#contenido-principal" 
+               hx-select="#contenido-a-extraer"
+               hx-push-url="false"
+               class="menu-link"
+               style="cursor: pointer;">
                 <i class="fas fa-microscope"></i> Ayudas Diagnósticas
             </a>
 
             <p class="menu-label">Configuración</p>
             <div class="settings-grid">
-                <a href="{{ url_for('inventario.listar_insumos') }}" title="Insumos"><i class="fas fa-box"></i></a>
-                <a href="{{ url_for('param.medicamentos') }}" title="Medicamentos"><i class="fas fa-pills"></i></a>
-                <a href="{{ url_for('param.cie10') }}" title="CIE-10"><i class="fas fa-notes-medical"></i></a>
-                <a href="{{ url_for('param.laboratorios') }}" title="Laboratorios"><i class="fas fa-vial"></i></a>
+                <a hx-get="{{ url_for('inventario.listar_insumos') }}" hx-target="#contenido-principal" hx-select="#contenido-a-extraer" hx-push-url="true" title="Insumos" style="cursor: pointer;"><i class="fas fa-box"></i></a>
+                <a hx-get="{{ url_for('param.medicamentos') }}" hx-target="#contenido-principal" hx-select="#contenido-a-extraer" hx-push-url="true" title="Medicamentos" style="cursor: pointer;"><i class="fas fa-pills"></i></a>
+                <a hx-get="{{ url_for('param.cie10') }}" hx-target="#contenido-principal" hx-select="#contenido-a-extraer" hx-push-url="true" title="CIE-10" style="cursor: pointer;"><i class="fas fa-notes-medical"></i></a>
+                <a hx-get="{{ url_for('param.laboratorios') }}" hx-target="#contenido-principal" hx-select="#contenido-a-extraer" hx-push-url="true" title="Laboratorios" style="cursor: pointer;"><i class="fas fa-vial"></i></a>
             </div>
         </div>
     </nav>
 
     <main class="main-content-pro">
-       <section class="welcome-banner">
-            <div class="banner-text">
-                <h2>¡Hola!</h2>
-                <p>Para iniciar revisa los modulos de la izquierda</p>
-            </div>
-            <div class="banner-img">
-                <i class="fas fa-hospital-user shadow-lg"></i>
-            </div>
-        </section>
+        <div id="contenido-principal">
+            <section class="welcome-banner">
+                <div class="banner-text">
+                    <h2>¡Hola!</h2>
+                    <p>Para iniciar revisa los módulos de la izquierda</p>
+                </div>
+                <div class="banner-img">
+                    <i class="fas fa-hospital-user shadow-lg"></i>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
 
 <style>
-    /* 1. Reset y Estructura Base */
-    body, html { margin: 0; padding: 0; overflow-x: hidden; }
-
+    /* Reset y Estructura */
     .dashboard-wrapper {
         display: flex;
-        min-height: 100vh;
-        background-color: #f4f7f6;
         width: 100%;
+        background-color: #f4f7f6;
     }
 
-    /* 2. Sidebar Profesional */
     .sidebar-professional {
-    width: 280px;
-    min-width: 280px;
-    background: #1a1d23;
-    color: #fff;
-    padding: 30px 20px;
-    display: flex;
-    flex-direction: column;
+        width: 280px;
+        min-width: 280px;
+        background: #236e7b !important;
+        color: #fff;
+        padding: 30px 20px;
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+        margin: 20px;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
 
-    /* --- CAMBIOS PARA ELIMINAR EL ESPACIO SOBRANTE --- */
-    height: fit-content;      /* La altura se ajusta solo a lo que ocupan los botones */
-    max-height: calc(100vh - 40px); /* Evita que crezca más que la pantalla */
-    margin: 20px;            /* Crea el efecto de "flotado" */
-    border-radius: 24px;     /* Redondea el corte inferior */
-    
-    position: sticky;
-    top: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-    .logo-text { font-size: 1.5rem; font-weight: 800; color: #0c0b0b; letter-spacing: 1px; margin-bottom: 20px; }
-    .logo-text span { color: #3498db; }
-
-    /* 3. Etiquetas y Enlaces del Menú (MEJORADOS) */
     .menu-label { 
         font-size: 0.7rem; 
         text-transform: uppercase; 
         color: #dde6e9; 
         font-weight: 700; 
-        margin-top: 30px; 
-        margin-bottom: 12px;
+        margin-top: 20px; 
         letter-spacing: 1.2px;
-        padding-left: 5px;
     }
 
     .menu-link {
@@ -92,60 +95,40 @@
         padding: 12px 15px;
         color: #eaeef0;
         text-decoration: none !important;
-        border-radius: 12px; /* Más redondeado */
+        border-radius: 12px;
         margin-bottom: 8px;
-        transition: all 0.3s ease; /* Transición más suave */
+        transition: all 0.3s ease;
     }
-
-    .menu-link i { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1rem; }
 
     .menu-link:hover { 
-        background: rgba(255, 255, 255, 0.05); 
+        background: rgba(255, 255, 255, 0.1); 
         color: #fff; 
-        transform: translateX(5px); /* Efecto de desplazamiento al pasar el mouse */
+        transform: translateX(5px);
     }
 
-    .menu-link.active { 
-        background: #236e7b; /* Tu color primario */
-        color: #fff; 
-        box-shadow: 0 4px 12px rgba(35, 110, 123, 0.2);
-    }
-
-    /* 4. Grilla de Configuración (MEJORADA 2x2) */
     .settings-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr); /* Cambio a 2 columnas para mejor tamaño */
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
         margin-top: 10px;
     }
 
     .settings-grid a {
-        background: #2d3436; 
+        background: rgba(255,255,255,0.1); 
         color: #fff; 
-        height: 45px; /* Un poco más altos para facilitar el click */
+        height: 45px; 
         display: flex; 
         align-items: center; 
         justify-content: center;
         border-radius: 10px; 
-        transition: 0.3s; 
         text-decoration: none;
-        border: 1px solid transparent;
     }
 
-    .settings-grid a:hover { 
-        background: #3498db; 
-        transform: translateY(-2px); /* Efecto de levante */
-    }
-
-    /* 5. Contenido Principal */
     .main-content-pro {
-        flex-grow: 1;
-        padding: 40px;
-        box-sizing: border-box;
-        overflow-y: auto;
+        flex: 1;
+        padding: 20px;
     }
 
-    /* 6. Banner y Cards */
     .welcome-banner {
         background: linear-gradient(135deg, #236e7b 0%, #3498db 100%);
         padding: 40px;
@@ -154,41 +137,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
     }
-
-    .welcome-banner h2 { font-weight: 800; font-size: 2rem; margin: 0; }
-    .banner-img i { font-size: 5rem; opacity: 0.3; }
-
-    .quick-access-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 20px;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 25px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        transition: 0.3s;
-    }
-    
-    .stat-card:hover { transform: translateY(-5px); }
-
-    .stat-icon {
-        width: 55px; height: 55px; border-radius: 15px;
-        display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
-    }
-    .stat-icon.blue { background: #e3f2fd; color: #1e88e5; }
-    .stat-icon.green { background: #e8f5e9; color: #43a047; }
-    .stat-icon.orange { background: #fff3e0; color: #fb8c00; }
-
-    .stat-details h3 { font-size: 0.75rem; color: #95a5a6; margin: 0; text-transform: uppercase; }
-    .stat-details p { font-size: 1.2rem; font-weight: 700; color: #2d3436; margin: 0; }
 </style>
 {% endblock %}

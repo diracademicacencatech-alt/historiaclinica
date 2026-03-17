@@ -137,45 +137,43 @@
     </div>
 </div>
 
-    <div class="menu-grid">
-        
-        <a href="{{ url_for('enfermeria.registros_paciente', paciente_id=paciente.id) }}" class="btn-sm-accion">
-            <i class="fas fa-file-medical-alt"></i>
-            <span>Ver historial de registros</span>
-        </a>
+<div class="menu-grid">
+    <a href="{{ url_for('enfermeria.registros_paciente', paciente_id=paciente.id) }}" class="btn-sm-accion">
+        <i class="fas fa-file-medical-alt"></i>
+        <span>Ver historial de registros</span>
+    </a>
 
-        <a href="{{ url_for('enfermeria.crear', paciente_id=paciente.id) }}" class="btn-sm-accion">
-            <i class="fas fa-heartbeat"></i>
-            <span>Registrar Signos Vitales y Balance de Liquidos</span>
-        </a>
+    <a href="{{ url_for('enfermeria.crear', paciente_id=paciente.id) }}" class="btn-sm-accion">
+        <i class="fas fa-heartbeat"></i>
+        <span>Registrar Signos Vitales y Balance de Liquidos</span>
+    </a>
 
-        <a href="{{ url_for('enfermeria.crear_nota', paciente_id=paciente.id) }}" class="btn-sm-accion">
-            <i class="fas fa-notes-medical"></i>
-            <span>Notas de enfermeria</span>
-        </a>
+    <a href="{{ url_for('enfermeria.crear_nota', paciente_id=paciente.id) }}" class="btn-sm-accion">
+        <i class="fas fa-notes-medical"></i>
+        <span>Notas de enfermeria</span>
+    </a>
 
-        <a href="{{ url_for('enfermeria.administrar_medicamentos_paciente', paciente_id=paciente.id) }}" class="btn-sm-accion">
-            <i class="fas fa-pills"></i>
-            <span>Registrar Medicamentos</span>
-        </a>
+    <a href="{{ url_for('enfermeria.administrar_medicamentos_paciente', paciente_id=paciente.id) }}" class="btn-sm-accion">
+        <i class="fas fa-pills"></i>
+        <span>Registrar Medicamentos</span>
+    </a>
 
-        <a href="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}" class="btn-sm-accion">
-            <i class="fas fa-hand-holding-medical"></i>
-            <span>Solicitar Insumos</span>
-        </a>
+    <a href="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}" class="btn-sm-accion">
+        <i class="fas fa-hand-holding-medical"></i>
+        <span>Solicitar Insumos</span>
+    </a>
 
-        <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}" class="btn-sm-accion">
-            <i class="fas fa-box-open"></i>
-            <span>Registrar Insumos</span>
-        </a>
+    <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}" class="btn-sm-accion">
+        <i class="fas fa-box-open"></i>
+        <span>Registrar Insumos</span>
+    </a>
+</div>
 
-    </div>
-
-    <div class="text-center mt-5">
-        <a href="{{ url_for('enfermeria.inicio_enfermeria') }}" class="btn-volver-custom">
-            <i class="fas fa-chevron-left me-2"></i> Volver a la búsqueda de pacientes
-        </a>
-    </div>
+  <div class="text-center mt-5">
+    <a href="/enfermeria/" class="btn-volver-custom">
+        <i class="fas fa-chevron-left me-2"></i> Volver a la búsqueda de pacientes
+    </a>
+</div>
 
 </div>
 {% endblock %}

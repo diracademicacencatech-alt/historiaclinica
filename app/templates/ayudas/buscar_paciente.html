@@ -1,71 +1,116 @@
 {% extends "base.html" %}
 {% block title %}Ayudas diagnósticas{% endblock %}
 
-
 {% block content %}
-<div class="row">
-  <div class="col-12 col-lg-4 mb-3">
+<div id="contenido-a-extraer">
+<style>
+    .sm-main-title {
+        color: #236e7b;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+    .sm-main-subtitle {
+        color: #5f5f5f;
+        margin-bottom: 2rem;
+    }
+    .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .card-header {
+        background-color: #236e7b !important;
+        color: white !important;
+        font-weight: 600;
+        border-radius: 15px 15px 0 0 !important;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+    .form-control {
+        border-radius: 10px;
+        padding: 12px;
+        border: 2px solid #eee;
+    }
+    .form-control:focus {
+        border-color: #236e7b;
+        box-shadow: none;
+    }
+    .btn-primary {
+        background-color: #236e7b !important;
+        border: none !important;
+        padding: 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+    .btn-primary:hover {
+        background-color: #0b6169 !important;
+        transform: translateY(-2px);
+    }
+    /* Estilo para las sugerencias de búsqueda */
+    #sugerencias {
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border: none;
+        border-radius: 0 0 10px 10px;
+        overflow: hidden;
+    }
+    .list-group-item-action:hover {
+        background-color: #f0e7d8;
+        color: #236e7b;
+    }
+</style>
 
+<div class="row fade-in" style="animation: fadeIn 0.4s ease;">
+  <div class="col-12 col-lg-5 mb-3">
 
     <h2 class="sm-main-title">Ayudas diagnósticas</h2>
     <p class="sm-main-subtitle">
-      Buscar paciente para laboratorios, imágenes u otros estudios.
+      Busque al paciente para gestionar laboratorios o imágenes.
     </p>
 
-
-    <!-- FORMULARIO DE BÚSQUEDA DE PACIENTE -->
     <div class="card">
-      <div class="card-header">Buscar paciente</div>
-      <div class="card-body">
+      <div class="card-header"><i class="fas fa-search me-2"></i> Localizar Paciente</div>
+      <div class="card-body p-4">
         <form method="post" action="{{ url_for('ayudas.buscar_paciente') }}">
           <div class="mb-3 position-relative">
-            <label for="criterio" class="form-label">Nombre o número de paciente</label>
-
+            <label for="criterio" class="form-label fw-bold" style="color: #0b6169;">Nombre o número de documento</label>
 
             <input type="text" id="criterio" name="criterio"
                    class="form-control"
                    autocomplete="off"
-                   placeholder="Empieza a escribir: Juan, 12345..." required>
+                   placeholder="Ej: Juan Pérez o 1020..." required>
 
-
-            <!-- Contenedor de sugerencias -->
             <div id="sugerencias"
                  class="list-group position-absolute w-100"
                  style="z-index: 1000;"></div>
           </div>
 
-
-          <button type="submit" class="btn btn-primary w-100">
-            Buscar
+          <button type="submit" class="btn btn-primary w-100 mt-2">
+            <i class="fas fa-arrow-right me-2"></i> BUSCAR PACIENTE
           </button>
         </form>
       </div>
     </div>
-
-
   </div>
 
-
-  <div class="col-12 col-lg-8">
-    <!-- vacío; los resultados se muestran en buscar_resultados.html -->
+  <div class="col-12 col-lg-7 d-none d-lg-flex align-items-center justify-content-center text-center">
+    <div class="p-5 opacity-50">
+        <i class="fas fa-microscope fa-5x mb-3" style="color: #236e7b;"></i>
+        <p class="h5">Módulo de gestión de estudios y resultados</p>
+    </div>
   </div>
 </div>
 
-
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+// Usamos una IIFE (función autoejecutable) para que HTMX pueda re-ejecutar el script al cargar
+(function() {
   const input = document.getElementById('criterio');
   const contenedor = document.getElementById('sugerencias');
-
-
   let ultimoTermino = '';
   let timeoutId = null;
 
-
-  if (!input || !contenedor) {
-    return;
-  }
-
+  if (!input || !contenedor) return;
 
   function limpiarSugerencias() {
     while (contenedor.firstChild) {
@@ -73,58 +118,40 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-
   input.addEventListener('input', function () {
     const termino = input.value.trim();
-
-
     if (termino.length < 2 || termino === ultimoTermino) {
       limpiarSugerencias();
       return;
     }
     ultimoTermino = termino;
-
-
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
+    if (timeoutId) clearTimeout(timeoutId);
 
     timeoutId = setTimeout(function () {
       fetch('{{ url_for("ayudas.autocomplete_pacientes") }}?q=' + encodeURIComponent(termino))
         .then(resp => resp.json())
         .then(function (datos) {
           limpiarSugerencias();
-
-
           datos.forEach(function (p) {
             const item = document.createElement('button');
             item.type = 'button';
-            item.className = 'list-group-item list-group-item-action';
-            item.textContent = p.nombre + ' (' + p.numero + ')';
-
+            item.className = 'list-group-item list-group-item-action border-0 py-3';
+            item.innerHTML = `<i class="fas fa-user me-2 text-muted"></i> ${p.nombre} <small class="text-muted">(${p.numero})</small>`;
 
             item.addEventListener('click', function () {
-              // Rellenar el input solo con el número del paciente
               input.value = p.numero;
               limpiarSugerencias();
             });
-
-
             contenedor.appendChild(item);
           });
-        })
-        .catch(function (err) {
-          console.error('Error en autocomplete:', err);
-          limpiarSugerencias();
         });
     }, 250);
   });
 
-
   input.addEventListener('blur', function () {
     setTimeout(limpiarSugerencias, 200);
   });
-});
+})();
 </script>
+</div> 
 {% endblock %}

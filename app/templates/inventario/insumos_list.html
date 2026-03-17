@@ -2,89 +2,121 @@
 {% block title %}Insumos Médicos{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>🧴 Catálogo de Insumos Médicos</h2>
+<div id="contenido-a-extraer">
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2>🧴 Catálogo de Insumos Médicos</h2>
+      <div>
+        <a href="{{ url_for('inventario.nuevo_insumo') }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus"></i> Nuevo insumo
+        </a>
+      </div>
+    </div>
 
-  <div class="mb-3 d-flex justify-content-between align-items-center">
-    <!-- Nuevo insumo -->
-    <a href="{{ url_for('inventario.nuevo_insumo') }}" class="btn btn-primary btn-sm">
-      <i class="fas fa-plus"></i> Nuevo insumo
-    </a>
-
-    <!-- Buscador -->
-    <form method="GET" action="{{ url_for('inventario.listar_insumos') }}" class="d-flex">
-      <input type="text" name="q" class="form-control form-control-sm me-2"
-             placeholder="Buscar por código o nombre..."
-             value="{{ q or '' }}">
-      <button type="submit" class="btn btn-outline-light btn-sm">
-        <i class="fas fa-search"></i> Buscar
-      </button>
-    </form>
-
-    <!-- Eliminar seleccionados -->
-    <form method="POST"
-          action="{{ url_for('inventario.eliminar_insumos_seleccionados') }}"
-          id="formEliminarSeleccionados"
-          onsubmit="return confirm('¿Eliminar los insumos seleccionados?');">
-      <button type="submit" class="btn btn-danger btn-sm">
-        <i class="fas fa-trash"></i> Eliminar seleccionados
-      </button>
-    </form>
-  </div>
-
-  <form method="POST"
-        action="{{ url_for('inventario.eliminar_insumos_seleccionados') }}"
-        id="formTablaInsumos">
-    <table class="table table-sm table-striped">
-      <thead class="table-dark">
-        <tr>
-          <th style="width:30px;">
-            <input type="checkbox" id="checkAll"
-                   onclick="document.querySelectorAll('.chk-insumo').forEach(c=>c.checked=this.checked);">
-          </th>
-          <th>ID</th>
-          <th>Código</th>
-          <th>Nombre</th>
-          <th class="text-end">Stock</th>
-          <th>Unidad</th>
-          <th>Activo</th>
-          <th style="width:120px;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for i in insumos %}
-        <tr>
-          <td>
-            <input type="checkbox" name="insumo_ids" value="{{ i.id }}" class="chk-insumo">
-          </td>
-          <td>{{ i.id }}</td>
-          <td><code>{{ i.codigo }}</code></td>
-          <td>{{ i.nombre }}</td>
-          <td class="text-end">{{ i.stock_actual }}</td>
-          <td>{{ i.unidad }}</td>
-          <td>
-            {% if i.activo %}
-              <span class="badge bg-success">Sí</span>
-            {% else %}
-              <span class="badge bg-secondary">No</span>
-            {% endif %}
-          </td>
-          <td>
-            <form method="POST"
-                  action="{{ url_for('inventario.eliminar_insumo', insumo_id=i.id) }}"
-                  style="display:inline"
-                  onsubmit="return confirm('¿Eliminar insumo {{ i.nombre }}?');">
-              <button type="submit" class="btn btn-danger btn-sm px-3 py-1">
-                <i class="fas fa-trash-alt me-1"></i> ELIMINAR
+    <div class="card mb-3 bg-light">
+      <div class="card-body py-2">
+        <div class="row align-items-center">
+          <div class="col-md-7">
+            <form method="GET" action="{{ url_for('inventario.listar_insumos') }}" class="d-flex">
+              <input type="text" name="q" class="form-control form-control-sm me-2"
+                     placeholder="Buscar por código o nombre..."
+                     value="{{ q or '' }}">
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-search"></i> Buscar
               </button>
             </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </form>
+          </div>
+          <div class="col-md-5 text-end">
+            <button type="button" class="btn btn-danger btn-sm" onclick="if(confirm('¿Eliminar seleccionados?')) document.getElementById('formTablaInsumos').submit();">
+              <i class="fas fa-trash"></i> Eliminar seleccionados
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">← Volver al menú</a>
+    <form method="POST" action="{{ url_for('inventario.eliminar_insumos_seleccionados') }}" id="formTablaInsumos">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th style="width:30px;">
+                <input type="checkbox" id="checkAll" class="form-check-input"
+                       onclick="document.querySelectorAll('.chk-insumo').forEach(c=>c.checked=this.checked);">
+              </th>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th class="text-end">Stock</th>
+              <th>Unidad</th>
+              <th class="text-center">Activo</th>
+              <th class="text-center" style="width:150px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in insumos %}
+            <tr>
+              <td>
+                <input type="checkbox" name="insumo_ids" value="{{ i.id }}" class="form-check-input chk-insumo">
+              </td>
+              <td><code>{{ i.codigo }}</code></td>
+              <td><strong>{{ i.nombre }}</strong></td>
+              <td class="text-end">{{ i.stock_actual }}</td>
+              <td>{{ i.unidad }}</td>
+              <td class="text-center">
+                <span class="badge {{ 'bg-success' if i.activo else 'bg-secondary' }}">
+                  {{ 'Sí' if i.activo else 'No' }}
+                </span>
+              </td>
+              <td class="text-center">
+  <div class="btn-group">
+    <a href="{{ url_for('inventario.editar_insumo', insumo_id=i.id) }}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-edit"></i>
+    </a>
+    
+    <button type="button" 
+        class="btn btn-outline-danger btn-sm btn-eliminar-insumo" 
+        data-nombre="{{ i.nombre }}" 
+        data-url="{{ url_for('inventario.eliminar_insumo', insumo_id=i.id) }}">
+    <i class="fas fa-trash-alt"></i>
+</button>
+  </div>
+</td>
+            </tr>
+            {% endfor %}
+            {% if not insumos %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">No se encontraron insumos.</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+
+    <div class="mt-4">
+      <a href="{{ url_for('menu.inicio') }}" class="btn btn-secondary btn-sm">
+        <i class="fas fa-chevron-left"></i> Volver al menú
+      </a>
+    </div>
+  </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Escuchamos los clics en todos los botones de eliminar
+    document.querySelectorAll('.btn-eliminar-insumo').forEach(boton => {
+        boton.addEventListener('click', function() {
+            const nombre = this.getAttribute('data-nombre');
+            const url = this.getAttribute('data-url');
+            
+            if (confirm('¿Realmente desea eliminar el insumo: ' + nombre + '?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = url;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

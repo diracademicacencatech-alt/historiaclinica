@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from app.extensions import db
 from app.models import InsumoMedico
-
+import pandas as pd 
+from io import BytesIO
 inventario_bp = Blueprint('inventario', __name__, url_prefix='/inventario')
 
 # LISTAR INSUMOS
@@ -55,6 +56,29 @@ def nuevo_insumo():
 
     return render_template('inventario/insumo_form.html', insumo=None)
 
+# Asegúrate de que el nombre sea exactamente editar_insumo
+@inventario_bp.route('/insumos/editar/<int:insumo_id>', methods=['GET', 'POST'])
+@login_required
+def editar_insumo(insumo_id): # <-- ESTE NOMBRE ES EL QUE BUSCA EL ERROR
+    insumo = InsumoMedico.query.get_or_404(insumo_id)
+    
+    if request.method == 'POST':
+        insumo.codigo = request.form.get('codigo', '').strip()
+        insumo.nombre = request.form.get('nombre', '').strip()
+        insumo.stock_actual = float(request.form.get('stock_actual', 0))
+        insumo.unidad = request.form.get('unidad', 'Unidad')
+        insumo.activo = 1 if request.form.get('activo') == 'on' else 0
+
+        if not insumo.codigo or not insumo.nombre:
+            flash('Código y nombre son obligatorios', 'danger')
+            return redirect(url_for('inventario.editar_insumo', insumo_id=insumo.id))
+
+        db.session.commit()
+        flash('Insumo actualizado correctamente', 'success')
+        return redirect(url_for('inventario.listar_insumos'))
+
+    return render_template('inventario/insumo_form.html', insumo=insumo)
+
 # ELIMINAR INDIVIDUAL
 @inventario_bp.route('/insumos/<int:insumo_id>/eliminar', methods=['POST'])
 @login_required
@@ -81,4 +105,59 @@ def eliminar_insumos_seleccionados():
     )
     db.session.commit()
     flash(f'{deleted} insumos eliminados.', 'success')
+    return redirect(url_for('inventario.listar_insumos'))
+
+@inventario_bp.route('/insumos/importar_excel', methods=['POST'])
+@login_required
+def importar_excel():
+    archivo = request.files.get('archivo_excel')
+    if not archivo:
+        flash('Por favor selecciona un archivo', 'danger')
+        return redirect(url_for('inventario.listar_insumos'))
+
+    try:
+        # Leemos el Excel
+        df = pd.read_excel(archivo)
+        
+        # Limpiar nombres de columnas
+        df.columns = [c.strip().lower() for c in df.columns]
+
+        actualizados = 0
+        creados = 0
+
+        for _, row in df.iterrows():
+            codigo = str(row['codigo']).strip()
+            nombre = str(row['nombre']).strip()
+            # Tomamos el stock del excel
+            stock = float(row.get('stock_actual', 0))
+            unidad = str(row.get('unidad', 'Unidad')).strip()
+
+            # BUSCAMOS SI YA EXISTE
+            insumo = InsumoMedico.query.filter_by(codigo=codigo).first()
+
+            if insumo:
+                # SI EXISTE: Actualizamos stock y nombre (Ideal para corregir los de stock 0)
+                insumo.nombre = nombre
+                insumo.stock_actual = stock
+                insumo.unidad = unidad
+                actualizados += 1
+            else:
+                # SI NO EXISTE: Lo creamos
+                nuevo = InsumoMedico(
+                    codigo=codigo,
+                    nombre=nombre,
+                    stock_actual=stock,
+                    unidad=unidad,
+                    activo=True
+                )
+                db.session.add(nuevo)
+                creados += 1
+        
+        db.session.commit()
+        flash(f'Proceso terminado: {creados} creados y {actualizados} actualizados.', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al procesar el archivo: {str(e)}', 'danger')
+
     return redirect(url_for('inventario.listar_insumos'))

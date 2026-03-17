@@ -57,6 +57,30 @@ def medicamento_nuevo():
 
     return render_template('param/medicamento_form.html', medicamento=None)
 
+# 💊 EDITAR MEDICAMENTO EXISTENTE
+@param_bp.route('/medicamentos/editar/<int:med_id>', methods=['GET', 'POST'])
+@login_required
+def medicamento_editar(med_id):
+    med = Medicamento.query.get_or_404(med_id)
+    
+    if request.method == 'POST':
+        med.codigo = request.form.get('codigo', '').strip()
+        med.nombre = request.form.get('nombre', '').strip()
+        med.forma_farmaceutica = request.form.get('forma_farmaceutica', '').strip()
+        med.presentacion = request.form.get('presentacion', '').strip()
+        med.cantidad_disponible = request.form.get('cantidad_disponible', '0').strip()
+        med.unidad_inventario = request.form.get('unidad_inventario', '').strip()
+
+        if not med.codigo or not med.nombre:
+            flash('Código y nombre son obligatorios', 'danger')
+            return redirect(url_for('param.medicamento_editar', med_id=med.id))
+
+        db.session.commit()
+        flash('Medicamento actualizado correctamente', 'success')
+        return redirect(url_for('param.medicamentos'))
+
+    return render_template('param/medicamento_form.html', medicamento=med)
+
 # 💊 ELIMINAR INDIVIDUAL
 @param_bp.route('/medicamentos/<int:med_id>/eliminar', methods=['POST'])
 @login_required

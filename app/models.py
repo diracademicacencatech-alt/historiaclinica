@@ -363,6 +363,8 @@ class AdministracionMedicamento(db.Model):
         db.ForeignKey('registro_enfermeria.id'),
         nullable=False
     )
+
+    formulacion_id = db.Column(db.Integer, nullable=True)
     medicamento_id = db.Column(
         db.Integer,
         db.ForeignKey('medicamentos.id'),
