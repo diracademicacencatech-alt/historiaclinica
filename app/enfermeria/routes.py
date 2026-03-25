@@ -115,27 +115,33 @@ enfermeria_bp = Blueprint('enfermeria', __name__)
 @enfermeria_bp.route('/', methods=['GET', 'POST'])
 @login_required
 def inicio_enfermeria():
-    pacientes = []
     criterio = ""
+    # 1. Definimos pacientes fuera del if para que siempre exista la variable
+    pacientes = [] 
     
     if request.method == 'POST':
         criterio = request.form.get('criterio', '').strip()
         if criterio:
-            # Buscamos pacientes que tengan historia clínica y coincidan con el criterio
+            # Tu lógica de búsqueda actual
             ids_validos = [h.paciente_id for h in HistoriaClinica.query.all()]
             pacientes = Paciente.query.filter(Paciente.id.in_(ids_validos)).filter(
                 (Paciente.numero.ilike(f"%{criterio}%")) | 
                 (Paciente.nombre.ilike(f"%{criterio}%"))
             ).all()
         else:
-            # Si el POST llega vacío, podrías cargar los últimos 10 o dejarlo vacío
             pacientes = []
+    else:
+        # 2. CARGA INICIAL (Cuando entras por primera vez sin buscar)
+        # Cargamos los últimos 10 pacientes que tengan historia clínica
+        # Esto evita que la tabla aparezca con el mensaje de "Vacía"
+        ids_con_historia = [h.paciente_id for h in HistoriaClinica.query.limit(100).all()]
+        pacientes = Paciente.query.filter(Paciente.id.in_(ids_con_historia))\
+                                  .order_by(Paciente.id.desc())\
+                                  .limit(10).all()
 
-    # RUTA DE TEMPLATE: Flask buscará en app/templates/enfermeria/listar.html
-    # Esto es compatible con tu estructura actual y con HTMX
     return render_template('enfermeria/listar.html', 
-                           pacientes=pacientes, 
-                           criterio=criterio)
+                            pacientes=pacientes, 
+                            criterio=criterio)
 
 # ---------- 2) AUTOCOMPLETE ----------
 
@@ -459,20 +465,42 @@ def eliminar_nota_enfermeria(registro_id):
 @enfermeria_bp.route('/insumo_paciente/<int:ip_id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_insumo_paciente(ip_id):
+    # 1. Buscamos el registro que se quiere borrar
     ip = InsumoPaciente.query.get_or_404(ip_id)
+    paciente_id = ip.paciente_id
     
-    # Buscamos el registro de enfermería asociado al insumo
-    registro = RegistroEnfermeria.query.get(ip.registro_enfermeria_id)
-    if registro:
-        permitido, mensaje = validar_turno_estricto(registro)
-        if not permitido:
-            flash(mensaje, "danger")
-            return redirect(request.referrer)
+    # 2. VALIDACIÓN DE TURNO (Mantenemos tu lógica estricta)
+    if hasattr(ip, 'registro_enfermeria_id') and ip.registro_enfermeria_id:
+        registro = RegistroEnfermeria.query.get(ip.registro_enfermeria_id)
+        if registro:
+            permitido, mensaje = validar_turno_estricto(registro)
+            if not permitido:
+                flash(mensaje, "danger")
+                return redirect(request.referrer)
+    
+    try:
+        # 3. RESTAURAR EL SALDO EN LA TABLA DE ARRIBA
+        # Buscamos la solicitud que corresponde a este insumo para cambiarle el estado
+        # Nota: Usamos ip.insumo_id porque es el nombre real en tu base de datos
+        solicitud = SolicitudInsumo.query.filter_by(
+            paciente_id=paciente_id, 
+            insumo_medico_id=ip.insumo_id 
+        ).first()
 
-    db.session.delete(ip)
-    db.session.commit()
-    flash('Insumo eliminado.', 'success')
-    return redirect(request.referrer)
+        if solicitud:
+            # Al eliminar el uso, la solicitud debe volver a aparecer como 'parcial' o 'pendiente'
+            solicitud.estado = 'parcial'
+
+        db.session.delete(ip)
+        db.session.commit()
+        flash('✅ Registro eliminado. El insumo vuelve a estar disponible para legalizar.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error al eliminar: {str(e)}', 'danger')
+
+    # Retornamos a la misma página de registro de insumos
+    return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
 
 # ---------- 5) ADMINISTRAR MEDICAMENTOS POR REGISTRO ----------
 @enfermeria_bp.route('/registro/<int:registro_id>/medicamentos', methods=['GET', 'POST'])
@@ -897,52 +925,40 @@ def exportar_pdf(paciente_id):
 
    # ---------- 8) API INFO PACIENTE ----------
 
-# Asegúrate de que la ruta comience con /enfermeria si ese es el prefijo del blueprint
 @enfermeria_bp.route('/api/buscar_info_paciente', methods=['GET'])
 @login_required
 def buscar_info_paciente():
-    q = request.args.get('q', '').strip() # Limpiamos espacios
+    q = request.args.get('q', '').strip()
     if not q:
-        return jsonify({'error': 'Consulta vacía'}), 400
+        return jsonify([]) # Devolvemos lista vacía en lugar de error 400
 
-    # Búsqueda por documento o nombre
-    paciente = Paciente.query.filter(
-        (Paciente.numero == q) | 
+    # 1. Buscamos TODOS los pacientes que coincidan (limitamos a 5 para rapidez)
+    pacientes = Paciente.query.filter(
+        (Paciente.numero.like(f"%{q}%")) | 
         (Paciente.nombre.ilike(f"%{q}%"))
-    ).first()
+    ).limit(5).all()
 
-    # Si no lo encuentra por paciente, busca por número de ingreso en HistoriaClinica
-    if not paciente:
-        historia_q = (
-            HistoriaClinica.query
-            .filter_by(numero_ingreso=q)
-            .order_by(HistoriaClinica.fecha_registro.desc())
-            .first()
-        )
-        if historia_q:
-            paciente = historia_q.paciente
-        else:
-            return jsonify({'error': 'No encontrado'}), 404
+    # 2. Si no hay pacientes por nombre/doc, buscamos por número de ingreso
+    if not pacientes:
+        historia_q = HistoriaClinica.query.filter_by(numero_ingreso=q).first()
+        if historia_q and historia_q.paciente:
+            pacientes = [historia_q.paciente]
 
-    # Buscamos la última historia para devolver los datos de cama e ingreso
-    historia = (
-        HistoriaClinica.query
-        .filter_by(paciente_id=paciente.id)
-        .order_by(HistoriaClinica.fecha_registro.desc())
-        .first()
-    )
+    resultados = []
+    for p in pacientes:
+        # Obtenemos la última historia para cada paciente de la lista
+        h = HistoriaClinica.query.filter_by(paciente_id=p.id)\
+            .order_by(HistoriaClinica.fecha_registro.desc()).first()
+        
+        resultados.append({
+            'paciente_id': p.id,
+            'nombre': p.nombre,
+            'documento': p.numero,
+            'cama': p.cama or 'S/A',
+            'ingreso': h.numero_ingreso if h else 'N/A'
+        })
 
-    return jsonify({
-        'paciente_id': paciente.id,
-        'nombre': paciente.nombre,
-        'documento': paciente.numero,
-        'cama': paciente.cama or 'S/A',
-        'ingreso': historia.numero_ingreso if historia else 'N/A',
-        'fecha_ingreso': (
-            historia.fecha_registro.strftime('%d/%m/%Y') # Formato más amigable
-            if historia and historia.fecha_registro else ''
-        ),
-    })
+    return jsonify(resultados) # Ahora enviamos una LISTA []
 
 
 # ---------- 9) CREAR NOTA  ----------
@@ -1088,27 +1104,49 @@ def registrar_administracion_enfermeria(registro_enfermeria_id, codigo_medicamen
     db.session.commit()
 
 
-# --- FUNCIÓN DE EDICIÓN ACTUALIZADA ---
 @enfermeria_bp.route('/administracion/<int:admin_id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_administracion_medicamento(admin_id):
     admin = AdministracionMedicamento.query.get_or_404(admin_id)
     registro_id = admin.registro_enfermeria_id
 
-    # VALIDACIÓN DE TURNO (Ahora también en Editar)
+    # VALIDACIÓN DE TURNO
     permitido, mensaje = validar_turno_estricto(admin.registro)
     if not permitido:
         flash(mensaje, "danger")
         return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
 
-    if request.method == 'GET':
-        return render_template('enfermeria/editar_medicamento.html', admin=admin)
+    if request.method == 'POST':
+        try:
+            # 1. CAPTURAR DATOS DEL FORMULARIO
+            nueva_cantidad = request.form.get('cantidad')
+            nueva_via = request.form.get('via')
+            nueva_fecha_str = request.form.get('hora_administracion')
+            nuevas_obs = request.form.get('observaciones')
 
-    # ... (resto de tu lógica de guardado de edición que ya tenías)
-    nueva_cantidad = request.form.get('cantidad')
-    # ... (procesar cambios y db.session.commit())
-    return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
+            # 2. ASIGNAR VALORES AL OBJETO 'admin'
+            if nueva_cantidad:
+                admin.cantidad = float(nueva_cantidad)
+            
+            admin.via = nueva_via
+            admin.observaciones = nuevas_obs
+            
+            # Convertir el string del input datetime-local a objeto datetime de Python
+            if nueva_fecha_str:
+                admin.hora_administracion = datetime.strptime(nueva_fecha_str, '%Y-%m-%dT%H:%M')
 
+            # 3. GUARDAR CAMBIOS REALES EN LA BASE DE DATOS
+            db.session.commit()
+            flash('✅ Administración actualizada correctamente.', 'success')
+            
+        except Exception as e:
+            db.session.rollback() # Si algo falla, cancela el cambio
+            flash(f'❌ Error al actualizar: {str(e)}', 'danger')
+
+        return redirect(url_for('enfermeria.administrar_medicamentos', registro_id=registro_id))
+
+    # Si es GET, simplemente mostramos el formulario
+    return render_template('enfermeria/editar_medicamento.html', admin=admin)
 
 # --- FUNCIÓN DE ELIMINACIÓN ACTUALIZADA ---
 @enfermeria_bp.route('/administracion/<int:admin_id>/eliminar', methods=['POST'])
@@ -1401,7 +1439,7 @@ def solicitar_insumos(paciente_id):
                         cantidad=cant_pedida,
                         unidad=insumo_medico.unidad,
                         fecha_solicitud=ahora_bogota(),
-                        estado='pendiente',
+                        estado='pendiente', # Inicia siempre como pendiente
                         enfermero_id=current_user.id
                     )
                     db.session.add(nueva_solicitud)
@@ -1412,29 +1450,51 @@ def solicitar_insumos(paciente_id):
                 flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
 
-    # --- RECONSTRUCCIÓN CON LOS NOMBRES QUE TU HTML PIDE ---
-    pendientes = SolicitudInsumo.query.filter_by(paciente_id=paciente_id, estado='pendiente').all()
+    # --- LÓGICA DE SALDOS MÓVILES ---
+    # Buscamos solicitudes que no estén marcadas como 'entregado' (completas)
+    pendientes = SolicitudInsumo.query.filter(
+        SolicitudInsumo.paciente_id == paciente_id,
+        SolicitudInsumo.estado != 'entregado'
+    ).all()
     
     lista_para_tabla = []
     for p in pendientes:
         m = InsumoMedico.query.get(p.insumo_medico_id)
-        lista_para_tabla.append({
-            'ultimo_id': p.id,
-            'nombre': m.nombre if m else "Desconocido",
-            'solicitado': p.cantidad,
-            'total_solicitado': p.cantidad,  # <--- REPARADO: Lo que pedía el error
-            'total_usado': 0,
-            'pendiente': p.cantidad,        # <--- REPARADO: Lo que pedía el error anterior
-            'unidad': p.unidad or 'und',
-            'num_solicitudes': 1,
-            'fecha': p.fecha_solicitud.strftime('%H:%M') if p.fecha_solicitud else '--'
-        })
+        
+        # Obtenemos todos los registros de uso de este paciente
+        registros_uso = InsumoPaciente.query.filter_by(paciente_id=paciente_id).all()
+        
+        total_usado = 0
+        for reg in registros_uso:
+            # Intentamos obtener el ID del insumo del registro, probando ambos nombres comunes
+            id_insumo_reg = getattr(reg, 'insumo_medico_id', getattr(reg, 'insumo_id', None))
+            
+            # Si el insumo coincide y fue registrado después de la solicitud, sumamos
+            if id_insumo_reg == p.insumo_medico_id and reg.fecha_registro >= p.fecha_solicitud:
+                total_usado += float(reg.cantidad)
+        
+        saldo_pendiente = float(p.cantidad) - total_usado
+        
+        if saldo_pendiente > 0:
+            lista_para_tabla.append({
+                'ultimo_id': p.id,
+                'nombre': m.nombre if m else "Insumo Desconocido",
+                'solicitado': float(p.cantidad),
+                'total_solicitado': float(p.cantidad),
+                'total_usado': total_usado,
+                'pendiente': saldo_pendiente,
+                'unidad': p.unidad or 'und',
+                'num_solicitudes': 1,
+                'fecha': p.fecha_solicitud.strftime('%H:%M') if p.fecha_solicitud else '--'
+            })
+        else:
+            # Auto-cierre de solicitud si ya se consumió todo
+            p.estado = 'entregado'
+            db.session.commit()
 
-    return render_template(
-        'enfermeria/solicitar_insumos.html', 
-        paciente=paciente, 
-        insumos_solicitados=lista_para_tabla 
-    )
+    return render_template('enfermeria/solicitar_insumos.html', 
+                           paciente=paciente, 
+                           insumos_solicitados=lista_para_tabla)
   
 @enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/insumos/limpiar', methods=['POST'])
 @login_required
@@ -1443,16 +1503,6 @@ def limpiar_insumos_solicitados(paciente_id):
     SolicitudInsumo.query.filter_by(paciente_id=paciente_id, estado='pendiente').delete()
     db.session.commit()
     flash('🧹 Pendientes limpiados.', 'info')
-    return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
-
-@enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/insumos/eliminar_uno/<int:insumo_paciente_id>', methods=['POST'])
-@login_required
-def eliminar_insumo_individual(paciente_id, insumo_paciente_id):
-    insumo = InsumoPaciente.query.get_or_404(insumo_paciente_id)
-    if insumo.paciente_id == paciente_id:
-        db.session.delete(insumo)
-        db.session.commit()
-        flash('🗑️ Eliminado.', 'success')
     return redirect(url_for('enfermeria.solicitar_insumos', paciente_id=paciente_id))
 
 @enfermeria_bp.route('/enfermeria/paciente/<int:paciente_id>/insumos/reset', methods=['POST'])
@@ -1527,71 +1577,76 @@ def registrar_insumos(paciente_id):
     paciente = Paciente.query.get_or_404(paciente_id)
     
     if request.method == 'POST':
-        accion = request.form.get('accion')
-        insumos_ids = request.form.getlist('insumos_reg[]')
+        solicitud_id = request.form.get('solicitud_id')
+        cantidad_usada = float(request.form.get('cantidad_usada', 0))
+        observaciones = request.form.get('observaciones', '')
         
-        try:
-            for i_id in insumos_ids:
-                sol = SolicitudInsumo.query.get(i_id)
-                if not sol or sol.enfermero_id != current_user.id: continue
-
-                insumo_medico = InsumoMedico.query.get(sol.insumo_medico_id)
+        # 1. Buscamos la solicitud original
+        solicitud = SolicitudInsumo.query.get(solicitud_id)
+        
+        if solicitud and cantidad_usada > 0:
+            try:
+                # 2. CREAR EL REGISTRO EN EL HISTORIAL
+                nuevo_registro = InsumoPaciente(
+                    paciente_id=paciente_id,
+                    insumo_id=solicitud.insumo_medico_id,  # Vinculamos al ID del insumo
+                    cantidad=cantidad_usada,
+                    observaciones=observaciones,
+                    enfermero_id=current_user.id,
+                    fecha_registro=datetime.now()
+                )
                 
-                if accion == 'eliminar':
-                    # AL "ELIMINAR" EL REGISTRO:
-                    # 1. Devolvemos la cantidad al stock central
-                    if sol.estado == 'entregado' and insumo_medico:
-                        insumo_medico.stock_actual = Decimal(str(insumo_medico.stock_actual)) + Decimal(str(sol.cantidad))
-                    
-                    # 2. En lugar de borrar, lo regresamos a pendiente
-                    sol.estado = 'pendiente' 
-                    sol.observaciones = "Reversado por error en registro"
-                    flash('↩️ Registro movido nuevamente a Pendientes y stock restaurado.', 'info')
+                # 3. LÓGICA DE SALDO INTELIGENTE
+                # Calculamos cuánto se ha usado en total sumando este nuevo registro
+                total_usado_antes = db.session.query(db.func.sum(InsumoPaciente.cantidad))\
+                    .filter_by(paciente_id=paciente_id, insumo_id=solicitud.insumo_medico_id).scalar() or 0
                 
-                else: # Registrar o Corregir
-                    valor_form = request.form.get(f'cant_{i_id}', '0')
-                    cant_usada = int(float(valor_form))
-                    
-                    if insumo_medico:
-                        # Si era una corrección de algo ya entregado, devolvemos stock previo
-                        if sol.estado == 'entregado':
-                            insumo_medico.stock_actual = Decimal(str(insumo_medico.stock_actual)) + Decimal(str(sol.cantidad))
-                        
-                        # Restamos la nueva cantidad
-                        insumo_medico.stock_actual = Decimal(str(insumo_medico.stock_actual)) - Decimal(cant_usada)
-                        
-                        sol.cantidad = cant_usada
-                        sol.estado = 'entregado'
-                        sol.observaciones = request.form.get(f'obs_{i_id}', '')
+                total_acumulado = total_usado_antes + cantidad_usada
+                
+                # Actualizamos el estado de la solicitud
+                if total_acumulado >= solicitud.cantidad:
+                    solicitud.estado = 'completado'
+                else:
+                    solicitud.estado = 'parcial'
+                
+                db.session.add(nuevo_registro)
+                db.session.commit()
+                flash(f"✅ Se registraron {cantidad_usada} unidades.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al registrar: {str(e)}", "danger")
+        
+        return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
 
-            db.session.commit()
-            return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'❌ Error: {str(e)}', 'danger')
-
-    # --- CONSULTA DE DATOS ---
-    # Lo pendiente aparece arriba (incluye lo que acabamos de "eliminar" del historial)
-    pendientes = SolicitudInsumo.query.filter_by(paciente_id=paciente_id, estado='pendiente').all()
+    # --- LÓGICA PARA MOSTRAR LA TABLA (GET) ---
+    solicitudes = SolicitudInsumo.query.filter_by(paciente_id=paciente_id).filter(SolicitudInsumo.estado != 'completado').all()
     
-    # Lo entregado por este enfermero aparece abajo
-    registrados = SolicitudInsumo.query.filter_by(paciente_id=paciente_id, estado='entregado', enfermero_id=current_user.id)\
-                  .order_by(SolicitudInsumo.fecha_solicitud.desc()).limit(10).all()
+    insumos_pendientes = []
+    for sol in solicitudes:
+        # 1. Obtenemos la suma (esto suele devolver un objeto Decimal)
+        resultado_suma = db.session.query(db.func.sum(InsumoPaciente.cantidad))\
+            .filter_by(paciente_id=paciente_id, insumo_id=sol.insumo_medico_id).scalar() or 0
+        
+        # 2. Convertimos AMBOS a float en la misma línea para que la resta sea segura
+        saldo = float(sol.cantidad) - float(resultado_suma)
+        
+        # 3. Solo lo añadimos si realmente queda algo por registrar
+        if saldo > 0:
+            insumos_pendientes.append({
+                'id': sol.id,
+                'nombre': sol.insumo_medico.nombre,
+                'unidad': sol.insumo_medico.unidad,
+                'total_pedido': float(sol.cantidad),
+                'ya_registrado': float(resultado_suma),
+                'saldo': saldo
+            })
 
-    def formatear(query):
-        return [{
-            'id': s.id,
-            'nombre': InsumoMedico.query.get(s.insumo_medico_id).nombre if InsumoMedico.query.get(s.insumo_medico_id) else "Desc.",
-            'solicitado': int(s.cantidad),
-            'unidad': s.unidad or 'und',
-            'observaciones': s.observaciones or '',
-            'fecha': s.fecha_solicitud.strftime('%H:%M')
-        } for s in query]
-
+    historial = InsumoPaciente.query.filter_by(paciente_id=paciente_id).order_by(InsumoPaciente.fecha_registro.desc()).all()
+    
     return render_template('enfermeria/registrar_insumos.html', 
                            paciente=paciente, 
-                           insumos=formatear(pendientes),
-                           historial=formatear(registrados))
+                           insumos=insumos_pendientes, 
+                           historial=historial)
 
 @enfermeria_bp.route('/registro/<int:registro_id>/editar_balance', methods=['GET', 'POST'])
 @login_required
@@ -1716,31 +1771,50 @@ def editar_administracion_med(admin_id):
 
     return render_template('enfermeria/editar_medicamento.html', admin=admin, registro=registro)
 
-@enfermeria_bp.route('/insumo/<int:insumo_paciente_id>/editar', methods=['GET', 'POST'])
+@enfermeria_bp.route('/enfermeria/insumo_paciente/<int:insumo_paciente_id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_insumo_paciente(insumo_paciente_id):
-    insumo_p = InsumoPaciente.query.get_or_404(insumo_paciente_id)
-    registro = RegistroEnfermeria.query.get(insumo_p.registro_enfermeria_id)
-    if registro:
-        permitido, mensaje = validar_turno_estricto(registro)
-        if not permitido:
-            flash(mensaje, "danger")
-            return redirect(request.referrer)
+    # Buscamos el registro usando el ID que viene del HTML
+    ip = InsumoPaciente.query.get_or_404(insumo_paciente_id)
+    paciente_id = ip.paciente_id
+
+    # CORRECCIÓN DE SEGURIDAD: Comparamos como string para evitar el error de "otro usuario"
+    if ip.enfermero_id and str(ip.enfermero_id) != str(current_user.id):
+        flash("⚠️ Este registro pertenece a otro usuario y no puede ser editado.", "danger")
+        return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
 
     if request.method == 'POST':
         try:
-            insumo_p.cantidad = float(request.form.get('cantidad'))
-            insumo_p.observaciones = request.form.get('observaciones')
+            nueva_cantidad = float(request.form.get('cantidad', 0))
+            ip.cantidad = nueva_cantidad
+            ip.observaciones = request.form.get('observaciones', '')
             
+            # Buscamos la solicitud original para recalcular el estado
+            solicitud = SolicitudInsumo.query.filter_by(
+                paciente_id=paciente_id, 
+                insumo_medico_id=ip.insumo_id 
+            ).first()
+
+            if solicitud:
+                # Sumamos todo lo registrado de este insumo para este paciente
+                total_registrado = db.session.query(db.func.sum(InsumoPaciente.cantidad))\
+                    .filter_by(paciente_id=paciente_id, insumo_id=ip.insumo_id).scalar() or 0
+                
+                # Si lo registrado es menor a lo pedido, vuelve a ser 'parcial'
+                if float(total_registrado) < float(solicitud.cantidad):
+                    solicitud.estado = 'parcial'
+                else:
+                    solicitud.estado = 'completado'
+
             db.session.commit()
-            flash('✅ Registro de insumo actualizado.', 'success')
+            flash("✅ Registro actualizado correctamente.", "success")
+            return redirect(url_for('enfermeria.registrar_insumos', paciente_id=paciente_id))
+            
         except Exception as e:
             db.session.rollback()
-            flash(f'❌ Error: {str(e)}', 'danger')
-            
-        return redirect(url_for('enfermeria.detalle', paciente_id=insumo_p.paciente_id))
+            flash(f"❌ Error al actualizar: {str(e)}", "danger")
 
-    return render_template('enfermeria/editar_insumo.html', insumo_p=insumo_p)
+    return render_template('enfermeria/editar_insumo.html', ip=ip, paciente_id=paciente_id)
 
 @enfermeria_bp.app_context_processor
 def inject_permissions():

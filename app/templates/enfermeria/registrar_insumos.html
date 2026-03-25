@@ -6,11 +6,10 @@
     .card-hospital { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
     .header-clinico { background: linear-gradient(135deg, var(--primary-med), var(--secondary-med)); color: white; padding: 20px; }
     .table-med thead { background-color: #f8f9fa; color: var(--primary-med); text-transform: uppercase; font-size: 0.85rem; }
-    .input-cant { border: 2px solid var(--primary-med); font-weight: bold; color: var(--primary-med); border-radius: 8px; max-width: 100px; }
-    .btn-save { background-color: #28a745; border: none; font-weight: bold; transition: 0.3s; }
-    .btn-save:hover { background-color: #218838; transform: translateY(-2px); }
-    .btn-delete { color: #dc3545; background: none; border: none; transition: 0.3s; }
-    .btn-delete:hover { color: #a71d2a; transform: scale(1.1); }
+    .input-cant { border: 2px solid var(--primary-med); font-weight: bold; color: var(--primary-med); border-radius: 8px; max-width: 90px; }
+    .badge-balance { font-size: 0.9rem; padding: 5px 10px; border-radius: 20px; }
+    .btn-legalizar { background-color: var(--primary-med); color: white; border: none; font-weight: bold; transition: 0.3s; }
+    .btn-legalizar:hover { background-color: var(--secondary-med); transform: translateY(-2px); color: white; }
 </style>
 {% endblock %}
 
@@ -18,102 +17,108 @@
 <div class="container py-4">
     <div class="card card-hospital mb-4">
         <div class="header-clinico d-flex justify-content-between align-items-center">
-            <div>
-                <h3 class="mb-0 fw-bold"><i class="fas fa-microscope me-2"></i> Gestión de Insumos</h3>
-                <p class="mb-0 opacity-75">Paciente: {{ paciente.nombre }} | <i class="fas fa-user-md ms-2"></i> Turno: {{ current_user.nombre }}</p>
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" class="btn btn-outline-light btn-sm me-3 border-0">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <div>
+                    <h3 class="mb-0 fw-bold"><i class="fas fa-microscope me-2"></i> Gestión de Insumos</h3>
+                    <p class="mb-0 opacity-75">Paciente: {{ paciente.nombre }}</p>
+                </div>
             </div>
             <a href="{{ url_for('enfermeria.solicitar_insumos', paciente_id=paciente.id) }}" class="btn btn-light btn-sm fw-bold shadow-sm">
-                <i class="fas fa-plus-circle me-1"></i> Solicitar más Insumos
+                <i class="fas fa-plus-circle me-1"></i> Solicitar más
             </a>
         </div>
 
-        <form method="POST" class="p-3">
-            <input type="hidden" name="accion" value="registrar">
-            <h5 class="fw-bold text-secondary mb-3"><i class="fas fa-clipboard-list me-2"></i> Por Registrar</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle table-med">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;"></th>
-                            <th>Material / Insumo</th>
-                            <th class="text-center">Cant. Usada</th>
-                            <th>Notas de Uso</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ins in insumos %}
-                        <tr>
-                            <td><input type="checkbox" name="insumos_reg[]" value="{{ ins.id }}" class="form-check-input" checked></td>
-                            <td>
-                                <span class="fw-bold d-block text-dark">{{ ins.nombre }}</span>
-                                <small class="text-muted">Pedido a las: {{ ins.fecha }}</small>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th class="text-start ps-4">MATERIAL / INSUMO</th>
+                        <th>SOLICITADO</th>
+                        <th>REGISTRADO</th>
+                        <th>CANT. A LEGALIZAR</th>
+                        <th>NOTAS</th>
+                        <th class="text-end pe-4">ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ins in insumos %}
+                    <tr class="text-center">
+                        <td class="text-start ps-4">
+                            <span class="text-dark fw-bold d-block">{{ ins.nombre }}</span>
+                            <small class="text-muted">Pendiente: {{ ins.saldo }} {{ ins.unidad }}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ ins.total_pedido }}</span></td>
+                        <td><span class="badge bg-info-subtle text-info border-info">{{ ins.ya_registrado }}</span></td>
+                        
+                        <form action="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}" method="POST">
+                            <input type="hidden" name="solicitud_id" value="{{ ins.id }}">
+                            <td style="width: 120px;">
+                                <input type="number" name="cantidad_usada" value="{{ ins.saldo }}" 
+                                       step="0.1" min="0.1" max="{{ ins.saldo }}" 
+                                       class="form-control form-control-sm text-center fw-bold border-primary">
                             </td>
                             <td>
-                                <div class="d-flex justify-content-center align-items-center">
-                                    <input type="number" name="cant_{{ ins.id }}" value="{{ ins.solicitado }}" step="1" min="1" class="form-control form-control-sm input-cant text-center me-2">
-                                    <span class="badge bg-light text-dark border">{{ ins.unidad }}</span>
-                                </div>
+                                <input type="text" name="observaciones" class="form-control form-control-sm" placeholder="Opcional...">
                             </td>
-                            <td><input type="text" name="obs_{{ ins.id }}" class="form-control form-control-sm" placeholder="Opcional..."></td>
-                        </tr>
-                        {% endfor %}
-                        {% if not insumos %}
-                        <tr><td colspan="4" class="text-center py-4 text-muted">No hay insumos pendientes de registro.</td></tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-            {% if insumos %}
-            <div class="text-end mt-3">
-                <button type="submit" class="btn btn-save text-white px-5 py-2 shadow">
-                    <i class="fas fa-check-double me-2"></i> CONFIRMAR REGISTRO
-                </button>
-            </div>
-            {% endif %}
-        </form>
+                            <td class="text-end pe-4">
+                                <button type="submit" class="btn btn-success btn-sm px-3 fw-bold shadow-sm">
+                                    <i class="fas fa-check me-1"></i> LEGALIZAR
+                                </button>
+                            </td>
+                        </form>
+                    </tr>
+                    {% endfor %}
+                    {% if not insumos %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No hay insumos pendientes por legalizar.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     {% if historial %}
-    <div class="card card-hospital bg-white border-0">
+    <div class="card card-hospital bg-white border-0 shadow-sm">
         <div class="card-header bg-light fw-bold text-muted border-0">
-            <i class="fas fa-history me-2"></i> Mis Registros en este Turno
+            <i class="fas fa-history me-2"></i> Historial de Consumos Realizados
         </div>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0">
-                <thead class="small bg-light text-muted">
+                <thead class="small bg-light text-muted text-center">
                     <tr>
-                        <th class="ps-3">Insumo</th>
-                        <th class="text-center">Cant.</th>
-                        <th>Observaciones</th>
-                        <th class="text-center">Acciones</th>
+                        <th class="text-start ps-4">Insumo</th>
+                        <th>Cant.</th>
+                        <th>Notas</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for h in historial %}
-                    <tr>
-                        <td class="ps-3">
-                            <span class="text-dark fw-bold">{{ h.nombre }}</span>
-                            <small class="d-block text-muted">{{ h.fecha }}</small>
+                    <tr class="text-center">
+                        <td class="text-start ps-4">
+                            <span class="text-dark fw-bold">{{ h.insumo.nombre if h.insumo else 'Sin nombre' }}</span>
+                            <small class="d-block text-muted">{{ h.fecha_registro.strftime('%d/%m %H:%M') }}</small>
                         </td>
-                        <td style="width: 150px;">
-                            <form method="POST" class="d-flex align-items-center justify-content-center">
-                                <input type="hidden" name="accion" value="corregir">
-                                <input type="hidden" name="insumos_reg[]" value="{{ h.id }}">
-                                <input type="number" name="cant_{{ h.id }}" value="{{ h.solicitado }}" step="1" min="1" class="form-control form-control-sm text-center border-info me-1" style="width: 60px;">
-                                <button type="submit" class="btn btn-sm btn-info text-white" title="Actualizar"><i class="fas fa-sync-alt"></i></button>
-                            </form>
+                        <td class="fw-bold text-primary">{{ h.cantidad }}</td>
+                        <td class="small text-muted">{{ h.observaciones or '--' }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('enfermeria.editar_insumo_paciente', insumo_paciente_id=h.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                <form action="{{ url_for('enfermeria.eliminar_insumo_paciente', ip_id=h.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-link text-danger p-0 ms-2" title="Eliminar" onclick="return confirm('¿Eliminar este registro?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
-                        <td class="small">{{ h.observaciones }}</td>
-                        <td class="text-center">
-    <form method="POST" class="d-inline">
-        <input type="hidden" name="accion" value="eliminar">
-        <input type="hidden" name="insumos_reg[]" value="{{ h.id }}">
-        <button type="submit" class="btn btn-sm btn-outline-warning" 
-                onclick="return confirm('¿Desea anular este registro y enviarlo de nuevo a la lista de SOLICITADOS?')">
-            <i class="fas fa-undo"></i> Reversar
-        </button>
-    </form>
-</td>
                     </tr>
                     {% endfor %}
                 </tbody>

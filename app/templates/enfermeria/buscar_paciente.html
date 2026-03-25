@@ -33,59 +33,101 @@
 
   </div>
 </div>
+<div class="card-body">
+  <div class="mb-3 position-relative">
+    <label for="criterio" class="form-label fw-bold text-primary">Buscar Paciente (Documento, Nombre o Ingreso)</label>
+    <div class="input-group">
+        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" id="criterio" class="form-control form-control-lg border-start-0" 
+               placeholder="Escriba para buscar..." autocomplete="off">
+    </div>
+    
+    <div id="sugerencias" class="shadow-lg position-absolute w-100" style="z-index: 1000; display:none; margin-top: 5px;">
+      <div class="card border-primary">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="bg-primary text-white">
+              <tr>
+                <th style="font-size: 0.8rem;">PACIENTE / DOCUMENTO</th>
+                <th class="text-center" style="font-size: 0.8rem;">CAMA</th>
+                <th class="text-end" style="font-size: 0.8rem;">ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody id="lista-resultados">
+              </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="text-muted small">
+    <i class="fas fa-info-circle"></i> Seleccione el paciente de la lista para gestionar sus registros.
+  </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const input = document.getElementById('criterio');
-  const contenedor = document.getElementById('sugerencias');
+    const input = document.getElementById('criterio');
+    const contenedor = document.getElementById('sugerencias');
+    const lista = document.getElementById('lista-resultados');
+    let timeoutId = null;
 
-  let ultimoTermino = '';
-  let timeoutId = null;
+    input.addEventListener('input', function () {
+        const q = input.value.trim();
+        if (timeoutId) clearTimeout(timeoutId);
 
-  if (!input || !contenedor) return;
+        if (q.length < 3) {
+            contenedor.style.display = 'none';
+            return;
+        }
 
-  function limpiarSugerencias() {
-    while (contenedor.firstChild) contenedor.removeChild(contenedor.firstChild);
-  }
+        timeoutId = setTimeout(function () {
+            // Usamos la API que ya tienes configurada
+            fetch(`/enfermeria/api/buscar_info_paciente?q=${encodeURIComponent(q)}`)
+                .then(resp => resp.json())
+                .then(data => {
+                    lista.innerHTML = ''; 
+                    
+                    if (data.paciente_id) {
+                        // Creamos la fila clickeable
+                        const fila = document.createElement('tr');
+                        fila.style.cursor = 'pointer';
+                        fila.className = 'align-middle';
+                        
+                        // Al hacer clic en cualquier parte de la fila, navega
+                        fila.onclick = function() {
+                            window.location.href = `/enfermeria/registros_paciente/${data.paciente_id}`;
+                        };
 
-  input.addEventListener('input', function () {
-    const termino = input.value.trim();
+                        fila.innerHTML = `
+                            <td>
+                                <div class="fw-bold text-uppercase text-primary">${data.nombre}</div>
+                                <div class="text-muted small">CC: ${data.documento}</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info text-dark">${data.cama}</span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </td>
+                        `;
+                        lista.appendChild(fila);
+                        contenedor.style.display = 'block';
+                    } else {
+                        contenedor.style.display = 'none';
+                    }
+                }).catch(() => { contenedor.style.display = 'none'; });
+        }, 300); // 300ms de espera para no saturar el servidor mientras escribes
+    });
 
-    if (termino.length < 2 || termino === ultimoTermino) {
-      limpiarSugerencias();
-      return;
-    }
-    ultimoTermino = termino;
-
-    if (timeoutId) clearTimeout(timeoutId);
-
-    timeoutId = setTimeout(function () {
-      fetch('{{ url_for("enfermeria.autocomplete_pacientes") }}?q=' + encodeURIComponent(termino))
-        .then(resp => resp.json())
-        .then(function (datos) {
-          limpiarSugerencias();
-          datos.forEach(function (p) {
-            const item = document.createElement('button');
-            item.type = 'button';
-            item.className = 'list-group-item list-group-item-action';
-            item.textContent = p.nombre + ' (' + p.numero + ')';
-            item.addEventListener('click', function () {
-              // mandamos al backend el número del paciente
-              input.value = p.numero;
-              limpiarSugerencias();
-            });
-            contenedor.appendChild(item);
-          });
-        })
-        .catch(function () {
-          limpiarSugerencias();
-        });
-    }, 250);
-  });
-
-  input.addEventListener('blur', function () {
-    setTimeout(limpiarSugerencias, 200);
-  });
+    // Cerrar sugerencias si se hace clic fuera
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !contenedor.contains(e.target)) {
+            contenedor.style.display = 'none';
+        }
+    });
 });
 </script>
 {% endblock %}

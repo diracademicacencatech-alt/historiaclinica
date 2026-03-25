@@ -408,6 +408,7 @@ class SolicitudInsumo(db.Model):
     estado = db.Column(db.String(20), default='pendiente')  # pendiente, aprobado, entregado
     enfermero_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     
+
     # Relaciones
     paciente = db.relationship('Paciente', backref='solicitudes_insumos')
     # enfermero enfermero = db.relationship('Usuario', foreign_keys=[enfermero_id]) # temporal 
@@ -424,6 +425,7 @@ class InsumoPaciente(db.Model):
     fecha_uso = db.Column(db.DateTime)  # ← NUEVO
     stock_actual = db.Column(db.Float, default=0)
     observaciones = db.Column(db.Text, default='')
+    enfermero_id = db.Column(db.String(20), nullable=True)
     # Relaciones SIMPLES
     paciente = db.relationship('Paciente', back_populates='insumos_paciente')
     insumo = db.relationship('InsumoMedico')

@@ -176,11 +176,7 @@
                     <tr>
                         <th class="ps-3">Insumo</th>
                         <th class="text-center">Solicitado</th>
-                        <th class="text-center">Usado</th>
-                        <th class="text-center">Pendiente</th>
-                        <th class="text-center">Solicitudes</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
+                        </tr>
                 </thead>
                 <tbody>
                     {% for ins in insumos_solicitados %}
@@ -190,24 +186,7 @@
                             <small class="text-muted">Último ID: </small><span class="badge-id">{{ ins.ultimo_id }}</span>
                         </td>
                         <td class="text-center fw-bold">{{ "%.0f"|format(ins.total_solicitado) }}</td>
-                        <td class="text-center text-muted">{{ "%.0f"|format(ins.total_usado) }}</td>
-                        <td class="text-center">
-                            <span class="badge {% if ins.pendiente > 0 %}bg-danger{% else %}bg-success{% endif %}" style="font-size: 0.9rem;">
-                                {{ "%.0f"|format(ins.pendiente) }}
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge rounded-pill bg-secondary px-3">{{ ins.num_solicitudes }} vez/veces</span>
-                        </td>
-                        <td class="text-center">
-                            <div class="btn-group shadow-sm">
-                                <form method="POST" action="{{ url_for('enfermeria.eliminar_insumo_individual', paciente_id=paciente.id, insumo_paciente_id=ins.ultimo_id) }}" 
-                                      onsubmit="return confirm('¿Eliminar la última solicitud de {{ ins.nombre }}?');">
-                                    <button type="submit" class="btn btn-white btn-sm text-danger border" title="Eliminar última">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                                {% if ins.pendiente > 0 %}
+                        {% if ins.pendiente > 0 %}
                                 <a href="{{ url_for('enfermeria.registrar_insumos', paciente_id=paciente.id) }}" 
                                    class="btn btn-white btn-sm text-success border" title="Ir a registrar">
                                     <i class="fas fa-check-double"></i>

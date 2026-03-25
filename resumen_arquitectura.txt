@@ -1,0 +1,238 @@
+=== RESUMEN DE ARQUITECTURA TÉCNICA (HISTORIA CLÍNICA) ===
+
+[DIR] ./
+  |-- app.py
+  |-- arreglar_db.py
+  |-- config.py
+     > [Modelo]: Config
+  |-- historia_form.html
+  |-- manage.py
+  |-- mapear_proyecto.py
+     > [Lógica]: extraer_info_proyecto...
+  |-- run.py
+  [DIR] app/
+    |-- auth.py
+       > [Endpoint]: '/logout'
+       > [Lógica]: register, login, logout...
+    |-- decorators.py
+       > [Lógica]: roles_requeridos, decorator, decorated_function...
+    |-- extensions.py
+    |-- menu.py
+       > [Endpoint]: '/'
+       > [Lógica]: inicio...
+    |-- models.py
+       > [Lógica]: set_password, check_password, load_user...
+       > [Modelo]: User
+       > [Modelo]: Paciente
+       > [Modelo]: HistoriaClinica
+       > [Modelo]: OrdenMedica
+       > [Modelo]: Medico
+       > [Modelo]: SignosVitales
+       > [Modelo]: Evolucion
+       > [Modelo]: Diagnostico
+       > [Modelo]: CIE10
+       > [Modelo]: RegistroEnfermeria
+       > [Modelo]: AyudaDiagnostica
+       > [Modelo]: CatLaboratorioExamen
+       > [Modelo]: CatLaboratorioParametro
+       > [Modelo]: LabSolicitud
+       > [Modelo]: LabResultado
+       > [Modelo]: DiagnosticoCIE10
+       > [Modelo]: Medicamento
+       > [Modelo]: AdministracionMedicamento
+       > [Modelo]: InsumoMedico
+       > [Modelo]: SolicitudInsumo
+       > [Modelo]: InsumoPaciente
+       > [Modelo]: OrdenLaboratorioItem
+    |-- __init__.py
+       > [Endpoint]: '/'
+       > [Lógica]: create_app, index, inject_now, load_user, roles_requeridos...
+    [DIR] ayudas/
+      |-- routes.py
+         > [Endpoint]: '/'
+         > [Endpoint]: '/paciente/<int:paciente_id>/historias'
+         > [Endpoint]: '/historia/<int:historia_id>/ayudas'
+         > [Endpoint]: '/autocomplete'
+         > [Endpoint]: '/archivo/<int:ayuda_id>'
+         > [Endpoint]: '/historia/<int:historia_id>/generar_pdf_laboratorio'
+         > [Lógica]: guardar_archivo_ayuda, inicio_ayudas, buscar_paciente, seleccionar_historia, menu_ayudas_historia...
+      |-- __init__.py
+    [DIR] enfermeria/
+      |-- routes.py
+         > [Endpoint]: '/detalle/<int:paciente_id>'
+         > [Endpoint]: '/paciente/<int:paciente_id>/medicamentos'
+         > [Endpoint]: '/api/registro/<int:registro_id>/medicamentos-formulados'
+         > [Endpoint]: '/paciente/<int:paciente_id>/menu'
+         > [Endpoint]: '/paciente/<int:paciente_id>/registros'
+         > [Endpoint]: '/debug/ordenes/<int:historia_id>'
+         > [Endpoint]: '/buscar_insumo_api'
+         > [Lógica]: ahora_bogota, parse_json_seguro, obtener_turno_actual, validar_turno_estricto, validar_acceso_visual...
+      |-- __init__.py
+    [DIR] inventario/
+      |-- routes.py
+         > [Endpoint]: '/insumos'
+         > [Lógica]: listar_insumos, nuevo_insumo, editar_insumo, eliminar_insumo, eliminar_insumos_seleccionados...
+      |-- __init__.py
+    [DIR] pacientes/
+      |-- pacientes.py
+         > [Endpoint]: '/listar', methods=['GET'], endpoint='listar'
+         > [Endpoint]: '/crear', methods=['GET', 'POST'], endpoint='crear'
+         > [Endpoint]: '/eliminar/<int:paciente_id>', methods=['POST'], endpoint='eliminar'
+         > [Endpoint]: '/carga-masiva', methods=['GET', 'POST'], endpoint='carga_masiva'
+         > [Endpoint]: '/descargar-plantilla', endpoint='descargar_plantilla'
+         > [Endpoint]: '/autocomplete_cie10'
+         > [Endpoint]: '/historias/libro/<int:historia_id>/pdf'
+         > [Endpoint]: '/historias/libro/<int:historia_id>/ver'
+         > [Lógica]: listar, crear, nuevo_ingreso, eliminar_paciente, carga_masiva...
+      |-- __init__.py
+    [DIR] param/
+      |-- routes.py
+         > [Endpoint]: '/medicamentos'
+         > [Endpoint]: '/cie10'
+         > [Endpoint]: '/laboratorios'
+         > [Lógica]: medicamentos, medicamento_nuevo, medicamento_editar, medicamento_eliminar, medicamentos_eliminar_seleccionados...
+      |-- __init__.py
+    [DIR] templates/
+      |-- base.html
+      |-- historias_pdf.html
+      |-- menu.html
+      |-- regsitrar_usuarios.html
+      |-- ver_usuarios.html
+      [DIR] auth/
+        |-- login.html
+        |-- register.html
+      [DIR] ayudas/
+        |-- buscar_paciente.html
+        |-- buscar_resultados.html
+        |-- imagenes_listar.html
+        |-- informe.html
+        |-- laboratorios_listar.html
+        |-- laboratorio_paciente.html
+        |-- menu_ayudas_historia.html
+        |-- seleccionar_historia.html
+      [DIR] enfermeria/
+        |-- administrar_medicamentos.html
+        |-- buscar_paciente.html
+        |-- crear.html
+        |-- crear_nota.html
+        |-- editar_balance.html
+        |-- editar_insumo.html
+        |-- editar_medicamento.html
+        |-- editar_nota.html
+        |-- editar_signos.html
+        |-- listar.html
+        |-- menu_paciente.html
+        |-- pdf_enfermeria_limpio.html
+        |-- registrar_insumos.html
+        |-- registros_paciente.html
+        |-- registro_detalle.html
+        |-- solicitar_insumos.html
+      [DIR] inventario/
+        |-- insumos_list.html
+        |-- insumo_form.html
+      [DIR] laboratorio/
+        |-- carga_masiva.html
+        |-- nueva_solicitud.html
+        |-- solicitudes_listar.html
+        |-- solicitud_detalle.html
+      [DIR] pacientes/
+        |-- carga_masiva.html
+        |-- crear_orden_medica.html
+        |-- crear_simple.html
+        |-- listar.html
+        |-- nuevo_ingreso.html
+        |-- pdf_libro.html
+        |-- ver_historia.html
+      [DIR] param/
+        |-- cie10_list.html
+        |-- lab_examenes_list.html
+        |-- lab_examen_detalle.html
+        |-- medicamentos_list.html
+        |-- medicamento_form.html
+    [DIR] uploads/
+      [DIR] ayudas/
+        [DIR] imagenes/
+          [DIR] 1/
+          [DIR] 2/
+          [DIR] 3/
+          [DIR] 6/
+    [DIR] utils/
+      |-- fechas.py
+         > [Lógica]: ahora_bogota...
+  [DIR] instance/
+  [DIR] migrations/
+    |-- env.py
+       > [Lógica]: get_engine, get_engine_url, get_metadata, run_migrations_offline, run_migrations_online...
+    [DIR] versions/
+      |-- 06f561f2264e_catalogo_medicamentos_y_administraciones.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 1244ae70223e_ajuste_id_historiaclinica_para_usar_id_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 1cfc4a7ac119_agregar_antecedentes_riesgos_y_alergias.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 224fbc70290d_add_servicio_to_historias_clinicas.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 29a40a2014f8_añadir_fecha_registro_a_ordenes_medicas.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 2c725410eb0c_orden_laboratorio_items.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 34b17c40e710_create_insumos_paciente_table.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 3746cca11570_add_fecha_registro_column_to_historias_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 4222f2078a48_initial_migration_with_historias_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 5072259d8b0b_add_cantidad_usada_to_insumopaciente.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 5a5bd0b2749a_tabla_diagnosticos_cie10.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 5fd32c7851d3_add_ayuda_diagnostica.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 711137b8a6f9_add_indicaciones_medicas_and_medicacion_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 8ab8cba60ffa_add_campos_evaluacion_clinica.py
+         > [Lógica]: upgrade, downgrade...
+      |-- 8bd464bfa11e_add_stock_actual_insumos_paciente.py
+         > [Lógica]: upgrade, downgrade...
+      |-- a073cafc6477_add_turno_to_registro_enfermeria.py
+         > [Lógica]: upgrade, downgrade...
+      |-- acecab6b1aae_agregar_insumos_médicos_enfermería.py
+         > [Lógica]: upgrade, downgrade...
+      |-- b5cea64a3e87_agregar_campo_fecha_registro_a_historia_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- b8102cfd5c95_add_administracion_medicamento_table.py
+         > [Lógica]: upgrade, downgrade...
+      |-- bdf65cb803cf_add_laboratorio_nombre_and_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- c5d035dadf8c_add_observaciones_to_ayudas.py
+         > [Lógica]: upgrade, downgrade...
+      |-- ccad232b2b80_agregar_historia_clinica_id_a_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- d11c019fa7df_add_observaciones_to_insumopaciente.py
+         > [Lógica]: upgrade, downgrade...
+      |-- d4b58d65e0df_tabla_medicamentos_con_inventario.py
+         > [Lógica]: upgrade, downgrade...
+      |-- d5d0aa69221f_agregar_campo_fecha_ingreso.py
+         > [Lógica]: upgrade, downgrade...
+      |-- d62fbdee40c2_add_nullable_false_to_historia_id_in_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- def9d863c34c_agregar_columna_activo_a_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- e86fc55ca165_add_cie10_principal_servicio_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- f395f6c0aa0c_add_campos_tipo_nota_y_texto_nota_a_.py
+         > [Lógica]: upgrade, downgrade...
+      |-- f7ba92bbb124_add_lab_models.py
+         > [Lógica]: upgrade, downgrade...
+      |-- xxxxxxxx1234_fix_ordenes_medicas_nullability.py
+         > [Lógica]: upgrade, downgrade...
+  [DIR] scripts/
+    |-- cargar_insumos.py
+    |-- descargar_lab.py
+    |-- importar_lab.py
+       > [Lógica]: parse_float...
+    |-- __init.py__.py
+  [DIR] uploads/
+    [DIR] ayudas/
+      [DIR] imagenes/
+        [DIR] 6/

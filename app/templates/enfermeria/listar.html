@@ -17,83 +17,116 @@
     </style>
 
     <div class="container py-2 fade-in-content">
-        <h2 class="titulo-principal"><i class="fas fa-users-medical"></i> Selección de Paciente</h2>
+        <h2 class="titulo-principal"><i class="fas fa-users-medical"></i> Selección</h2>
 
-        <div class="search-box">
-            <label class="form-label fw-bold mb-2" style="font-size: 0.8rem; text-transform: uppercase;">Localizar para Gestión Integral</label>
-            <div class="input-group">
-                <input type="text" id="buscador_paciente" class="form-control input-search-custom" placeholder="Documento o nombre del paciente...">
-                <button class="btn btn-search-custom" onclick="buscarYCompletarPaciente()">
-                    <i class="fas fa-search"></i> BUSCAR PACIENTE
-                </button>
-            </div>
-        </div>
-
-        <div class="table-responsive table-sm-custom">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">Documento</th>
-                        <th style="width: 50%;">Nombre Completo</th>
-                        <th style="width: 35%;" class="text-center">Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="pacientes_tbody">
-                    {% for paciente in pacientes %}
-                    <tr>
-                        <td><span class="badge bg-light text-dark border">{{ paciente.numero }}</span></td>
-                        <td class="fw-bold" style="color: var(--text-links);">{{ paciente.nombre }}</td>
-                        <td class="text-center">
-                            <a class="btn-gestion-total" 
-                               hx-get="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}" 
-                               hx-target="#contenido-principal"
-                               style="cursor:pointer;">
-                                <i class="fas fa- hospital-user"></i> ABRIR EXPEDIENTE
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+       <div class="search-box">
+    <label class="form-label fw-bold mb-2" style="font-size: 0.8rem; text-transform: uppercase;">Localizar para Gestión Integral</label>
+    <div class="input-group">
+        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" id="buscador_paciente" class="form-control input-search-custom" 
+               placeholder="Filtrar por documento o nombre...">
     </div>
+</div>
 
-    <script>
-    (function() {
-        window.buscarYCompletarPaciente = function() {
-            const queryInput = document.getElementById('buscador_paciente');
-            const query = queryInput.value.trim();
-            if (!query) return;
+<div class="table-responsive table-sm-custom">
+    <table class="table table-hover mb-0" id="tabla_pacientes">
+        <thead>
+            <tr>
+                <th style="width: 15%;">Documento</th>
+                <th style="width: 50%;">Nombre Completo</th>
+                <th style="width: 35%;" class="text-center">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="pacientes_tbody">
+    {% if pacientes %}
+        {% for paciente in pacientes %}
+            <tr class="fila-paciente align-middle">
+                <td class="fw-bold">{{ paciente.numero }}</td>
+                <td class="text-uppercase">{{ paciente.nombre }}</td>
+                <td class="text-center">
+                    <a href="{{ url_for('enfermeria.menu_paciente', paciente_id=paciente.id) }}"
+                       class="btn-gestion-total">
+                        <i class="fas fa-clipboard-list me-2"></i> Gestionar
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+    {% else %}
+        <tr id="debug-vacio">
+            <td colspan="3" class="text-center py-4">
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-circle"></i> No hay pacientes registrados o activos en el sistema.
+                </div>
+            </td>
+        </tr>
+    {% endif %}
+</tbody>
+    </table>
+</div>
 
-            const tbody = document.getElementById('pacientes_tbody');
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><div class="spinner-border text-teal" role="status"></div></td></tr>';
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buscador = document.getElementById('buscador_paciente');
+    const tbody = document.getElementById('pacientes_tbody');
+    let timeoutId = null;
 
-            fetch('/enfermeria/api/buscar_info_paciente?q=' + encodeURIComponent(query))
-                .then(r => r.json())
-                .then(data => {
-                    tbody.innerHTML = "";
-                    if (data.error) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No se encontró el paciente</td></tr>';
-                        return;
-                    }
-                    
-                    // Busca esta línea en el script de listar.html y déjala exactamente así:
-tbody.innerHTML = `
-    <tr class="table-light">
-        <td><span class="badge bg-light text-dark border">${data.documento}</span></td>
-        <td class="fw-bold" style="color: var(--text-links);">${data.nombre}</td>
-        <td class="text-center">
-            <a class="btn-gestion-total" 
-               href="/enfermeria/paciente/${data.paciente_id}/menu">
-                <i class="fas fa-hospital-user"></i> ABRIR EXPEDIENTE
-            </a>
-        </td>
-    </tr>`;
-                    
-                    // IMPORTANTE: Como el contenido es dinámico, le decimos a HTMX que procese el nuevo botón
-                    htmx.process(tbody);
-                });
-        };
-    })();
-    </script>
+    buscador.addEventListener('input', function() {
+        const termino = buscador.value.toLowerCase().trim();
+        const filas = document.querySelectorAll('.fila-paciente');
+        let hayResultadosLocales = false;
+
+        // 1. Filtrado local (lo que ya está en pantalla)
+        filas.forEach(fila => {
+            const textoFila = fila.textContent.toLowerCase();
+            if (textoFila.includes(termino)) {
+                fila.style.setProperty('display', '', 'important');
+                hayResultadosLocales = true;
+            } else {
+                fila.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // 2. Búsqueda en Servidor (si no hay resultados locales y escribió más de 3 letras)
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        if (!hayResultadosLocales && termino.length >= 3) {
+            timeoutId = setTimeout(() => {
+                fetch(`/enfermeria/api/buscar_info_paciente?q=${encodeURIComponent(termino)}`)
+                    .then(resp => resp.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            // Limpiamos y mostramos los resultados del servidor
+                            tbody.innerHTML = '';
+                            data.forEach(p => {
+                                const tr = document.createElement('tr');
+                                tr.className = 'fila-paciente align-middle';
+                                tr.innerHTML = `
+                                    <td class="fw-bold">${p.documento}</td>
+                                    <td class="text-uppercase">${p.nombre}</td>
+                                    <td class="text-center">
+                                        <a href="/enfermeria/detalle/${p.paciente_id}" class="btn-gestion-total">
+                                            <i class="fas fa-user-nurse me-2"></i> Gestionar
+                                        </a>
+                                    </td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        } else {
+                            mostrarMensajeVacio(termino);
+                        }
+                    });
+            }, 300);
+        } else if (termino === "") {
+            // Si borra el buscador, podrías recargar la página o dejar los iniciales
+            if (document.getElementById('mensaje-vacio')) document.getElementById('mensaje-vacio').remove();
+        }
+    });
+
+    function mostrarMensajeVacio(valor) {
+        if (!document.getElementById('mensaje-vacio')) {
+            tbody.innerHTML = `<tr id="mensaje-vacio"><td colspan="3" class="text-center py-5 text-muted">No se encontraron pacientes para: <strong>${valor}</strong></td></tr>`;
+        }
+    }
+});
+</script>
 </div>

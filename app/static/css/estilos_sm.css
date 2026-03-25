@@ -1,0 +1,93 @@
+/* app/static/css/estilos_sm.css */
+
+:root {
+    --sm-bg: #f4f7f6;
+    --sm-primary: #236e7b;
+    --sm-accent: #0b6169;
+    --sm-card-bg: #ffffff;
+    --sm-text: #334756;
+}
+
+body {
+    background-color: var(--sm-bg);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--sm-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar-sm {
+    background-color: white !important;
+    border-bottom: 3px solid var(--sm-primary);
+    padding: 0.5rem 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.logo-img {
+    height: 75px;
+    width: auto;
+    object-fit: contain;
+}
+
+#reloj-digital {
+    background: var(--sm-primary);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.sm-main-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.flash-messages-container {
+    padding: 1rem 2rem 0 2rem;
+}
+
+.main-content {
+    padding: 20px;
+    flex: 1;
+}
+
+footer {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #888;
+    background: white;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Estilos para la tabla de pacientes que estamos ajustando */
+.btn-gestion-total {
+    background-color: #28a745 !important;
+    color: white !important;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+    border: none;
+}
+
+.btn-gestion-total:hover {
+    background-color: #218838 !important;
+    transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+    .logo-img { height: 55px; }
+    #reloj-digital { display: none !important; }
+}
